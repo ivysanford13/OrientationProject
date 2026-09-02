@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f1728">
+    <meta name="description" content="IS Career Launchpad — a playful career exploration game for BYU Information Systems students.">
+    <title>IS Career Launchpad</title>
+    <style>__INLINE_CSS__</style>
+  </head>
+  <body>
+    <a class="skip-link" href="#app">Skip to game</a>
+
+    <header class="site-header" aria-label="IS Career Launchpad">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span>IS</span><i></i></div>
+        <div>
+          <p class="eyebrow">BYU · INFORMATION SYSTEMS</p>
+          <p class="brand-name">CAREER <span>LAUNCHPAD</span></p>
+        </div>
+      </div>
+      <div class="header-status" aria-label="Journey status">
+        <span class="status-lamp" aria-hidden="true"></span>
+        <span class="status-copy" id="header-status-copy">READY TO EXPLORE</span>
+        <button class="button button-quiet" id="restart-button" type="button" hidden>Restart</button>
+      </div>
+    </header>
+
+    <main id="app" tabindex="-1" aria-live="polite"></main>
+
+    <aside id="skill-dock" class="skill-dock" aria-labelledby="skill-dock-title">
+      <div class="dock-inner">
+        <div class="dock-label">
+          <span class="dock-pip" aria-hidden="true"></span>
+          <div>
+            <h2 id="skill-dock-title">SKILL STACK</h2>
+            <p id="skill-dock-count">Your launch kit is empty</p>
+          </div>
+        </div>
+        <div class="hex-track" id="skill-dock-list" role="list" aria-label="Skills earned during this journey">
+          <div class="hex-empty" id="skill-dock-empty" role="listitem">
+            <span aria-hidden="true">+</span><span>Earn skills<br>as you explore</span>
+          </div>
+        </div>
+        <div class="dock-tip"><span aria-hidden="true">⌁</span> Each mission adds a new edge</div>
+      </div>
+    </aside>
+
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <div id="modal-root" class="modal-root" aria-live="polite"></div>
+
+    <script>__INLINE_DATA__</script>
+    <script>__INLINE_APP__</script>
+  </body>
+</html>
