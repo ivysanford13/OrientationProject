@@ -3720,7 +3720,11 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
         // Browsers may restore the prior scroll position after initial render;
         // enforce the screen-start contract even when focus is user-owned.
         window.scrollTo(0, 0);
-        if (active && active !== document.body && active !== root) return;
+        // A control that triggered this render can remain document.activeElement
+        // briefly even after root.innerHTML detached it. Treat that stale focus
+        // as unowned so the new screen heading still receives context focus.
+        var activeOwnsFocus = active && active !== document.body && active !== root && document.documentElement.contains(active);
+        if (activeOwnsFocus) return;
         try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
         // Some older WebKit builds ignore focus({preventScroll}); enforce the
         // screen contract after focus as a harmless second guard.

@@ -129,7 +129,7 @@ class InterviewModuleTests(unittest.TestCase):
                     version: 2,
                     screen: 'career',
                     name: 'Interview QA',
-                    avatar: 'comet',
+                    avatar: 'cougar',
                     starterSkills,
                     recommendedRegionId: regionId,
                     activeRegionId: regionId,
@@ -334,6 +334,26 @@ class InterviewModuleTests(unittest.TestCase):
             self.assertEqual(state["careerId"], career_id)
             self.assertEqual(state["questionIndex"], 0)
             self.assertEqual(state["status"], "in-progress")
+        self.assert_clean(errors)
+
+    def test_keyboard_interview_transitions_focus_each_new_screen_heading(self) -> None:
+        """Announce interview context after keyboard-triggered screen changes."""
+
+        page, errors, _requests = self.new_page()
+        self.show_career(page, "application-developer")
+
+        open_interview = page.locator('[data-action="open-interview"]')
+        open_interview.focus()
+        page.keyboard.press("Enter")
+        page.locator(".interview-intro").wait_for()
+        page.wait_for_function("document.activeElement && document.activeElement.id === 'interview-title'")
+
+        start_interview = page.locator('[data-action="interview-start"]')
+        start_interview.focus()
+        page.keyboard.press("Enter")
+        page.locator(".interview-question").wait_for()
+        page.wait_for_function("document.activeElement && document.activeElement.id === 'question-title'")
+
         self.assert_clean(errors)
 
     def test_unsupported_career_has_a_clear_coming_next_state(self) -> None:
