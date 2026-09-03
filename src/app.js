@@ -18,10 +18,12 @@
   if (!root) return;
 
   var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var research = window.CAREER_RESEARCH_DATA || { salaryByCareerId: {}, interviews: [], sourceLedger: [] };
   var model = normalizeData(window.CAREER_LAUNCHPAD_DATA || {});
   var state = loadState();
   var modalReturnFocus = null;
   var travelTimer = null;
+  var focusAfterRenderId = null;
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -70,6 +72,19 @@
     });
 
     var careers = indexById(source.careers || []);
+    Object.keys(research.salaryByCareerId || {}).forEach(function (careerId) {
+      if (!careers[careerId]) return;
+      var salaryResearch = research.salaryByCareerId[careerId];
+      careers[careerId] = Object.assign({}, careers[careerId], {
+        salary: Object.assign({}, careers[careerId].salary || {}, {
+          status: 'researched',
+          range: salaryResearch.entryRange && salaryResearch.entryRange.label,
+          source: 'BLS OEWS May 2023 · SOC ' + salaryResearch.soc,
+          note: salaryResearch.mapping,
+          research: salaryResearch
+        })
+      });
+    });
     var domains = Array.isArray(source.domains) ? source.domains : [];
     var specializations = Array.isArray(source.specializations) ? source.specializations : [];
     var regions = (Array.isArray(source.regions) ? source.regions : []).map(function (region, index) {
@@ -85,7 +100,7 @@
       return regionCopy;
     });
 
-    return { starterSkills: starterSkills, skills: skills, regions: regions };
+    return { starterSkills: starterSkills, skills: skills, regions: regions, careers: careers };
   }
 
   function normalizeNode(item, parentId, skills, careers) {
@@ -123,8 +138,64 @@
       version: 2, screen: 'landing', name: '', avatar: 'comet', starterSkills: [],
       recommendedRegionId: null, activeRegionId: null, activeDomainId: null,
       completed: [], earned: [], rejected: [], selectedNodeId: null,
-      travelTargetId: null, travelFromId: null, lastCareerId: null, lastAward: false
+      travelTargetId: null, travelFromId: null, lastCareerId: null, lastAward: false,
+      reviewingNodeId: null,
+      interview: defaultInterviewState()
     };
+  }
+
+  function defaultInterviewState() {
+    return { careerId: null, questionIndex: 0, answers: {}, feedback: {}, status: 'idle', returnScreen: 'career' };
+  }
+
+  function interviewForCareer(careerId) {
+    return (research.interviews || []).filter(function (interview) { return interview.careerId === careerId; })[0] || null;
+  }
+
+  function normalizeInterview(savedInterview) {
+    var result = defaultInterviewState();
+    if (!savedInterview || typeof savedInterview !== 'object') return result;
+    var authored = interviewForCareer(savedInterview.careerId);
+    if (!authored) return result;
+    result.careerId = authored.careerId;
+    result.questionIndex = Math.max(0, Math.min(2, Number(savedInterview.questionIndex) || 0));
+    result.status = ['idle', 'in-progress', 'feedback', 'complete'].indexOf(savedInterview.status) === -1 ? 'idle' : savedInterview.status;
+    result.returnScreen = savedInterview.returnScreen === 'career' ? 'career' : 'career';
+    var validQuestionIds = authored.questions.map(function (question) { return question.id; });
+    Object.keys(savedInterview.answers || {}).forEach(function (questionId) {
+      if (validQuestionIds.indexOf(questionId) !== -1 && typeof savedInterview.answers[questionId] === 'string') result.answers[questionId] = savedInterview.answers[questionId].slice(0, 1000);
+    });
+    Object.keys(savedInterview.feedback || {}).forEach(function (questionId) {
+      if (validQuestionIds.indexOf(questionId) === -1 || !savedInterview.feedback[questionId]) return;
+      var feedback = savedInterview.feedback[questionId];
+      result.feedback[questionId] = {
+        level: feedback.level,
+        wordCount: Number(feedback.wordCount) || 0,
+        matchedCriterionIds: Array.isArray(feedback.matchedCriterionIds) ? feedback.matchedCriterionIds : [],
+        missingCriterionIds: Array.isArray(feedback.missingCriterionIds) ? feedback.missingCriterionIds : []
+      };
+    });
+    return result;
+  }
+
+  function validNodeIds(values) {
+    return (Array.isArray(values) ? values : []).filter(function (id, index, list) {
+      return typeof id === 'string' && list.indexOf(id) === index && !!findNode(id);
+    });
+  }
+
+  function validStarterSkillIds(values) {
+    return (Array.isArray(values) ? values : []).filter(function (id, index, list) {
+      return typeof id === 'string' && list.indexOf(id) === index && !!model.skills[id] && model.starterSkills.some(function (skill) { return skill.id === id; });
+    });
+  }
+
+  function validEarned(values) {
+    return (Array.isArray(values) ? values : []).filter(function (entry) {
+      return entry && typeof entry === 'object' && typeof entry.nodeId === 'string' && !!findNode(entry.nodeId) && typeof entry.skillId === 'string' && !!model.skills[entry.skillId];
+    }).map(function (entry) {
+      return { skillId: entry.skillId, nodeId: entry.nodeId, earnedAt: Number(entry.earnedAt) || 0 };
+    });
   }
 
   function loadState() {
@@ -132,13 +203,20 @@
     try {
       var saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null');
       if (!saved || saved.version !== 2) return initial;
-      return Object.assign(initial, saved, {
-        starterSkills: Array.isArray(saved.starterSkills) ? saved.starterSkills.slice(0, 4) : [],
-        completed: Array.isArray(saved.completed) ? saved.completed : [],
-        earned: Array.isArray(saved.earned) ? saved.earned : [],
-        rejected: Array.isArray(saved.rejected) ? saved.rejected : [],
-        screen: saved.screen === 'travel' ? 'map' : saved.screen
+      var restored = Object.assign(initial, saved, {
+        starterSkills: validStarterSkillIds(saved.starterSkills).slice(0, 4),
+        completed: validNodeIds(saved.completed),
+        earned: validEarned(saved.earned),
+        rejected: validNodeIds(saved.rejected),
+        screen: ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].indexOf(saved.screen) === -1 ? 'landing' : (saved.screen === 'travel' ? 'map' : saved.screen),
+        reviewingNodeId: typeof saved.reviewingNodeId === 'string' && findNode(saved.reviewingNodeId) ? saved.reviewingNodeId : null,
+        interview: normalizeInterview(saved.interview)
       });
+      if (restored.starterSkills.length === 4 && !findNode(restored.activeRegionId)) restored.activeRegionId = recommendRegion(restored.starterSkills, restored.rejected).id;
+      if (restored.screen === 'career' && !findNode(restored.selectedNodeId)) restored.screen = restored.starterSkills.length === 4 ? 'map' : 'landing';
+      if ((restored.screen === 'mini' || restored.screen === 'reflection') && !findNode(restored.selectedNodeId)) restored.screen = restored.starterSkills.length === 4 ? 'map' : 'landing';
+      if (['interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].indexOf(restored.screen) !== -1 && !interviewForCareer(restored.interview.careerId)) restored.screen = 'career';
+      return restored;
     } catch (error) { return initial; }
   }
 
@@ -232,6 +310,10 @@
     if (state.screen === 'mini') return renderMiniGame(findNode(state.selectedNodeId));
     if (state.screen === 'reflection') return renderReflection(findNode(state.selectedNodeId));
     if (state.screen === 'career') return renderCareer(findNode(state.selectedNodeId));
+    if (state.screen === 'interview-intro') return renderInterviewIntro();
+    if (state.screen === 'interview-question') return renderInterviewQuestion();
+    if (state.screen === 'interview-feedback') return renderInterviewFeedback();
+    if (state.screen === 'interview-debrief') return renderInterviewDebrief();
     return renderLanding();
   }
 
@@ -261,6 +343,7 @@
   function renderMap() {
     var region = findNode(state.activeRegionId) || recommendRegion(state.starterSkills, state.rejected);
     if (!region) return '<section class="screen"><h1>No map data found</h1></section>';
+    var scene = region.scene || {};
     var regionDone = isCompleted(region.id);
     var domain = state.activeDomainId ? findNode(state.activeDomainId) : null;
     var domainDone = domain && isCompleted(domain.id);
@@ -270,25 +353,48 @@
     var scores = scoreRegions(state.starterSkills);
     var recommendation = region.id === state.recommendedRegionId ? 'BEST STARTING MATCH' : 'NEXT BEST MATCH';
     // Keep the lower fork above the fixed skill stack on compact phone screens.
+    // Keep both phone forks above the fixed skill HUD; the chapter label now
+    // lives in the sky band, leaving the lower terrain band available for the
+    // route card and traveling explorer.
     var lowerChoiceY = window.innerWidth <= 767 ? 43 : 70;
     var sceneNodes = [];
     if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: 43 }, kind: 'region' });
     if (stage === 1) {
-      sceneNodes.push({ node: region, position: { x: 17, y: 53 }, kind: 'past' });
-      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 66, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
+      sceneNodes.push({ node: region, position: { x: 20, y: 62 }, kind: 'past' });
+      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 72, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
     }
     if (stage === 2) {
-      sceneNodes.push({ node: region, position: { x: 8, y: 53 }, kind: 'past' });
-      sceneNodes.push({ node: domain, position: { x: 31, y: 53 }, kind: 'past' });
-      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 73, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
+      sceneNodes.push({ node: region, position: { x: 24, y: 62 }, kind: 'past-region' });
+      sceneNodes.push({ node: domain, position: { x: 47, y: 62 }, kind: 'past-domain' });
+      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 75, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
     }
     var avatarPosition = avatarMapPosition(stage, current && current.id, sceneNodes);
     var travelTarget = state.travelTargetId && sceneNodes.filter(function (entry) { return entry.node.id === state.travelTargetId; })[0];
     var travelFrom = state.travelFromId && sceneNodes.filter(function (entry) { return entry.node.id === state.travelFromId; })[0];
     var targetPosition = travelTarget ? travelTarget.position : avatarPosition;
     var fromPosition = travelFrom ? travelFrom.position : avatarPosition;
+    var routePath = scene.paths && scene.paths[stage] || 'M80 360 C220 380 355 270 580 224 S730 154 850 155';
+    var sceneStyle = '--scene-sky:' + escapeAttr(scene.sky || '#9ed8eb') + ';--scene-horizon:' + escapeAttr(scene.horizon || '#a4d477') + ';--scene-terrain:' + escapeAttr(scene.terrain || '#347c51') + ';--scene-mountain:' + escapeAttr(scene.mountain || '#6d8fa5') + ';--scene-sun:' + escapeAttr(scene.sun || '#ffb647') + ';--scene-haze:' + escapeAttr(scene.haze || '#d9f4ef') + ';--scene-accent:' + escapeAttr(scene.accent || region.color || '#2f6fed');
 
-    return '<section class="screen screen--map world-screen" aria-labelledby="map-title"><header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + (stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.') + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header><section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + '" aria-label="Interactive journey map"><div class="world-sky" aria-hidden="true"><span class="world-sun"></span><span class="cloud cloud--one"></span><span class="cloud cloud--two"></span><span class="mountain mountain--one"></span><span class="mountain mountain--two"></span></div><svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path d="M80 360 C240 375 315 260 450 260 S655 125 850 155 M450 260 C625 260 660 390 850 390"></path></svg><div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + sceneNodes.map(renderWorldStop).join('') + '<div class="map-avatar avatar-' + escapeAttr(state.avatar) + (state.screen === 'travel' ? ' is-traveling' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span aria-hidden="true">' + avatarGlyph(state.avatar) + '</span><small>' + escapeHtml(state.name || 'YOU') + '</small></div><div class="terrain terrain--front" aria-hidden="true"></div><div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style') + '</strong></div></section><div class="map-action-row"><p><strong>' + options.filter(function (node) { return !isRejected(node.id); }).length + '</strong> route' + (options.filter(function (node) { return !isRejected(node.id); }).length === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+    return '<section class="screen screen--map world-screen" aria-labelledby="map-title"><header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + (stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.') + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header><section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + '" style="' + sceneStyle + '" aria-label="Interactive journey map"><div class="world-sky" aria-hidden="true"><span class="world-haze"></span><span class="world-sun"></span><span class="cloud cloud--one"></span><span class="cloud cloud--two"></span><span class="mountain mountain--one"></span><span class="mountain mountain--two"></span>' + renderWorldLandmarks(scene.landmarks) + '</div><svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path d="' + escapeAttr(routePath) + '"></path></svg><div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + '<div class="map-avatar avatar-' + escapeAttr(state.avatar) + (state.screen === 'travel' ? ' is-traveling' : '') + (state.lastAward ? ' is-arrived' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span class="avatar-shell" aria-hidden="true"><i class="avatar-face">' + avatarGlyph(state.avatar) + '</i><b class="avatar-spark">•</b></span><small>' + escapeHtml(state.name || 'YOU') + '</small></div><div class="terrain terrain--front" aria-hidden="true"></div><div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style') + '</strong></div></section><div class="map-action-row"><p><strong>' + options.filter(function (node) { return !isRejected(node.id); }).length + '</strong> route' + (options.filter(function (node) { return !isRejected(node.id); }).length === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+  }
+
+  function renderWorldLandmarks(landmarks) {
+    return (Array.isArray(landmarks) ? landmarks : []).map(function (landmark) {
+      var type = slug(landmark.type || 'landmark');
+      return '<div class="world-landmark landmark-' + escapeAttr(type) + '" style="--x:' + Number(landmark.x || 50) + '%;--y:' + Number(landmark.y || 40) + '%" aria-hidden="true"><span class="landmark-art landmark-art--' + escapeAttr(type) + '"><i></i><b></b></span><small>' + escapeHtml(landmark.label || 'Landmark') + '</small></div>';
+    }).join('');
+  }
+
+  // Past cards are intentionally hidden on narrow maps to keep the active fork
+  // readable. These compact, non-interactive pins retain route context without
+  // competing with the avatar or the skill dock.
+  function renderWorldMilestones(stage, entries) {
+    if (stage === 0) return '';
+    var past = entries.filter(function (entry) { return entry.kind.indexOf('past') === 0; });
+    return '<div class="world-milestones" aria-label="Completed route milestones">' + past.map(function (entry, index) {
+      return '<span class="world-milestone" title="' + escapeAttr(entry.node.title) + '"><b aria-hidden="true">✓</b><small>' + String(index + 1).padStart(2, '0') + '</small></span>';
+    }).join('') + '</div>';
   }
 
   function renderWorldStop(entry) {
@@ -296,13 +402,17 @@
     var rejected = isRejected(node.id);
     var complete = isCompleted(node.id);
     var open = canOpen(node);
-    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon" aria-hidden="true">' + (rejected ? '×' : complete ? '✓' : entry.kind === 'region' ? '◆' : '●') + '</span><span class="stop-copy"><small>' + escapeHtml(rejected ? 'TRAIL CLOSED' : complete ? 'EXPLORED' : 'NEXT STOP') + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
+    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon" aria-hidden="true">' + (rejected ? '×' : complete ? '✓' : entry.kind.indexOf('past') === 0 ? '✓' : entry.kind === 'region' ? '◆' : '●') + '</span><span class="stop-copy"><small>' + escapeHtml(rejected ? 'TRAIL CLOSED' : complete ? 'EXPLORED' : 'NEXT STOP') + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
   }
 
   function avatarMapPosition(stage, currentId, entries) {
     if (!currentId) return { x: 9, y: 64 };
     var current = entries.filter(function (entry) { return entry.node.id === currentId; })[0];
-    if (current) return current.position;
+    // On phones, completed route cards collapse into milestone pins. Park the
+    // explorer in the lower-left clearing so it remains visible beside the
+    // active fork instead of inheriting the hidden past-domain card's center.
+    if (current && window.innerWidth <= 767 && stage === 2 && current.kind === 'past-domain') return { x: 16, y: 76 };
+    if (current) return { x: current.position.x, y: Math.max(17, current.position.y - 14) };
     if (stage === 2) return { x: 31, y: 49 };
     if (stage === 1) return { x: 17, y: 49 };
     return { x: 9, y: 64 };
@@ -324,7 +434,7 @@
   function renderReflection(node) {
     var skill = skillFor(node);
     var sibling = findAlternative(node);
-    return '<section class="screen screen--reflection" aria-labelledby="reflection-title"><div class="reflection-scene"><div class="reflection-avatar avatar-' + escapeAttr(state.avatar) + '" aria-hidden="true">' + avatarGlyph(state.avatar) + '</div><div class="reflection-card"><p class="screen-kicker">TRAIL CHECKPOINT</p><h1 id="reflection-title" tabindex="-1">Did you enjoy that kind of activity?</h1><p>Your answer changes the map. There is no wrong response—this is about noticing what gives you energy.</p><div class="reflection-choice-grid"><button class="reflection-choice reflection-choice--yes" data-action="enjoy-yes"><span aria-hidden="true">✓</span><strong>Yes, keep going</strong><small>Add <b>' + escapeHtml(skill.name) + '</b> and reveal the next stage.</small></button><button class="reflection-choice reflection-choice--no" data-action="enjoy-no"><span aria-hidden="true">↶</span><strong>No, try another trail</strong><small>' + escapeHtml(sibling ? 'Return to the map and try ' + sibling.title + '.' : 'Return to the map for a different recommendation.') + '</small></button></div><button class="text-button" data-action="back-map">I’m not sure yet — return to map</button></div></div></section>';
+    return '<section class="screen screen--reflection" aria-labelledby="reflection-title"><div class="reflection-scene"><div class="reflection-avatar avatar-' + escapeAttr(state.avatar) + '" aria-hidden="true">' + avatarGlyph(state.avatar) + '</div><div class="reflection-card"><p class="screen-kicker">TRAIL CHECKPOINT</p><h1 id="reflection-title" tabindex="-1">Did you enjoy that kind of activity?</h1><p>Your answer changes the map. There is no wrong response—this is about noticing what gives you energy.</p><div class="reflection-choice-grid"><button class="reflection-choice reflection-choice--yes" data-action="enjoy-yes"><span aria-hidden="true">✓</span><strong>Yes, keep going</strong><small>Add <b>' + escapeHtml(skill.name) + '</b> and reveal the next stage.</small></button><button class="reflection-choice reflection-choice--maybe" data-action="enjoy-maybe"><span aria-hidden="true">?</span><strong>Maybe, show me more</strong><small>Keep this trail open without changing your progress.</small></button><button class="reflection-choice reflection-choice--no" data-action="enjoy-no"><span aria-hidden="true">↶</span><strong>No, try another trail</strong><small>' + escapeHtml(sibling ? 'Not for me? Confirm to try ' + sibling.title + '.' : 'Not for me? Confirm to return to the map.') + '</small></button></div><button class="text-button" data-action="back-map">I’m not sure yet — return to map</button></div></div></section>';
   }
 
   function renderCareer(node) {
@@ -337,24 +447,121 @@
       ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.toolsAndTechnologies || career.tools],
       ['Entry-level needs', career.entryLevelNeeds || career.entryLevel], ['Strong candidate', candidate]
     ];
-    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node.id) + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p class="lede">' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-hero-meta"><span>Starter skills: <strong>4</strong></span><span>Journey skills: <strong>' + state.earned.length + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(formatSalary(career.salary)) + '</strong><small>Research-backed salary data will be added in the content phase.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.careerGrowth || career.growth)) + '</p></div><button class="button button-coral button--wide" data-action="new-path">Start another path ↗</button><button class="text-button" data-action="back-map">View this world</button></aside></div></section>';
+    var salaryResearch = research.salaryByCareerId[career.id];
+    var interview = interviewForCareer(career.id);
+    var practiceMarkup = interview
+      ? '<div class="practice-card"><span class="eyebrow">INTERVIEW PRACTICE</span><strong>Make the role feel real.</strong><p>Three short prompts on experience, judgment, and your next step.</p><button class="button button-coral button--wide" data-action="open-interview" data-career-id="' + escapeAttr(career.id) + '">' + (state.interview.careerId === career.id && state.interview.status !== 'idle' ? 'Continue practice' : 'Practice a mock interview') + ' <span aria-hidden="true">↗</span></button></div>'
+      : '<div class="practice-card practice-card--soon"><span class="eyebrow">INTERVIEW PRACTICE</span><strong>Coming next.</strong><p>We are authoring a dedicated practice path for this role. Explore the field notes above in the meantime.</p></div>';
+    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node.id) + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p class="lede">' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-hero-meta"><span>Starter skills: <strong>4</strong></span><span>Journey skills: <strong>' + state.earned.length + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE · NATIONAL PROXY</span><strong>' + escapeHtml(salaryResearch ? salaryResearch.entryRange.label : formatSalary(career.salary)) + '</strong><small>' + escapeHtml(salaryResearch ? 'BLS OEWS May 2023 · 10th–25th percentile · SOC ' + salaryResearch.soc : 'Salary context is being prepared.') + '</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.careerGrowth || career.growth)) + '</p></div>' + practiceMarkup + '<button class="button button-coral button--wide" data-action="new-path">Start another path ↗</button><button class="text-button" data-action="back-map">View this world</button></aside></div>' + (salaryResearch ? '<details class="career-sources"><summary>Sources &amp; salary methodology</summary><div class="source-disclosure"><p><strong>How to read this:</strong> The range is a national occupational benchmark, not a guaranteed offer. The role is mapped to <em>' + escapeHtml(salaryResearch.occupation) + '</em> (' + escapeHtml(salaryResearch.soc) + ') because student-facing titles do not always have one federal occupation code.</p><p>' + escapeHtml(salaryResearch.mapping) + ' ' + escapeHtml(salaryResearch.proxyLimitations) + '</p>' + renderSourceList((salaryResearch.sourceRefs || []).concat(['src-bls-oews-methods'])) + '</div></details>' : '') + '</section>';
+  }
+
+  function currentInterview() {
+    return interviewForCareer(state.interview.careerId);
+  }
+
+  function currentInterviewQuestion() {
+    var interview = currentInterview();
+    return interview && interview.questions[state.interview.questionIndex];
+  }
+
+  function renderSourceList(sourceRefs) {
+    var seen = {};
+    var sources = (sourceRefs || []).map(function (sourceId) {
+      return (research.sourceLedger || []).filter(function (source) { return source.id === sourceId; })[0];
+    }).filter(function (source) {
+      if (!source || seen[source.id]) return false;
+      seen[source.id] = true;
+      return true;
+    });
+    if (!sources.length) return '';
+    return '<ul class="source-list">' + sources.map(function (source) {
+      return '<li><a href="' + escapeAttr(source.url) + '" target="_blank" rel="noreferrer">' + escapeHtml(source.title) + '</a><span>' + escapeHtml(source.publisher) + ' · accessed ' + escapeHtml(source.accessed) + '</span></li>';
+    }).join('') + '</ul>';
+  }
+
+  function renderInterviewIntro() {
+    var interview = currentInterview();
+    var career = modelCareer(state.interview.careerId);
+    if (!interview || !career) return renderCareer(findNode(state.selectedNodeId));
+    var inProgress = state.interview.status !== 'idle';
+    return '<section class="screen interview-screen interview-intro" aria-labelledby="interview-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← Back to career</button><span class="progress-chip">3 QUESTIONS / ~4 MIN</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-intro-grid"><div><p class="screen-kicker">FIELD PRACTICE / ROLE REHEARSAL</p><h1 id="interview-title" tabindex="-1">' + escapeHtml(career.title) + '<br><em>in your own words.</em></h1><p class="interview-lede">' + escapeHtml(interview.intro) + '</p><div class="interview-expectations"><span><b>01</b> Your experience</span><span><b>02</b> Role scenario</span><span><b>03</b> Your next step</span></div></div><aside class="interview-welcome-card"><span class="eyebrow">A QUICK REHEARSAL</span><strong>This is practice, not a grade.</strong><p>Write what you would really say. The feedback is a transparent checklist based on words you chose.</p><button class="button button--primary button--wide" data-action="interview-start">' + (inProgress ? 'Continue practice' : 'Start practice') + ' <span aria-hidden="true">→</span></button>' + (inProgress ? '<button class="text-button" data-action="interview-replay">Start this interview again</button>' : '') + '</aside></div>' + renderInterviewSources(interview) + '</section>';
+  }
+
+  function renderInterviewQuestion() {
+    var interview = currentInterview();
+    var question = currentInterviewQuestion();
+    if (!interview || !question) return renderCareer(findNode(state.selectedNodeId));
+    var answer = state.interview.answers[question.id] || '';
+    return '<section class="screen interview-screen interview-question" aria-labelledby="question-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">QUESTION ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-layout"><aside class="interview-rail" aria-label="Interview progress">' + interview.questions.map(function (item, index) { return '<div class="rail-step ' + (index < state.interview.questionIndex ? 'is-done' : index === state.interview.questionIndex ? 'is-current' : '') + '"><span>' + String(index + 1).padStart(2, '0') + '</span><small>' + escapeHtml(item.type === 'experience' ? 'Experience' : item.type === 'growth' ? 'Growth' : 'Scenario') + '</small></div>'; }).join('') + '</aside><div class="question-card"><p class="eyebrow">' + escapeHtml(modelCareer(state.interview.careerId).title) + '</p><h1 id="question-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p class="question-helper">' + escapeHtml(question.helper || '') + '</p><form id="interview-answer-form"><label for="interview-answer">Your answer</label><textarea id="interview-answer" maxlength="1000" rows="8" placeholder="Start with the situation, then explain what you did…">' + escapeHtml(answer) + '</textarea><div class="answer-meta"><span id="word-count">' + wordCount(answer) + ' words</span><span>Minimum ' + question.minWords + ' words · 1,000 characters max</span></div><details class="hint-disclosure"><summary>Show a hint</summary><p>' + escapeHtml(question.guidance) + '</p></details><div class="question-actions"><button class="button button--primary" type="submit" ' + (answer.trim() ? '' : 'disabled') + '>Check my answer <span aria-hidden="true">→</span></button><button class="text-button" type="button" data-action="interview-save-exit">Save and exit</button></div></form></div></div></section>';
+  }
+
+  function renderInterviewFeedback() {
+    var interview = currentInterview();
+    var question = currentInterviewQuestion();
+    var feedback = question && state.interview.feedback[question.id];
+    if (!interview || !question || !feedback) return renderInterviewQuestion();
+    var criteria = question.criteria || question.rubric.criteria;
+    var matched = criteria.filter(function (criterion) { return feedback.matchedCriterionIds.indexOf(criterion.id) !== -1; });
+    var missing = criteria.filter(function (criterion) { return feedback.missingCriterionIds.indexOf(criterion.id) !== -1; });
+    var nextLabel = state.interview.questionIndex === interview.questions.length - 1 ? 'See my debrief' : 'Next question';
+    return '<section class="screen interview-screen interview-feedback" aria-labelledby="feedback-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">FEEDBACK / ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="feedback-grid"><div class="question-card feedback-question"><p class="eyebrow">YOUR RESPONSE</p><h1 id="feedback-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><div class="answer-quote">' + escapeHtml(state.interview.answers[question.id] || '') + '</div><button class="text-button" data-action="interview-edit">Edit and try again</button></div><div class="feedback-card"><span class="feedback-level feedback-level--' + escapeAttr(feedback.level) + '">' + escapeHtml(feedback.level === 'strong' ? 'Strong foundation' : feedback.level === 'developing' ? 'Developing answer' : 'Good starting point') + '</span><p class="feedback-summary">' + feedback.wordCount + ' words · built from your answer</p><section><h2>You mentioned</h2>' + (matched.length ? '<ul class="criteria-list criteria-list--matched">' + matched.map(function (criterion) { return '<li>✓ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul>' : '<p class="muted-copy">Not enough rubric evidence yet.</p>') + '</section>' + (missing.length ? '<section><h2>Try adding</h2><ul class="criteria-list criteria-list--missing">' + missing.map(function (criterion) { return '<li>＋ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul></section>' : '') + '<p class="feedback-guidance"><strong>Practice note:</strong> ' + escapeHtml(question.guidance) + '</p><details class="strong-answer"><summary>Show a strong-answer example</summary><p>' + escapeHtml(question.strongAnswer) + '</p></details><button class="button button--primary button--wide" data-action="interview-next">' + nextLabel + ' <span aria-hidden="true">→</span></button></div></div></section>';
+  }
+
+  function renderInterviewDebrief() {
+    var interview = currentInterview();
+    var career = modelCareer(state.interview.careerId);
+    if (!interview || !career) return renderCareer(findNode(state.selectedNodeId));
+    var summaries = interview.questions.map(function (question, index) {
+      var feedback = state.interview.feedback[question.id];
+      return '<li><span>' + String(index + 1).padStart(2, '0') + '</span><strong>' + escapeHtml(question.type === 'experience' ? 'Experience' : question.type === 'growth' ? 'Growth plan' : 'Role scenario') + '</strong><em>' + escapeHtml(feedback ? (feedback.level === 'strong' ? 'Strong foundation' : feedback.level === 'developing' ? 'Developing answer' : 'Good starting point') : 'Not answered') + '</em></li>';
+    }).join('');
+    var strongest = strongestCriterion(interview);
+    return '<section class="screen interview-screen interview-debrief" aria-labelledby="debrief-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← Back to career</button><span class="progress-chip">PRACTICE COMPLETE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="debrief-card"><p class="screen-kicker">FIELD NOTES SAVED</p><h1 id="debrief-title" tabindex="-1">You made the role<br><em>more concrete.</em></h1><p class="interview-lede">Your answers stay in this browser so you can return, revise, and build a clearer story over time.</p><div class="debrief-grid"><section><span class="eyebrow">YOUR THREE ANSWERS</span><ol class="debrief-list">' + summaries + '</ol></section><aside class="debrief-next"><span class="eyebrow">A NEXT PRACTICE MOVE</span><strong>' + escapeHtml(strongest ? 'Keep developing ' + strongest.label.toLowerCase() + '.' : 'Keep collecting specific examples.') + '</strong><p>Use one class, work, club, or personal project this week to make that idea more specific.</p></aside></div><div class="debrief-actions"><button class="button button--primary" data-action="interview-replay">Practice again</button><button class="button button--secondary" data-action="interview-back-career">Return to career</button></div></div>' + renderInterviewSources(interview) + '</section>';
+  }
+
+  function renderInterviewSources(interview) {
+    return '<details class="career-sources interview-sources"><summary>Sources &amp; attribution</summary><div class="source-disclosure"><p>These prompts and examples are authored practice content. The linked sources support role framing and interview habits; they do not publish these exact questions.</p>' + renderSourceList(interview.sourceRefs) + '</div></details>';
+  }
+
+  function modelCareer(careerId) {
+    return (model.careers || {})[careerId] || null;
+  }
+
+  function wordCount(value) { return (String(value || '').match(/[a-z0-9']+/gi) || []).length; }
+
+  function evaluateInterviewAnswer(answer, question) {
+    var normalized = String(answer || '').toLowerCase();
+    var words = wordCount(answer);
+    var criteria = question.criteria || (question.rubric && question.rubric.criteria) || [];
+    var matched = criteria.filter(function (criterion) { return (criterion.signals || []).some(function (signal) { return normalized.indexOf(String(signal).toLowerCase()) !== -1; }); });
+    var ratio = criteria.length ? matched.length / criteria.length : 0;
+    var level = words >= question.minWords && ratio >= 0.67 ? 'strong' : words >= Math.max(8, Math.floor(question.minWords / 2)) && ratio >= 0.34 ? 'developing' : 'starting';
+    return { level: level, wordCount: words, matchedCriterionIds: matched.map(function (criterion) { return criterion.id; }), missingCriterionIds: criteria.filter(function (criterion) { return matched.indexOf(criterion) === -1; }).map(function (criterion) { return criterion.id; }) };
+  }
+
+  function strongestCriterion(interview) {
+    var counts = {};
+    interview.questions.forEach(function (question) { var feedback = state.interview.feedback[question.id]; (feedback ? feedback.matchedCriterionIds : []).forEach(function (id) { counts[id] = (counts[id] || 0) + 1; }); });
+    var best = null; var bestCount = 0;
+    interview.questions.forEach(function (question) { (question.criteria || []).forEach(function (criterion) { if ((counts[criterion.id] || 0) > bestCount) { best = criterion; bestCount = counts[criterion.id]; } }); });
+    return best;
   }
 
   function renderFactList(value) {
-    var items = Array.isArray(value) ? value : value ? [value] : ['Research pending'];
+    var items = Array.isArray(value) ? value : value ? [value] : ['Details coming soon'];
     return '<ul>' + items.map(function (item) { return '<li>' + escapeHtml(typeof item === 'object' ? formatList(item) : item) + '</li>'; }).join('') + '</ul>';
   }
 
   function formatSalary(value) {
-    if (!value) return 'Research pending';
+    if (!value) return 'Details coming soon';
     if (typeof value === 'string') return value;
-    return value.range || (value.status === 'research-pending' ? 'Research pending' : value.note) || 'Research pending';
+    return value.range || value.note || 'Details coming soon';
   }
 
   function formatList(value) {
     if (Array.isArray(value)) return value.join(' · ');
     if (value && typeof value === 'object') return Object.keys(value).map(function (key) { return formatList(value[key]); }).filter(Boolean).join(' · ');
-    return value || 'Research pending';
+    return value || 'Details coming soon';
   }
 
   function renderDock() {
@@ -371,9 +578,22 @@
     });
     dock.hidden = items.length === 0;
     dock.classList.toggle('has-skills', items.length > 0);
+    var shortLandscape = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
+    var interviewScreen = /^interview-/.test(state.screen || '');
+    var inlineDock = interviewScreen || window.innerWidth <= 560 || shortLandscape;
+    var screenClass = 'dock--screen-' + slug(state.screen || 'landing');
+    ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].forEach(function (screen) {
+      dock.classList.remove('dock--screen-' + slug(screen));
+    });
+    dock.classList.add(screenClass);
+    dock.classList.toggle('dock--inline', inlineDock);
+    dock.classList.toggle('dock--floating', !inlineDock);
+    dock.classList.toggle('dock--safe-top', !inlineDock && state.screen === 'reflection');
+    document.body.classList.toggle('dock-inline', inlineDock);
+    document.body.classList.toggle('dock-floating', !inlineDock);
     if (!items.length) { dock.innerHTML = ''; return; }
-    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2>SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
-      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span aria-hidden="true">' + escapeHtml(item.skill.glyph || '✦') + '</span><strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong><small>' + escapeHtml(item.starter ? 'starter' : 'earned') + '</small></button>';
+    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2 id="skill-dock-title">SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
+      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span aria-hidden="true">' + escapeHtml(item.skill.glyph || '✦') + '</span><strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong><small>' + escapeHtml(item.starter ? 'starter' : 'earned') + '</small></button>';
     }).join('') + '</div></div>';
   }
 
@@ -393,6 +613,29 @@
     if (dock) dock.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
     var form = document.getElementById('start-form');
     if (form) form.addEventListener('submit', handleStart);
+    var interviewForm = document.getElementById('interview-answer-form');
+    var answerInput = document.getElementById('interview-answer');
+    if (interviewForm) interviewForm.addEventListener('submit', handleInterviewCheck);
+    if (answerInput) {
+      answerInput.addEventListener('input', function () {
+        var question = currentInterviewQuestion();
+        if (!question) return;
+        var answer = answerInput.value.slice(0, 1000);
+        state.interview.answers[question.id] = answer;
+        saveState();
+        var count = document.getElementById('word-count');
+        if (count) count.textContent = wordCount(answer) + ' words';
+        var check = interviewForm && interviewForm.querySelector('button[type="submit"]');
+        if (check) check.disabled = !answer.trim();
+      });
+      answerInput.addEventListener('keydown', function (event) {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && interviewForm) {
+          event.preventDefault();
+          if (interviewForm.requestSubmit) interviewForm.requestSubmit();
+          else interviewForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+      });
+    }
   }
 
   function handleStart(event) {
@@ -415,22 +658,43 @@
     if (action === 'toggle-starter') { toggleStarterSkill(element.getAttribute('data-skill-id')); return; }
     if (action === 'confirm-skills') { confirmStarterSkills(); return; }
     if (action === 'back-landing') { state.screen = 'landing'; saveState(); render(); return; }
-    if (action === 'resume') { state.screen = state.starterSkills.length === 4 ? 'map' : 'skill-select'; saveState(); render(); return; }
-    if (action === 'edit-skills') { editStarterSkills(); return; }
+    if (action === 'resume') {
+      if (state.starterSkills.length === 4 && !findNode(state.activeRegionId)) state.activeRegionId = recommendRegion(state.starterSkills, state.rejected).id;
+      state.screen = state.starterSkills.length === 4 ? 'map' : 'skill-select'; saveState(); render(); return;
+    }
+    if (action === 'edit-skills') { requestEditStarterSkills(); return; }
     if (action === 'open-node') { openNode(element.getAttribute('data-node-id')); return; }
-    if (action === 'finish-game') { state.screen = 'reflection'; saveState(); render(); return; }
+    if (action === 'finish-game') {
+      if (state.reviewingNodeId) {
+        var replayed = findNode(state.reviewingNodeId);
+        state.reviewingNodeId = null; state.screen = 'map'; saveState(); render();
+        announce(replayed ? replayed.title + ' replay complete. Your journey progress is unchanged.' : 'Replay complete. Your journey progress is unchanged.');
+      } else { state.screen = 'reflection'; saveState(); render(); }
+      return;
+    }
     if (action === 'enjoy-yes') { completeNode(state.selectedNodeId); return; }
-    if (action === 'enjoy-no') { rejectNode(state.selectedNodeId); return; }
+    if (action === 'enjoy-maybe') { pauseReflection(); return; }
+    if (action === 'enjoy-no') { requestRejectNode(element); return; }
     if (action === 'back-map') { state.screen = 'map'; state.travelTargetId = null; saveState(); render(); return; }
     if (action === 'new-path') { startAnotherPath(); return; }
+    if (action === 'open-interview') { openInterview(element.getAttribute('data-career-id')); return; }
+    if (action === 'interview-start') { startInterview(); return; }
+    if (action === 'interview-next') { nextInterviewQuestion(); return; }
+    if (action === 'interview-edit') { editInterviewAnswer(); return; }
+    if (action === 'interview-replay') { replayInterview(); return; }
+    if (action === 'interview-save-exit' || action === 'interview-back-career') { exitInterview(); return; }
     if (action === 'restart') { modalReturnFocus = element; showRestartModal(); return; }
-    if (action === 'inspect-skill') { modalReturnFocus = element; showSkillModal(element.getAttribute('data-skill-id')); }
+    if (action === 'confirm-edit-skills') { editStarterSkills(); closeModal(); return; }
+    if (action === 'confirm-reject') { rejectNode(element.getAttribute('data-node-id') || state.selectedNodeId); closeModal(); return; }
+    if (action === 'replay-node') { replayNode(element.getAttribute('data-node-id')); closeModal(); return; }
+    if (action === 'inspect-skill') { modalReturnFocus = element; showSkillModal(element.getAttribute('data-inspect-skill-id') || element.getAttribute('data-skill-id')); }
   }
 
   function toggleStarterSkill(skillId) {
     var index = state.starterSkills.indexOf(skillId);
     if (index !== -1) state.starterSkills.splice(index, 1);
     else if (state.starterSkills.length < 4 && model.skills[skillId]) state.starterSkills.push(skillId);
+    focusAfterRenderId = skillId;
     saveState(); render();
   }
 
@@ -444,14 +708,23 @@
 
   function editStarterSkills() {
     state.screen = 'skill-select'; state.completed = []; state.earned = []; state.rejected = [];
-    state.activeDomainId = null; state.selectedNodeId = null; saveState(); render();
+    state.activeRegionId = null; state.activeDomainId = null; state.selectedNodeId = null; state.reviewingNodeId = null; saveState(); render();
+  }
+
+  function requestEditStarterSkills() {
+    if (!state.completed.length && !state.earned.length && !state.rejected.length) { editStarterSkills(); return; }
+    modalReturnFocus = document.querySelector('[data-action="edit-skills"]');
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-skills-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">EDIT STARTER LOADOUT</p><h2 id="edit-skills-title">Change your direction?</h2><p>This will clear your current route progress, including ' + state.completed.length + ' explored stops and ' + state.earned.length + ' earned skills. Your name and avatar will stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep exploring</button><button class="button button--danger" data-action="confirm-edit-skills">Edit starter skills</button></div></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
   function openNode(id) {
     var node = findNode(id);
     if (!canOpen(node)) return;
+    var replaying = isCompleted(node.id);
     var current = currentJourneyNode();
-    state.selectedNodeId = id; state.travelFromId = current ? current.id : null; state.travelTargetId = id;
+    state.selectedNodeId = id; state.reviewingNodeId = replaying ? id : null; state.travelFromId = current ? current.id : null; state.travelTargetId = id;
     if (nodeDepth(node) === 1) state.activeDomainId = id;
     state.screen = 'travel'; saveState(); render();
     if (travelTimer) window.clearTimeout(travelTimer);
@@ -485,7 +758,7 @@
 
   function rejectNode(id) {
     var node = findNode(id);
-    if (!node) return;
+    if (!node || isCompleted(id)) return;
     if (!isRejected(id)) state.rejected.push(id);
     var depth = nodeDepth(node);
     if (depth === 0) {
@@ -497,6 +770,22 @@
     announce(alternative ? node.title + ' closed. Try ' + alternative.title + '.' : 'That trail closed. Your compass found another route.');
   }
 
+  function pauseReflection() {
+    var node = findNode(state.selectedNodeId);
+    state.selectedNodeId = null; state.travelTargetId = null; state.travelFromId = null; state.screen = 'map'; saveState(); render();
+    announce(node ? 'You can revisit ' + node.title + ' when you are ready.' : 'The trail stays open for later.');
+  }
+
+  function requestRejectNode(element) {
+    var id = element && element.getAttribute('data-node-id') || state.selectedNodeId;
+    var node = findNode(id);
+    if (!node || isCompleted(id)) return;
+    modalReturnFocus = element;
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">TRAIL DECISION</p><h2 id="reject-title">Try the other trail?</h2><p>Choosing “Not for me” closes ' + escapeHtml(node.title) + ' for this journey and opens its alternative. Your earned skills stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep this trail open</button><button class="button button--danger" data-action="confirm-reject" data-node-id="' + escapeAttr(id) + '">Close this trail</button></div></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
+  }
+
   function findAlternative(node) {
     if (!node) return null;
     if (!node.parentId) return recommendRegion(state.starterSkills, state.rejected.concat([node.id]));
@@ -506,8 +795,77 @@
 
   function startAnotherPath() {
     state.screen = 'skill-select'; state.completed = []; state.earned = []; state.rejected = [];
-    state.activeRegionId = null; state.activeDomainId = null; state.selectedNodeId = null; state.lastCareerId = null;
+    state.activeRegionId = null; state.activeDomainId = null; state.selectedNodeId = null; state.lastCareerId = null; state.interview = defaultInterviewState();
     saveState(); render();
+  }
+
+  function openInterview(careerId) {
+    var career = modelCareer(careerId);
+    if (!career || !interviewForCareer(careerId)) return;
+    if (state.interview.careerId !== careerId) state.interview = Object.assign(defaultInterviewState(), { careerId: careerId });
+    state.interview.returnScreen = 'career'; state.screen = 'interview-intro'; saveState(); render();
+  }
+
+  function startInterview() {
+    var interview = currentInterview();
+    if (!interview) return;
+    if (state.interview.status === 'complete') { state.screen = 'interview-debrief'; saveState(); render(); return; }
+    state.interview.status = 'in-progress'; state.screen = 'interview-question'; saveState(); render();
+  }
+
+  function nextInterviewQuestion() {
+    var interview = currentInterview();
+    if (!interview) return;
+    if (state.interview.questionIndex >= interview.questions.length - 1) {
+      state.interview.status = 'complete'; state.screen = 'interview-debrief';
+    } else {
+      state.interview.questionIndex += 1; state.interview.status = 'in-progress'; state.screen = 'interview-question';
+    }
+    saveState(); render();
+  }
+
+  function editInterviewAnswer() {
+    if (!currentInterviewQuestion()) return;
+    state.interview.status = 'in-progress'; state.screen = 'interview-question'; saveState(); render();
+  }
+
+  function replayInterview() {
+    var careerId = state.interview.careerId;
+    if (!interviewForCareer(careerId)) return;
+    state.interview = Object.assign(defaultInterviewState(), { careerId: careerId, status: 'in-progress', returnScreen: 'career' });
+    state.screen = 'interview-question'; saveState(); render();
+  }
+
+  function exitInterview() {
+    state.screen = 'career'; saveState(); render();
+  }
+
+  function handleInterviewCheck(event) {
+    event.preventDefault();
+    var question = currentInterviewQuestion();
+    var input = document.getElementById('interview-answer');
+    if (!question || !input || !input.value.trim()) return;
+    var answer = input.value.slice(0, 1000);
+    state.interview.answers[question.id] = answer;
+    state.interview.feedback[question.id] = evaluateInterviewAnswer(answer, question);
+    state.interview.status = 'feedback';
+    state.screen = 'interview-feedback';
+    saveState(); render();
+  }
+
+  function showNodeReview(node) {
+    if (!modalRoot || !node) return;
+    var skill = skillFor(node);
+    modalReturnFocus = document.querySelector('[data-node-id="' + node.id + '"]');
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="review-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">EXPLORED STOP / RECAP</p><h2 id="review-title">' + escapeHtml(node.title) + '</h2><p>' + escapeHtml(node.description || node.subtitle) + '</p><p><strong>Skill earned:</strong> ' + escapeHtml(skill.name) + '</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Back to map</button><button class="button button--primary" data-action="replay-node" data-node-id="' + escapeAttr(node.id) + '">Replay challenge</button></div></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
+  }
+
+  function replayNode(id) {
+    var node = findNode(id);
+    if (!node || !isCompleted(id)) return;
+    closeModal(); state.reviewingNodeId = id; state.selectedNodeId = id; state.screen = 'mini'; saveState(); render();
   }
 
   // ---------------------------------------------------------------------------
@@ -561,6 +919,9 @@
       element.addEventListener('click', function (event) {
         var action = element.getAttribute('data-action');
         if (action === 'confirm-restart') resetState();
+        else if (action === 'confirm-edit-skills') { editStarterSkills(); closeModal(); }
+        else if (action === 'confirm-reject') { rejectNode(element.getAttribute('data-node-id') || state.selectedNodeId); closeModal(); }
+        else if (action === 'replay-node') { replayNode(element.getAttribute('data-node-id')); closeModal(); }
         else if (action === 'close-modal' && event.target === event.currentTarget) closeModal();
       });
     });
@@ -587,9 +948,22 @@
   }
 
   function focusAfterRender() {
-    var target = root.querySelector('h1, input, [data-action="open-node"]');
+    var target = focusAfterRenderId ? root.querySelector('[data-skill-id="' + focusAfterRenderId + '"]') : null;
+    focusAfterRenderId = null;
+    if (!target) target = root.querySelector('h1, input, [data-action="open-node"]');
     if (!target) return;
-    window.setTimeout(function () { if (document.body.contains(target) && target.focus) target.focus(); }, prefersReducedMotion ? 0 : 35);
+    window.setTimeout(function () {
+      if (document.body.contains(target) && target.focus) {
+        // Do not steal focus when a keyboard user has already moved to a new
+        // control during the short post-render delay.
+        var active = document.activeElement;
+        if (active && active !== document.body && active !== root) return;
+        try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
+        // Some older WebKit builds ignore focus({preventScroll}); enforce the
+        // screen contract after focus as a harmless second guard.
+        window.scrollTo(0, 0);
+      }
+    }, prefersReducedMotion ? 0 : 35);
   }
 
   function avatarGlyph(avatar) { return { comet: '✦', pixel: '▦', sprout: '✿', orbit: '◉' }[avatar] || '✦'; }

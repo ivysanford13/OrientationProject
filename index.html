@@ -300,7 +300,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   #app { min-height: calc(100vh - 66px); padding: 32px 15px calc(var(--dock-height) + 72px); }.screen-title { font-size: clamp(39px, 13vw, 64px); }.screen-subtitle { font-size: 15px; }
   .avatar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }.avatar-choice { min-height: 108px; }.avatar-portrait { width: 42px; height: 42px; margin-bottom: 7px; font-size: 18px; }.avatar-name { font-size: 12px; }
   .map-intro, .screen-heading-row { display: block; }.map-progress { margin-top: 16px; }.map-board { padding: 18px 10px 25px; border-radius: 17px; }.map-regions { grid-template-columns: 1fr; gap: 27px; }.map-region:not(:last-child)::after { top: auto; right: auto; bottom: -16px; left: 50%; width: 2px; height: 15px; }.map-domain-group::before { left: 15%; width: 70%; }.specialization-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }.map-start { margin-bottom: 31px; }
-  .career-layout, .interview-layout { grid-template-columns: 1fr; }.career-identity { position: static; }.career-facts, .results-grid { grid-template-columns: 1fr; }.fact-card--wide { grid-column: auto; }.interview-rail { order: 2; }.question-card { order: 1; }
+  .career-layout, .interview-layout { grid-template-columns: 1fr; }.career-identity { position: static; }.career-facts, .results-grid { grid-template-columns: 1fr; }.fact-card--wide { grid-column: auto; }.interview-rail { order: 2; }.interview-layout > .question-card { order: 1; }
   .mission-actions .button-secondary { margin-left: 0; }.mission-visual { min-height: 180px; }
   .dock-inner { display: block; min-height: var(--dock-height); padding: 8px 12px 7px; }.dock-label { height: 27px; gap: 7px; }.dock-pip { width: 6px; height: 24px; }.dock-label h2 { font-size: 13px; }.dock-label p { display: inline; margin-left: 7px; font-size: 9px; }.hex-track { height: 67px; padding: 1px 0 3px; }.hex-item { flex-basis: 53px; min-height: 61px; }.hex-item strong { max-width: 40px; font-size: 8px; }.hex-item small { margin-top: 2px; font-size: 6px; }.hex-empty { min-width: 120px; font-size: 9px; }.hex-empty > span:first-child { flex-basis: 32px; width: 32px; height: 36px; }
   .toast { bottom: auto; }
@@ -386,6 +386,51 @@ button, [tabindex] { scroll-margin-bottom: calc(var(--dock-height) + 28px); }
 }
 
 /* ========================================================================== */
+
+/* Interview practice and research disclosures. The visual language keeps the
+   field-guide palette, but uses a quiet editorial layout so writing remains
+   the focus. */
+.interview-screen { width: min(1120px, 100%); }
+.interview-screen .topbar .button--quiet, .screen--career > .topbar .button--quiet { border-color: var(--line-strong); color: var(--ink); background: rgba(255,255,255,.65); }
+.interview-screen .topbar .button--quiet:hover, .screen--career > .topbar .button--quiet:hover { color: var(--white); background: var(--night); }
+.interview-intro-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: clamp(28px, 7vw, 90px); align-items: center; min-height: 450px; }
+.interview-intro h1, .debrief-card h1 { max-width: 760px; margin: 0; color: var(--ink); font-family: var(--font-display); font-size: clamp(46px, 7vw, 85px); line-height: .9; text-transform: uppercase; }
+.interview-intro h1 em, .debrief-card h1 em { color: var(--blue); font-style: normal; }
+.interview-lede { max-width: 620px; margin: 20px 0 0; color: var(--ink-soft); font-size: 17px; }
+.interview-expectations { display: grid; gap: 10px; margin-top: 28px; color: var(--ink); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; }
+.interview-expectations span { display: flex; align-items: center; gap: 10px; }
+.interview-expectations b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--white); background: var(--violet); font-size: 10px; }
+.interview-welcome-card, .debrief-next { padding: clamp(22px, 4vw, 35px); border: 2px solid var(--line); border-radius: 17px; background: var(--white); box-shadow: var(--shadow); }
+.interview-welcome-card strong, .debrief-next strong { display: block; margin-top: 8px; color: var(--ink); font-family: var(--font-display); font-size: 28px; line-height: .98; text-transform: uppercase; }
+.interview-welcome-card p, .debrief-next p { margin: 10px 0 20px; color: var(--ink-soft); font-size: 13px; }
+.interview-welcome-card .text-button { width: 100%; margin-top: 14px; text-align: center; }
+.interview-layout { display: grid; grid-template-columns: 180px minmax(0, 760px); gap: clamp(22px, 5vw, 75px); align-items: start; justify-content: center; padding-top: 25px; }
+.interview-rail { position: sticky; top: 26px; display: grid; gap: 13px; padding-top: 7px; }
+.rail-step { display: grid; grid-template-columns: 35px 1fr; align-items: center; gap: 10px; color: #92a1b7; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
+.rail-step span { display: grid; place-items: center; width: 33px; height: 33px; border: 2px solid #b8c7da; border-radius: 50%; }
+.rail-step.is-current { color: var(--blue-dark); font-weight: 700; }.rail-step.is-current span { border-color: var(--blue); color: var(--white); background: var(--blue); }.rail-step.is-done { color: var(--green-dark); }.rail-step.is-done span { border-color: var(--green); color: var(--white); background: var(--green); }
+.question-card { padding: clamp(22px, 5vw, 47px); border: 2px solid var(--line); border-radius: 19px; background: var(--white); box-shadow: var(--shadow); }
+.question-card h1 { margin: 6px 0 0; color: var(--ink); font-family: var(--font-display); font-size: clamp(31px, 4.3vw, 54px); line-height: .96; text-transform: uppercase; }
+.question-helper { margin: 14px 0 26px; color: var(--ink-soft); font-size: 14px; }
+.question-card label { display: block; margin-bottom: 7px; color: var(--ink); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.question-card textarea { display: block; width: 100%; min-height: 205px; resize: vertical; padding: 15px; border: 2px solid var(--line-strong); border-radius: 11px; color: var(--ink); background: #fbfdff; font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.question-card textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(39,112,232,.13); outline: 0; }
+.answer-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 8px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; }
+.answer-meta span:first-child { color: var(--blue-dark); font-weight: 700; }
+.hint-disclosure, .strong-answer { margin-top: 22px; border-top: 1px solid var(--line); color: var(--ink-soft); }
+.hint-disclosure summary, .strong-answer summary { display: flex; align-items: center; min-height: 44px; padding: 8px 0; color: var(--blue-dark); cursor: pointer; font-family: var(--font-mono); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.hint-disclosure p, .strong-answer p { margin: 4px 0 0; font-size: 13px; }
+.question-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; margin-top: 24px; }
+.feedback-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .85fr); gap: 20px; align-items: start; padding-top: 25px; }
+.feedback-question { position: sticky; top: 20px; }.feedback-question h1 { font-size: clamp(28px, 4vw, 46px); }.answer-quote { margin: 24px 0 16px; padding: 18px; border-left: 4px solid var(--gold); border-radius: 0 10px 10px 0; color: var(--ink); background: #fffaf1; font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+.feedback-card { padding: clamp(22px, 4vw, 34px); border: 2px solid var(--line); border-radius: 17px; background: var(--white); box-shadow: var(--shadow); }.feedback-level { display: inline-block; padding: 7px 10px; border-radius: 7px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }.feedback-level--strong { color: #006d53; background: #dff9ef; }.feedback-level--developing { color: #825400; background: #fff0ca; }.feedback-level--starting { color: #8a3940; background: #ffe4e2; }.feedback-summary { margin: 10px 0 25px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; }
+.feedback-card section { margin-top: 19px; }.feedback-card h2 { margin: 0 0 8px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }.criteria-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; font-size: 13px; }.criteria-list--matched li { color: var(--green-dark); }.criteria-list--missing li { color: #a14749; }.muted-copy { margin: 0; color: var(--ink-soft); font-size: 13px; }.feedback-guidance { margin: 24px 0 0; padding: 13px; border-radius: 9px; color: var(--ink-soft); background: var(--paper-blue); font-size: 12px; }.feedback-guidance strong { color: var(--ink); }
+.debrief-card { padding: clamp(24px, 5vw, 52px); border: 2px solid var(--line); border-radius: 20px; background: var(--white); box-shadow: var(--shadow); }.debrief-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr); gap: 26px; margin-top: 36px; }.debrief-list { display: grid; gap: 10px; margin: 11px 0 0; padding: 0; list-style: none; }.debrief-list li { display: grid; grid-template-columns: 35px 1fr auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); }.debrief-list li > span { color: var(--blue-dark); font-family: var(--font-mono); font-size: 10px; font-weight: 700; }.debrief-list strong { font-size: 13px; }.debrief-list em { color: var(--green-dark); font-family: var(--font-mono); font-size: 9px; font-style: normal; text-transform: uppercase; }.debrief-next { align-self: start; box-shadow: none; background: #f7f9ff; }.debrief-actions { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 31px; }
+.career-sources { margin-top: 20px; border: 2px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.72); }.career-sources summary { padding: 15px 17px; color: var(--blue-dark); cursor: pointer; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }.source-disclosure { padding: 0 17px 17px; color: var(--ink-soft); font-size: 12px; }.source-disclosure p { margin: 0 0 11px; }.source-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }.source-list li { display: grid; gap: 2px; }.source-list a { color: var(--blue-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }.source-list span { color: var(--ink-soft); font-family: var(--font-mono); font-size: 9px; }.practice-card { padding: 18px; border: 2px solid #f5c76e; border-radius: 13px; background: #fffaf1; }.practice-card strong { display: block; margin-top: 5px; color: var(--ink); font-family: var(--font-display); font-size: 24px; line-height: 1; text-transform: uppercase; }.practice-card p { margin: 8px 0 15px; color: var(--ink-soft); font-size: 12px; }.practice-card--soon { border-color: var(--line); background: var(--paper-blue); }
+@media (max-width: 980px) { .interview-intro-grid { grid-template-columns: 1fr; min-height: 0; max-width: 720px; margin: 0 auto; }.interview-welcome-card { max-width: 480px; }.interview-layout { grid-template-columns: 1fr; max-width: 760px; margin: 0 auto; }.interview-rail { position: static; grid-template-columns: repeat(3, 1fr); gap: 9px; padding: 0; }.rail-step { grid-template-columns: 30px 1fr; }.rail-step span { width: 29px; height: 29px; }.feedback-grid { grid-template-columns: 1fr; max-width: 760px; margin: 0 auto; }.feedback-question { position: static; }.debrief-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .interview-intro h1, .debrief-card h1 { font-size: 46px; }.interview-lede { font-size: 15px; }.interview-rail { gap: 5px; }.rail-step { display: block; text-align: center; }.rail-step span { margin: 0 auto 5px; }.rail-step small { display: block; font-size: 8px; }.question-card { padding: 21px 16px; }.question-card h1 { font-size: 32px; }.question-card textarea { min-height: 180px; }.question-actions .button { width: 100%; }.debrief-card { padding: 23px 17px; }.debrief-list li { grid-template-columns: 28px 1fr; }.debrief-list em { grid-column: 2; }.debrief-actions .button { width: 100%; } }
+
+@media (prefers-reduced-motion: reduce) { .interview-screen *, .interview-screen *::before, .interview-screen *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
 /* Guided RPG journey — skill loadout, shifting world, and avatar travel      */
 /* ========================================================================== */
 
@@ -556,6 +601,275 @@ button, [tabindex] { scroll-margin-bottom: calc(var(--dock-height) + 28px); }
   .world-stage-label strong { font-size: 17px; }
   .reflection-card h1 { font-size: 42px; }
 }
+
+/* -------------------------------------------------------------------------- */
+/* World art pass                                                             */
+/* Data supplies the palette, landmarks, and route geometry. These primitives */
+/* deliberately use CSS shapes so the single-file build stays dependency-free. */
+/* -------------------------------------------------------------------------- */
+.rpg-world {
+  background:
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--scene-sun) 22%, transparent), transparent 17%),
+    linear-gradient(180deg, var(--scene-sky) 0 53%, var(--scene-horizon) 53% 100%);
+}
+.rpg-world::before {
+  opacity: .23;
+  background-image:
+    linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 46px 46px;
+}
+.rpg-world::after { background: color-mix(in srgb, var(--scene-terrain) 88%, #102b36); box-shadow: -220px 45px 0 45px color-mix(in srgb, var(--scene-terrain) 80%, #5dab62), -470px 61px 0 70px color-mix(in srgb, var(--scene-terrain) 72%, #6bb266), -720px 34px 0 45px color-mix(in srgb, var(--scene-terrain) 82%, #529a5a); }
+.world-haze { position: absolute; inset: 0; background: radial-gradient(ellipse at 48% 53%, transparent 20%, color-mix(in srgb, var(--scene-haze) 28%, transparent) 78%, transparent); mix-blend-mode: screen; }
+.world-sun { background: var(--scene-sun); box-shadow: 0 0 0 14px color-mix(in srgb, var(--scene-sun) 22%, transparent), 0 0 44px color-mix(in srgb, var(--scene-sun) 34%, transparent); }
+.mountain { background: var(--scene-mountain); filter: saturate(.85); }
+.mountain--two { opacity: .83; }
+.terrain--front { background: var(--scene-terrain); }
+.quest-path path { stroke: color-mix(in srgb, var(--scene-sun) 74%, #fff4c7); stroke-width: 24px; stroke-dasharray: 1 12; animation: route-flow 2.2s linear infinite; }
+@keyframes route-flow { to { stroke-dashoffset: -26px; } }
+
+.world-landmark:not(.start-camp) { z-index: 2; display: grid; justify-items: center; gap: 5px; color: var(--ink); pointer-events: none; transform: translate(-50%, -50%); filter: drop-shadow(0 7px 4px rgba(15,23,40,.16)); }
+.world-landmark:not(.start-camp) small { padding: 3px 6px; border: 1px solid rgba(255,255,255,.74); border-radius: 4px; color: var(--white); background: rgba(15,23,40,.72); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+.landmark-art { position: relative; display: grid; place-items: center; width: 68px; height: 60px; border: 3px solid rgba(15,23,40,.82); border-radius: 10px 10px 7px 7px; color: var(--white); background: var(--scene-accent); box-shadow: inset 0 -8px rgba(15,23,40,.14), 0 8px 0 rgba(15,23,40,.18); }
+.landmark-art::before, .landmark-art::after, .landmark-art i, .landmark-art b { position: absolute; display: block; content: ""; }
+.landmark-art::before { top: -14px; width: 54px; height: 22px; border: 3px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 8px 8px 0 0; background: color-mix(in srgb, var(--scene-accent) 72%, white); }
+.landmark-art::after { right: 9px; bottom: 9px; width: 12px; height: 21px; border: 2px solid rgba(255,255,255,.72); border-radius: 3px 3px 0 0; background: rgba(15,23,40,.45); }
+.landmark-art i { left: 10px; bottom: 13px; width: 22px; height: 13px; border: 2px solid rgba(255,255,255,.78); border-radius: 3px; background: rgba(255,255,255,.25); }
+.landmark-art b { top: 12px; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: var(--scene-sun); box-shadow: 0 0 9px var(--scene-sun); transform: translateX(-50%); }
+.landmark-art--circuit, .landmark-art--chart, .landmark-art--beacon { width: 48px; height: 78px; border-radius: 8px 8px 4px 4px; }
+.landmark-art--circuit::before, .landmark-art--chart::before, .landmark-art--beacon::before { top: -22px; width: 18px; height: 25px; border: 3px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 50% 50% 0 0; background: color-mix(in srgb, var(--scene-accent) 65%, white); }
+.landmark-art--circuit i { left: 12px; bottom: 16px; width: 22px; height: 26px; border: 2px solid rgba(255,255,255,.75); background: repeating-linear-gradient(90deg, transparent 0 4px, rgba(255,255,255,.55) 4px 6px); }
+.landmark-art--chart { border-radius: 50%; background: color-mix(in srgb, var(--scene-accent) 60%, #101a3d); }
+.landmark-art--chart::before { border-radius: 50%; border: 3px solid rgba(255,255,255,.8); background: transparent; }
+.landmark-art--chart i { left: 10px; bottom: 20px; width: 28px; height: 2px; border: 0; background: var(--scene-sun); transform: rotate(-28deg); box-shadow: 7px -9px var(--scene-sun), 15px -3px var(--scene-sun); }
+.landmark-art--beacon { background: color-mix(in srgb, var(--scene-accent) 80%, #11162b); }
+.landmark-art--beacon b { width: 18px; height: 18px; border: 3px solid var(--scene-sun); background: transparent; box-shadow: 0 0 0 8px color-mix(in srgb, var(--scene-sun) 16%, transparent), 0 0 20px var(--scene-sun); }
+.landmark-art--observatory, .landmark-art--pavilion { border-radius: 50% 50% 8px 8px; }
+.landmark-art--observatory::before, .landmark-art--pavilion::before { top: -17px; width: 75px; height: 30px; border: 3px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 50% 50% 0 0; }
+.landmark-art--observatory i { left: 50%; bottom: 14px; width: 26px; height: 26px; border: 3px solid var(--scene-sun); border-radius: 50%; background: rgba(255,255,255,.17); transform: translateX(-50%); }
+.landmark-art--bridge { width: 90px; height: 38px; margin-top: 20px; border-radius: 18px 18px 5px 5px; background: color-mix(in srgb, var(--scene-accent) 75%, #fff); }
+.landmark-art--bridge::before { top: -26px; width: 90px; height: 42px; border: 4px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 50% 50% 0 0; background: transparent; }
+.landmark-art--bridge i { left: 13px; bottom: 7px; width: 9px; height: 17px; border: 0; background: rgba(15,23,40,.4); box-shadow: 19px 0 rgba(15,23,40,.4), 38px 0 rgba(15,23,40,.4), 57px 0 rgba(15,23,40,.4); }
+.landmark-art--plaza { width: 78px; height: 50px; border-radius: 50%; background: color-mix(in srgb, var(--scene-accent) 78%, white); }
+.landmark-art--plaza::before { top: -18px; width: 43px; height: 30px; border: 3px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 50% 50% 0 0; background: transparent; }
+.landmark-art--plaza i { left: 16px; bottom: 11px; width: 8px; height: 13px; border: 0; border-radius: 50%; background: var(--scene-sun); box-shadow: 19px 0 var(--scene-sun), 38px 0 var(--scene-sun); }
+
+.map-avatar { gap: 2px; }
+.map-avatar::after { position: absolute; z-index: -1; bottom: -6px; width: 48px; height: 11px; border-radius: 50%; background: rgba(15,23,40,.28); content: ""; filter: blur(2px); }
+.map-avatar > .avatar-shell { position: relative; display: grid; place-items: center; width: 58px; height: 68px; border: 4px solid var(--white); border-radius: 20px 20px 15px 15px; color: var(--white); background: var(--coral); box-shadow: inset 0 -10px rgba(15,23,40,.16), 0 6px 0 rgba(15,23,40,.25); }
+.avatar-shell::before { position: absolute; top: 9px; width: 29px; height: 24px; border: 2px solid rgba(255,255,255,.72); border-radius: 50%; background: rgba(15,23,40,.22); content: ""; }
+.avatar-shell::after { position: absolute; bottom: -6px; width: 36px; height: 15px; border-radius: 50% 50% 6px 6px; background: color-mix(in srgb, var(--coral) 65%, #142039); content: ""; }
+.avatar-face { position: relative; z-index: 1; margin-top: -2px; color: var(--white); font-size: 22px; font-style: normal; line-height: 1; }
+.avatar-spark { position: absolute; z-index: 2; top: 7px; right: 7px; color: var(--scene-sun, var(--gold)); font-size: 14px; line-height: 1; }
+.map-avatar.avatar-pixel > .avatar-shell { background: var(--blue); }.map-avatar.avatar-pixel .avatar-shell::after { background: color-mix(in srgb, var(--blue) 65%, #142039); }
+.map-avatar.avatar-sprout > .avatar-shell { background: var(--green); }.map-avatar.avatar-sprout .avatar-shell::after { background: color-mix(in srgb, var(--green) 65%, #142039); }
+.map-avatar.avatar-orbit > .avatar-shell { background: var(--violet); }.map-avatar.avatar-orbit .avatar-shell::after { background: color-mix(in srgb, var(--violet) 65%, #142039); }
+.map-avatar.is-arrived { animation: avatar-arrive .62s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes avatar-arrive {
+  0% { transform: translate(-50%, calc(-50% + 8px)); opacity: .25; }
+  100% { transform: translate(-50%, -50%); opacity: 1; }
+}
+.world-stage-label { top: 17px; right: 19px; bottom: auto; }
+.map-action-row { justify-content: flex-start; }
+.map-action-row .button { margin-left: 0; }
+
+@media (max-width: 767px) {
+  .world-stage-label { top: 14px; right: 14px; }
+  .world-stage-label span { font-size: 9px; }
+  .world-stage-label strong { font-size: 19px; }
+  .world-landmark:not(.start-camp) { transform: translate(-50%, -50%) scale(.82); }
+  .world-stop { width: min(184px, 46vw); min-width: 0; }
+  /* Historical stops stay available in the desktop/tablet world view, but
+     yield the lower phone terrain band to the fixed skill HUD. */
+  .stage-1 .world-stop--past,
+  .stage-2 .world-stop--past-region,
+  .stage-2 .world-stop--past-domain { display: none; }
+  .stage-1 .world-stop--choice, .stage-2 .world-stop--choice { left: 72% !important; }
+  .map-avatar > .avatar-shell { width: 52px; height: 62px; }
+  .map-avatar small { font-size: 9px; }
+  /* Keep the explorer's nameplate clear of the bottom HUD on phone maps. */
+  .map-avatar { margin-top: -12px; }
+  .skill-dock { bottom: max(8px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 430px) {
+  .rpg-world { min-height: 500px; }
+  .world-stop { width: min(176px, calc(100% - 32px)); }
+  .stop-copy strong { font-size: 13px; }
+  .stop-copy small { font-size: 8px; }
+  .world-stage-label { top: 12px; right: 12px; }
+  .world-stage-label strong { font-size: 17px; }
+  .landmark-art { transform: scale(.88); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quest-path path { animation: none; }
+  .map-avatar.is-arrived { animation: none; }
+}
+
+/* Production integrity pass: reserve a safe visual band for the skill HUD. */
+.skill-dock.dock--safe-top {
+  top: 94px;
+  bottom: auto;
+}
+
+.skill-dock .hex-item {
+  flex: 0 0 78px;
+  width: 78px;
+  min-width: 78px;
+  min-height: 92px;
+}
+
+.skill-dock .hex-item strong { font-size: 10px; }
+.skill-dock .hex-item small { font-size: 10px; }
+.skill-dock .hex-item { animation-name: skill-pop-safe; }
+@keyframes skill-pop-safe {
+  from { opacity: 0; transform: translateY(18px) rotate(-4deg); }
+  to { opacity: 1; transform: translateY(0) rotate(0); }
+}
+.compass-card .text-button { min-height: 44px; padding: 4px 0; }
+.button-coral { color: var(--night); }
+.reflection-scene { overflow: hidden; }
+.reflection-choice-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.reflection-choice--maybe { border-color: var(--violet); background: #f7f3ff; }
+.reflection-choice--maybe > span { background: var(--violet); }
+
+@media (max-width: 767px) {
+  .reflection-choice-grid { grid-template-columns: 1fr; }
+  .skill-dock .hex-item {
+    flex-basis: 78px;
+    width: 78px;
+    min-width: 78px;
+    min-height: 92px;
+  }
+  .skill-dock .hex-item strong { font-size: 10px; }
+  .skill-dock .hex-item small { font-size: 8px; }
+}
+
+/* A short landscape viewport needs the map and HUD to occupy separate bands. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .skill-dock.dock--safe-top {
+    top: 82px;
+    right: 8px;
+    width: 224px;
+    min-height: 64px;
+  }
+  .skill-dock.dock--safe-top .dock-inner {
+    display: block;
+    min-height: 60px;
+    padding: 4px 8px;
+  }
+  .skill-dock.dock--safe-top .dock-label { display: none; }
+  .skill-dock.dock--safe-top .hex-track {
+    height: 54px;
+    padding: 1px 2px 4px;
+  }
+  .skill-dock.dock--safe-top .hex-item {
+    flex-basis: 48px;
+    width: 48px;
+    min-width: 48px;
+    min-height: 54px;
+    margin-left: -8px;
+  }
+  .skill-dock.dock--safe-top .hex-item strong { font-size: 9px; }
+  .skill-dock.dock--safe-top .hex-item small { font-size: 8px; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Phase-2 world polish: each region gets its own silhouette language, while  */
+/* the skill tray changes from HUD to document content when space is scarce.   */
+/* -------------------------------------------------------------------------- */
+.theme-build-create .world-sky {
+  background: linear-gradient(135deg, rgba(255,255,255,.08), transparent 42%), repeating-linear-gradient(115deg, transparent 0 42px, rgba(15,23,40,.06) 42px 44px, transparent 44px 92px);
+}
+.theme-build-create .mountain--one { clip-path: polygon(0 100%, 16% 56%, 28% 68%, 48% 21%, 61% 50%, 75% 35%, 100% 100%); }
+.theme-build-create .mountain--two { clip-path: polygon(0 100%, 22% 62%, 40% 76%, 58% 32%, 72% 58%, 100% 100%); }
+
+.theme-analyze-solve .world-sky {
+  background: radial-gradient(circle at 22% 36%, rgba(255,255,255,.18) 0 2px, transparent 3px 24px), radial-gradient(circle at 78% 28%, rgba(15,23,40,.10) 0 1px, transparent 2px 30px), linear-gradient(170deg, transparent 0 58%, rgba(15,23,40,.08) 58% 59%, transparent 59%);
+}
+.theme-analyze-solve .mountain--one { clip-path: polygon(0 100%, 12% 66%, 24% 40%, 35% 68%, 52% 18%, 67% 63%, 84% 33%, 100% 100%); }
+.theme-analyze-solve .mountain--two { clip-path: polygon(0 100%, 18% 45%, 32% 66%, 52% 27%, 68% 72%, 82% 49%, 100% 100%); }
+.theme-analyze-solve .world-sun { border-radius: 10px; transform: rotate(12deg); }
+
+.theme-people-lead .world-sky {
+  background: radial-gradient(ellipse at 16% 70%, rgba(255,255,255,.16) 0 11%, transparent 12%), radial-gradient(ellipse at 78% 72%, rgba(255,255,255,.13) 0 15%, transparent 16%), linear-gradient(180deg, transparent 0 66%, rgba(15,23,40,.08) 66% 67%, transparent 67%);
+}
+.theme-people-lead .mountain--one { height: 165px; border-radius: 46% 46% 0 0; clip-path: polygon(0 100%, 12% 57%, 29% 39%, 45% 51%, 62% 25%, 78% 43%, 100% 30%, 100% 100%); }
+.theme-people-lead .mountain--two { height: 135px; border-radius: 48% 48% 0 0; clip-path: polygon(0 100%, 16% 53%, 33% 35%, 49% 55%, 67% 31%, 84% 49%, 100% 37%, 100% 100%); }
+
+.world-milestones { position: absolute; z-index: 8; top: 16px; left: 16px; display: none; align-items: center; gap: 5px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.65); border-radius: 8px; background: rgba(15,23,40,.68); }
+.world-milestone { display: inline-grid; grid-template-columns: 18px auto; align-items: center; gap: 3px; color: var(--white); font-family: var(--font-mono); }
+.world-milestone b { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: var(--night); background: var(--scene-sun); font-size: 11px; }
+.world-milestone small { font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+
+/* A compact tray is part of the page flow. This is deliberately class-driven
+   so the controller can make the same decision for interview and viewport
+   changes without relying on browser-specific :has() support. */
+body.dock-inline { padding-bottom: 0 !important; }
+body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
+.skill-dock.dock--inline {
+  position: relative;
+  inset: auto;
+  width: min(720px, calc(100% - 32px));
+  min-height: 0;
+  margin: 0 auto 28px;
+  overflow: hidden;
+  border: 2px solid #344966;
+  border-radius: 17px;
+  box-shadow: 0 12px 32px rgba(15,23,40,.24);
+}
+.skill-dock.dock--inline .dock-inner { min-height: 0; padding: 12px 14px 10px; }
+.skill-dock.dock--inline .dock-label { flex-basis: 112px; }
+.skill-dock.dock--inline .dock-label p { font-size: 10px; }
+.skill-dock.dock--inline .hex-track { height: 101px; padding-bottom: 17px; }
+.skill-dock.dock--inline .hex-item { flex-basis: 78px; width: 78px; min-width: 78px; min-height: 92px; }
+.skill-dock.dock--inline .hex-item strong { font-size: 10px; }
+.skill-dock.dock--inline .hex-item small { font-size: 8px; }
+
+@media (max-width: 767px) {
+  .world-milestones { display: flex; }
+  .world-landmark:not(.start-camp) small { font-size: 10px; }
+  .stop-copy small { font-size: 10px; }
+  .stop-copy em { font-size: 10px; }
+}
+
+@media (max-width: 560px), (orientation: landscape) and (max-height: 500px) {
+  .skill-dock.dock--inline { width: min(720px, calc(100% - 24px)); margin-bottom: 24px; }
+  .skill-dock.dock--inline .dock-inner { display: block; }
+  .skill-dock.dock--inline .dock-label { display: flex; height: auto; min-height: 28px; }
+  .skill-dock.dock--inline .dock-label .dock-pip { width: 5px; height: 38px; }
+  .skill-dock.dock--inline .dock-label h2 { font-size: 13px; }
+  .skill-dock.dock--inline .dock-label p { margin: 2px 0 0; font-size: 10px; }
+  .skill-dock.dock--inline .hex-track { height: 101px; width: 100%; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .world-milestones { top: 12px; left: 12px; }
+  .skill-dock.dock--inline { margin-top: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-dock.dock--inline .hex-item { animation: none; }
+}
+
+/* Deterministic readability floors used by the visual release gates. */
+.world-stage-label span,
+.world-landmark:not(.start-camp) small,
+.stop-copy small,
+.map-avatar small,
+.compass-card > span,
+.compass-card small,
+.skill-dock .dock-label p,
+.skill-dock .hex-item strong { font-size: 10px; }
+.skill-dock .hex-item small { font-size: 8px; }
+.starter-skill small,
+.reflection-choice small,
+.question-card label,
+.question-helper { font-size: 12px; }
+.source-list a { display: block; min-width: 44px; min-height: 44px; padding: 11px 0; }
+.skill-dock .hex-item small,
+.skill-dock.dock--inline .hex-item small { font-size: 10px; }
 </style>
   </head>
   <body>
@@ -695,6 +1009,7 @@ function makeMiniGame(id, title, concept, visualType, instructions) {
  * @param {string} input.description
  * @param {string} input.color
  * @param {string} input.theme
+ * @param {Object} [input.scene] Data-driven art direction for top-level worlds.
  * @param {EarnedSkill} input.earnedSkill
  * @param {MiniGamePlan} input.miniGame
  * @param {string|null} [input.careerId]
@@ -710,6 +1025,7 @@ function makeNode(input) {
     description: input.description,
     color: input.color,
     theme: input.theme,
+    scene: input.scene || null,
     earnedSkill: input.earnedSkill,
     miniGame: input.miniGame,
     careerId: input.careerId || null,
@@ -747,6 +1063,72 @@ const COLORS = {
   analyzeLight: "#c4b5fd",
   people: "#059669",
   peopleLight: "#6ee7b7",
+};
+
+/**
+ * Art direction for each world.  This stays content-owned so the renderer can
+ * add a new region without growing a second, hard-coded map implementation.
+ * Landmark types are intentionally small CSS/SVG-like primitives: the bundle
+ * remains offline and future art can replace one landmark independently.
+ */
+const WORLD_SCENES = {
+  "build-create": {
+    sky: "#9ed8eb",
+    horizon: "#a4d477",
+    terrain: "#347c51",
+    mountain: "#6d8fa5",
+    sun: "#ffb647",
+    haze: "#d9f4ef",
+    accent: COLORS.build,
+    paths: {
+      0: "M80 360 C180 408 306 390 398 302 S640 222 850 155",
+      1: "M80 360 C170 392 240 350 290 286 M290 286 C430 212 520 182 720 150 M290 286 C415 318 545 382 720 390",
+      2: "M80 360 C170 390 236 350 276 298 C350 282 408 286 472 276 M472 276 C570 222 642 181 750 150 M472 276 C580 308 658 358 750 390",
+    },
+    landmarks: [
+      { type: "workshop", x: 28, y: 44, label: "Maker's workshop" },
+      { type: "circuit", x: 52, y: 27, label: "Signal ridge" },
+      { type: "crane", x: 80, y: 45, label: "Build yard" },
+    ],
+  },
+  "analyze-solve": {
+    sky: "#ada9e4",
+    horizon: "#c7bd81",
+    terrain: "#5c587f",
+    mountain: "#595678",
+    sun: "#f9cf71",
+    haze: "#e5e2ff",
+    accent: COLORS.analyze,
+    paths: {
+      0: "M80 360 C176 318 252 174 390 214 S570 350 676 276 S760 198 850 155",
+      1: "M80 360 C150 330 188 246 244 214 M244 214 C354 164 482 194 544 274 M544 274 C602 338 660 292 720 150 M244 214 C360 296 438 374 720 390",
+      2: "M80 360 C148 334 188 270 232 232 C300 190 360 204 414 246 M414 246 C500 314 564 342 618 266 M618 266 C674 216 706 176 750 150 M414 246 C520 220 622 300 750 390",
+    },
+    landmarks: [
+      { type: "observatory", x: 26, y: 43, label: "Evidence observatory" },
+      { type: "chart", x: 54, y: 28, label: "Pattern archive" },
+      { type: "beacon", x: 81, y: 45, label: "Risk beacon" },
+    ],
+  },
+  "people-lead": {
+    sky: "#a7dfe2",
+    horizon: "#d5bd7d",
+    terrain: "#4f9b78",
+    mountain: "#618998",
+    sun: "#ffd071",
+    haze: "#e7f7e7",
+    accent: COLORS.people,
+    paths: {
+      0: "M80 360 C202 432 336 432 448 350 S594 214 850 155",
+      1: "M80 360 C192 424 284 410 344 334 M344 334 C442 222 586 214 720 150 M344 334 C470 352 578 418 720 390",
+      2: "M80 360 C174 420 266 420 324 362 C380 304 414 288 472 276 M472 276 C562 222 660 196 750 150 M472 276 C574 328 642 410 750 390",
+    },
+    landmarks: [
+      { type: "pavilion", x: 27, y: 44, label: "Team pavilion" },
+      { type: "bridge", x: 53, y: 28, label: "Commons bridge" },
+      { type: "plaza", x: 81, y: 45, label: "People's plaza" },
+    ],
+  },
 };
 
 /**
@@ -869,6 +1251,7 @@ const REGIONS = [
     description: "Imagine, build, and improve the technology people use every day.",
     color: COLORS.build,
     theme: "build-create",
+    scene: WORLD_SCENES["build-create"],
     earnedSkill: SKILLS.creativity,
     miniGame: makeMiniGame(
       "minigame-build-create-door",
@@ -887,6 +1270,7 @@ const REGIONS = [
     description: "Look for patterns, investigate problems, and turn evidence into answers.",
     color: COLORS.analyze,
     theme: "analyze-solve",
+    scene: WORLD_SCENES["analyze-solve"],
     earnedSkill: SKILLS.analyst,
     miniGame: makeMiniGame(
       "minigame-analyze-solve-jigsaw",
@@ -905,6 +1289,7 @@ const REGIONS = [
     description: "Coordinate people, communicate clearly, and create useful experiences.",
     color: COLORS.people,
     theme: "people-lead",
+    scene: WORLD_SCENES["people-lead"],
     earnedSkill: SKILLS.peopleSkills,
     miniGame: makeMiniGame(
       "minigame-people-lead-team",
@@ -1531,6 +1916,527 @@ const DATA_ROOT = typeof window !== "undefined" ? window : globalThis;
 DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
 </script>
     <script>/*
+ * IS Career Launchpad — research and interview content
+ *
+ * This file is intentionally separate from the route data. It is an offline
+ * content layer: the app may read it, but it never fetches these URLs at run
+ * time. The questions and example answers are authored practice material; the
+ * cited sources support the role framing and interview skills, not the exact
+ * wording of any prompt.
+ */
+
+var CAREER_RESEARCH_DATA = {
+  version: "1.0.0",
+  accessed: "2026-09-03",
+  sourceLedger: [
+    {
+      id: "src-bls-oews-methods",
+      title: "Technical Notes for May 2023 OEWS Estimates",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes_tec.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: [
+        "OEWS scope, cross-industry national coverage, and semiannual panel design",
+        "Annual wage conversion convention of 2,080 hours where applicable",
+        "Straight-time gross wage definition and exclusions",
+        "Survey exclusions, including self-employed workers"
+      ]
+    },
+    {
+      id: "src-bls-software-developers",
+      title: "Occupational Employment and Wages, May 2023: Software Developers (15-1252)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes151252.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Software developer occupational definition", "National 10th, 25th, median, 75th, and 90th percentile wages"]
+    },
+    {
+      id: "src-bls-network-architects",
+      title: "Occupational Employment and Wages, May 2023: Computer Network Architects (15-1241)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes151241.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Computer network architect occupational definition", "National percentile wages used as a cloud-engineering proxy"]
+    },
+    {
+      id: "src-bls-systems-administrators",
+      title: "Occupational Employment and Wages, May 2023: Network and Computer Systems Administrators (15-1244)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes151244.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Systems administration occupational definition", "National percentile wages used as a systems-engineering entry proxy"]
+    },
+    {
+      id: "src-bls-systems-analysts",
+      title: "Occupational Employment and Wages, May 2023: Computer Systems Analysts (15-1211)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes151211.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Computer systems analyst occupational definition", "National percentile wages used as a systems-engineering proxy"]
+    },
+    {
+      id: "src-bls-operations-research",
+      title: "Occupational Employment and Wages, May 2023: Operations Research Analysts (15-2031)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes152031.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Operations research analyst occupational definition", "National percentile wages used as a data-analyst proxy"]
+    },
+    {
+      id: "src-bls-data-scientists",
+      title: "Occupational Employment and Wages, May 2023: Data Scientists (15-2051)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes152051.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Data scientist occupational definition", "National percentile wages"]
+    },
+    {
+      id: "src-bls-info-security",
+      title: "Occupational Employment and Wages, May 2023: Information Security Analysts (15-1212)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes151212.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Information security analyst occupational definition", "National percentile wages"]
+    },
+    {
+      id: "src-bls-project-management",
+      title: "Occupational Employment and Wages, May 2023: Project Management Specialists (13-1082)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes131082.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Project management specialist occupational definition", "National percentile wages used for IT project management and product management proxies"]
+    },
+    {
+      id: "src-bls-management-analysts",
+      title: "Occupational Employment and Wages, May 2023: Management Analysts (13-1111)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes131111.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Management analyst occupational definition", "National percentile wages used as a business-analyst proxy"]
+    },
+    {
+      id: "src-bls-interface-designers",
+      title: "Occupational Employment and Wages, May 2023: Web and Digital Interface Designers (15-1255)",
+      publisher: "U.S. Bureau of Labor Statistics",
+      url: "https://www.bls.gov/oes/2023/may/oes151255.htm",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Web and digital interface designer occupational definition", "National percentile wages used as a UX-designer proxy"]
+    },
+    {
+      id: "src-microsoft-interview-tips",
+      title: "Interview tips",
+      publisher: "Microsoft Careers",
+      url: "https://careers.microsoft.com/v2/global/en/hiring-tips/interview-tips.html",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Employer guidance to use specific examples", "Behavioral and competency-based interview framing", "STAR(R) structure, clear thinking, judgment, collaboration, and growth mindset"]
+    },
+    {
+      id: "src-microsoft-technical-interview",
+      title: "Technical interviews",
+      publisher: "Microsoft Careers",
+      url: "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing.html",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Technical interview emphasis on problem solving, assumptions, rationale, coding, and testing", "Considering security, edge cases, and error conditions"]
+    },
+    {
+      id: "src-amazon-product-manager",
+      title: "Product Manager Interview Prep",
+      publisher: "Amazon Jobs",
+      url: "https://amazon.jobs/content/en/how-we-hire/product-manager-interview-prep",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Product manager work across customers, requirements, delivery, and success metrics", "Behavioral, product-management, technical-depth, stakeholder-management, and writing competencies", "Using specific details, data, and STAR framing"]
+    },
+    {
+      id: "src-microsoft-data-analyst",
+      title: "Microsoft Certified: Power BI Data Analyst Associate",
+      publisher: "Microsoft Learn",
+      url: "https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Data analyst work prepares, models, visualizes, analyzes, and secures data", "Data analysts collaborate with business stakeholders and communicate actionable insights"]
+    },
+    {
+      id: "src-nist-nice",
+      title: "NICE Framework Work Role Videos",
+      publisher: "National Institute of Standards and Technology",
+      url: "https://www.nist.gov/itl/applied-cybersecurity/nice/nice-framework-work-role-videos",
+      accessed: "2026-09-03",
+      status: "verified",
+      claimsSupported: ["Defensive cybersecurity analyzes data from defense tools to mitigate risks", "Incident response investigates, analyzes, and responds to network cybersecurity incidents"]
+    }
+  ],
+
+  salaryContext: {
+    title: "National salary context",
+    dataset: "BLS Occupational Employment and Wage Statistics (OEWS), May 2023 national estimates",
+    sourceRefs: ["src-bls-oews-methods"],
+    geography: "United States, all covered industries",
+    unit: "Annual gross straight-time wage in USD",
+    entryProxy: "The displayed entry-level proxy is the BLS 10th-to-25th percentile annual wage band for the closest SOC occupation. It is a directional starting point, not a forecast, offer, or guaranteed minimum.",
+    method: [
+      "Use the 10th percentile as a lower national benchmark and the 25th percentile as an early-career benchmark.",
+      "Use BLS annual figures directly; where BLS annualizes hourly pay, the convention is 2,080 hours.",
+      "Map titles to a SOC occupation when the student-facing title has no single federal occupation code.",
+      "Keep the national vintage visible because pay varies by location, employer, industry, experience, education, and title.",
+      "Treat all figures as gross base wage context; OEWS excludes self-employed workers and does not describe total compensation."
+    ],
+    limitation: "A percentile band describes workers in an occupation, not newly graduated BYU IS students. Some mapped titles—especially cloud engineer, systems engineer, product manager, and application developer—span multiple occupations. Update the vintage before public release."
+  },
+
+  salaryByCareerId: {
+    "application-developer": {
+      title: "Application Developer",
+      occupation: "Software Developers",
+      soc: "15-1252",
+      entryRange: { low: 77020, high: 101200, label: "$77,020–$101,200" },
+      median: 132270,
+      sourceRefs: ["src-bls-software-developers"],
+      mapping: "Application developer is mapped to Software Developers because the profile emphasizes building, enhancing, and testing software applications.",
+      proxyLimitations: "Application developer titles may include web developers, programmers, QA-focused roles, or lower-scope associate jobs; this proxy can overstate or understate a specific posting."
+    },
+    "software-engineer": {
+      title: "Software Engineer",
+      occupation: "Software Developers",
+      soc: "15-1252",
+      entryRange: { low: 77020, high: 101200, label: "$77,020–$101,200" },
+      median: 132270,
+      sourceRefs: ["src-bls-software-developers"],
+      mapping: "Software engineer is mapped to Software Developers, the closest BLS category for designing, implementing, and maintaining software.",
+      proxyLimitations: "Engineering level, specialty, location, and company size can move pay well outside this national band."
+    },
+    "cloud-engineer": {
+      title: "Cloud Engineer",
+      occupation: "Computer Network Architects",
+      soc: "15-1241",
+      entryRange: { low: 77960, high: 100120, label: "$77,960–$100,120" },
+      median: 129840,
+      sourceRefs: ["src-bls-network-architects"],
+      mapping: "Cloud engineer is mapped to Computer Network Architects for its infrastructure, network design, capacity, and security overlap.",
+      proxyLimitations: "Cloud engineering also overlaps systems administration, DevOps, software engineering, and site reliability engineering; network-architect wages often reflect experienced work."
+    },
+    "systems-engineer": {
+      title: "Systems Engineer",
+      occupation: "Network and Computer Systems Administrators",
+      soc: "15-1244",
+      entryRange: { low: 58680, high: 74400, label: "$58,680–$74,400" },
+      median: 95360,
+      sourceRefs: ["src-bls-systems-administrators"],
+      mapping: "Systems engineer is mapped to Network and Computer Systems Administrators for its troubleshooting, configuration, monitoring, and availability overlap.",
+      proxyLimitations: "Some systems-engineer jobs align more closely with Computer Systems Analysts or Network Architects, so the band is intentionally a conservative entry proxy."
+    },
+    "data-analyst": {
+      title: "Data Analyst",
+      occupation: "Operations Research Analysts",
+      soc: "15-2031",
+      entryRange: { low: 52930, high: 66250, label: "$52,930–$66,250" },
+      median: 83640,
+      sourceRefs: ["src-bls-operations-research"],
+      mapping: "Data analyst is mapped to Operations Research Analysts because the BLS profile covers analyzing data and developing decision support for management.",
+      proxyLimitations: "Business intelligence, market research, reporting, and financial analyst titles may map to different SOC categories and pay bands."
+    },
+    "data-scientist": {
+      title: "Data Scientist",
+      occupation: "Data Scientists",
+      soc: "15-2051",
+      entryRange: { low: 61070, high: 79810, label: "$61,070–$79,810" },
+      median: 108020,
+      sourceRefs: ["src-bls-data-scientists"],
+      mapping: "Data scientist maps directly to the BLS Data Scientists occupation.",
+      proxyLimitations: "Data scientist entry expectations vary widely; research-heavy roles may require graduate study while product analytics roles may resemble analyst work."
+    },
+    "cybersecurity-analyst": {
+      title: "Cybersecurity Analyst",
+      occupation: "Information Security Analysts",
+      soc: "15-1212",
+      entryRange: { low: 69210, high: 90050, label: "$69,210–$90,050" },
+      median: 120360,
+      sourceRefs: ["src-bls-info-security"],
+      mapping: "Cybersecurity analyst maps directly to Information Security Analysts, whose BLS description includes monitoring protections, vulnerabilities, and breaches.",
+      proxyLimitations: "SOC, GRC, IAM, incident-response, and security-engineering specialties can have different entry requirements and compensation."
+    },
+    "it-risk-analyst": {
+      title: "IT Risk Analyst",
+      occupation: "Information Security Analysts",
+      soc: "15-1212",
+      entryRange: { low: 69210, high: 90050, label: "$69,210–$90,050" },
+      median: 120360,
+      sourceRefs: ["src-bls-info-security"],
+      mapping: "IT risk analyst uses Information Security Analysts as a security-controls and risk-advisory proxy.",
+      proxyLimitations: "IT risk work can instead map to auditors, compliance analysts, management analysts, or financial examiners; this is not a direct title match."
+    },
+    "it-project-manager": {
+      title: "IT Project Manager",
+      occupation: "Project Management Specialists",
+      soc: "13-1082",
+      entryRange: { low: 57500, high: 74100, label: "$57,500–$74,100" },
+      median: 98580,
+      sourceRefs: ["src-bls-project-management"],
+      mapping: "IT project manager maps to Project Management Specialists, covering schedules, staffing, budgets, technical teams, and client contact.",
+      proxyLimitations: "Manager titles may reflect prior experience; entry roles may be project coordinator, PMO analyst, or implementation analyst and can pay differently."
+    },
+    "business-analyst": {
+      title: "Business Analyst",
+      occupation: "Management Analysts",
+      soc: "13-1111",
+      entryRange: { low: 57840, high: 74540, label: "$57,840–$74,540" },
+      median: 99410,
+      sourceRefs: ["src-bls-management-analysts"],
+      mapping: "Business analyst maps to Management Analysts because the BLS profile covers organizational studies, systems, procedures, and efficiency work.",
+      proxyLimitations: "Technology-focused business analysts may align with Computer Systems Analysts, while operations, finance, and consulting roles vary by industry."
+    },
+    "ux-designer": {
+      title: "UX Designer",
+      occupation: "Web and Digital Interface Designers",
+      soc: "15-1255",
+      entryRange: { low: 48210, high: 66020, label: "$48,210–$66,020" },
+      median: 98540,
+      sourceRefs: ["src-bls-interface-designers"],
+      mapping: "UX designer maps to Web and Digital Interface Designers because the BLS profile includes interface usability, testing, navigation, and accessibility standards.",
+      proxyLimitations: "UX research, service design, visual design, and product design may sit in different labor markets; portfolio quality and location matter greatly."
+    },
+    "product-manager": {
+      title: "Product Manager",
+      occupation: "Project Management Specialists",
+      soc: "13-1082",
+      entryRange: { low: 57500, high: 74100, label: "$57,500–$74,100" },
+      median: 98580,
+      sourceRefs: ["src-bls-project-management", "src-amazon-product-manager"],
+      mapping: "Product manager has no single BLS occupation here; Project Management Specialists is used for delivery, coordination, and stakeholder overlap.",
+      proxyLimitations: "Product management is a distinct, broad market with product strategy, discovery, analytics, and influence responsibilities; this proxy can materially understate or overstate pay."
+    }
+  },
+
+  interviews: [
+    {
+      id: "interview-application-developer",
+      careerId: "application-developer",
+      title: "Application Developer interview practice",
+      intro: "Practice explaining a small build, your debugging decisions, and the next technical skill you want to grow.",
+      estimatedMinutes: 4,
+      questionIds: ["appdev-q1-story", "appdev-q2-debug", "appdev-q3-next"],
+      sourceRefs: ["src-bls-software-developers", "src-microsoft-interview-tips", "src-microsoft-technical-interview"],
+      attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+      questions: [
+        {
+          id: "appdev-q1-story", step: 1, type: "experience",
+          prompt: "Tell us about a small application, class project, or prototype you would be proud to explain.",
+          helper: "Coursework and personal projects count. Give the context, your contribution, and what changed.", minWords: 20,
+          criteria: [
+            { id: "context", label: "Sets the context", signals: ["project", "app", "user", "problem"] },
+            { id: "contribution", label: "Names their contribution", signals: ["built", "designed", "wrote", "implemented", "created"] },
+            { id: "result", label: "Explains an outcome", signals: ["tested", "improved", "learned", "result", "working"] }
+          ],
+          guidance: "A strong answer gives the situation, your contribution, and what changed because of the work. A specific result or lesson is more useful than a list of technologies.",
+          strongAnswer: "I built a small scheduling app for a class project. I translated the requirements into a simple form, wrote the validation, and tested it with classmates. Their feedback showed that the first flow was confusing, so I simplified it and documented the design decision.",
+          sourceRefs: ["src-bls-software-developers", "src-microsoft-interview-tips"]
+        },
+        {
+          id: "appdev-q2-debug", step: 2, type: "scenario",
+          prompt: "A user reports that a form sometimes loses their work. What would you do first?",
+          helper: "Describe your investigation before proposing a fix.", minWords: 18,
+          criteria: [
+            { id: "reproduce", label: "Reproduces or narrows the issue", signals: ["reproduce", "steps", "when", "browser", "input"] },
+            { id: "evidence", label: "Uses evidence", signals: ["log", "error", "console", "test", "observe"] },
+            { id: "communicate", label: "Communicates the next step", signals: ["user", "document", "team", "explain", "update"] }
+          ],
+          guidance: "Lead with a reproducible question, collect evidence, consider edge cases, and keep the user or team informed before changing production behavior.",
+          strongAnswer: "I would ask for the steps, browser, and type of input that caused the loss, then try to reproduce it. I would inspect errors and add a focused test before changing the form. I would document what I found and explain the next step to the user and team.",
+          sourceRefs: ["src-microsoft-technical-interview"]
+        },
+        {
+          id: "appdev-q3-next", step: 3, type: "growth",
+          prompt: "What is one technical skill you would practice next for this kind of role?",
+          helper: "Connect one skill to a concrete project or practice loop.", minWords: 12,
+          criteria: [
+            { id: "skill", label: "Names a relevant skill", signals: ["javascript", "python", "sql", "testing", "git", "api", "programming"] },
+            { id: "plan", label: "Names a practice plan", signals: ["build", "practice", "course", "project", "weekly", "read"] }
+          ],
+          guidance: "Name one skill and one small way you will practice it. A learning plan shows growth mindset without pretending you already know everything.",
+          strongAnswer: "I would practice testing by adding unit tests to my next Python project. I would write one test for the expected behavior and one for an edge case, then use Git to track what I learned.",
+          sourceRefs: ["src-microsoft-interview-tips", "src-microsoft-technical-interview"]
+        }
+      ]
+    },
+    {
+      id: "interview-data-analyst",
+      careerId: "data-analyst",
+      title: "Data Analyst interview practice",
+      intro: "Practice turning messy information into a trustworthy recommendation and explaining what you would learn next.",
+      estimatedMinutes: 4,
+      questionIds: ["data-q1-story", "data-q2-recommendation", "data-q3-next"],
+      sourceRefs: ["src-bls-operations-research", "src-microsoft-data-analyst", "src-microsoft-interview-tips"],
+      attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+      questions: [
+        {
+          id: "data-q1-story", step: 1, type: "experience",
+          prompt: "Tell us about a time you used data to answer a question or make a recommendation.",
+          helper: "A class analysis, club project, work task, or personal dataset is enough.", minWords: 20,
+          criteria: [
+            { id: "question", label: "Names the decision question", signals: ["question", "goal", "decide", "problem", "needed"] },
+            { id: "method", label: "Explains the analysis", signals: ["clean", "filter", "query", "compare", "chart", "analy"] },
+            { id: "insight", label: "Connects insight to action", signals: ["recommend", "found", "insight", "decision", "result", "next"] }
+          ],
+          guidance: "Make the chain visible: question, method, finding, and recommendation. Mention a data-quality check or limitation when you can.",
+          strongAnswer: "For a class project, I analyzed survey responses to understand why students missed tutoring sessions. I cleaned duplicate rows, grouped responses by time of day, and charted attendance. Evening conflicts were the clearest pattern, so I recommended adding one late session and suggested testing that change for a month.",
+          sourceRefs: ["src-microsoft-data-analyst", "src-microsoft-interview-tips"]
+        },
+        {
+          id: "data-q2-recommendation", step: 2, type: "scenario",
+          prompt: "A dashboard shows that a key metric fell sharply this week. How would you turn that signal into a useful recommendation?",
+          helper: "Start with validation and context before explaining what a stakeholder should do.", minWords: 20,
+          criteria: [
+            { id: "validate", label: "Checks data quality and definition", signals: ["check", "validate", "definition", "refresh", "duplicate", "quality"] },
+            { id: "segment", label: "Explores context or segments", signals: ["segment", "filter", "time", "group", "compare", "source"] },
+            { id: "communicate", label: "Communicates an actionable next step", signals: ["recommend", "stakeholder", "explain", "action", "decision", "follow"] }
+          ],
+          guidance: "Separate a real change from a data issue, investigate meaningful slices, then communicate uncertainty and a small next action in plain language.",
+          strongAnswer: "I would first confirm the metric definition, refresh status, and source data so I do not recommend action from a broken report. Then I would compare the drop by date, customer segment, and channel and look for a related operational change. I would share the likely explanation, the confidence and limitation, and a focused follow-up test with the stakeholder.",
+          sourceRefs: ["src-microsoft-data-analyst", "src-microsoft-interview-tips"]
+        },
+        {
+          id: "data-q3-next", step: 3, type: "growth",
+          prompt: "What is one data skill you would practice next, and what would you build to show it?",
+          helper: "Choose a small, finishable practice loop rather than a vague goal.", minWords: 12,
+          criteria: [
+            { id: "skill", label: "Names a relevant data skill", signals: ["sql", "excel", "power bi", "tableau", "python", "statistics", "visual"] },
+            { id: "artifact", label: "Names a concrete artifact or practice", signals: ["dashboard", "project", "dataset", "query", "report", "notebook", "practice"] }
+          ],
+          guidance: "Pair one skill with an artifact someone else could inspect, such as an annotated dashboard, reproducible query, or short analysis memo.",
+          strongAnswer: "I would practice SQL joins and validation by building a small analysis from two public datasets. I would publish the query, an annotated chart, and a short note explaining one limitation and one recommendation.",
+          sourceRefs: ["src-microsoft-data-analyst", "src-microsoft-interview-tips"]
+        }
+      ]
+    },
+    {
+      id: "interview-cybersecurity-analyst",
+      careerId: "cybersecurity-analyst",
+      title: "Cybersecurity Analyst interview practice",
+      intro: "Practice investigating a signal carefully, communicating risk, and choosing a safe next step while you keep learning.",
+      estimatedMinutes: 4,
+      questionIds: ["cyber-q1-story", "cyber-q2-alert", "cyber-q3-next"],
+      sourceRefs: ["src-bls-info-security", "src-nist-nice", "src-microsoft-interview-tips"],
+      attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+      questions: [
+        {
+          id: "cyber-q1-story", step: 1, type: "experience",
+          prompt: "Tell us about a time you noticed a security, privacy, or reliability concern and helped investigate it.",
+          helper: "It can be a lab, class exercise, workplace task, or responsible personal project.", minWords: 20,
+          criteria: [
+            { id: "signal", label: "Describes the signal or risk", signals: ["alert", "risk", "suspicious", "security", "privacy", "issue"] },
+            { id: "investigation", label: "Explains an evidence-based investigation", signals: ["log", "evidence", "check", "investigat", "compare", "trace"] },
+            { id: "response", label: "Explains a safe response or lesson", signals: ["report", "document", "contain", "fix", "learned", "recommend"] }
+          ],
+          guidance: "Focus on curiosity, evidence, scope, and a responsible response. Do not include secrets or sensitive identifying details.",
+          strongAnswer: "In a security lab, I noticed repeated failed logins from one address. I checked the timestamps and compared them with the normal activity in the sample logs instead of assuming compromise. I documented the pattern, recommended rate limiting and a password reset for the test account, and wrote down what evidence I would collect next.",
+          sourceRefs: ["src-nist-nice", "src-microsoft-interview-tips"]
+        },
+        {
+          id: "cyber-q2-alert", step: 2, type: "scenario",
+          prompt: "A security tool flags a suspicious login from a new country. Walk through your first response.",
+          helper: "Show how you balance urgency, evidence, user impact, and escalation.", minWords: 20,
+          criteria: [
+            { id: "triage", label: "Triages the alert with context", signals: ["verify", "context", "time", "device", "location", "log"] },
+            { id: "protect", label: "Chooses a safe containment step", signals: ["contain", "disable", "reset", "revoke", "protect", "escalate"] },
+            { id: "document", label: "Documents and communicates", signals: ["document", "ticket", "user", "team", "notify", "evidence"] }
+          ],
+          guidance: "A careful answer verifies context, follows the organization’s incident process, limits harm, and records what happened. Avoid claiming that location alone proves an attack.",
+          strongAnswer: "I would verify the account, timestamp, device, authentication method, and related logs, then check whether the user is traveling or using an approved service. I would follow the incident playbook, escalate according to severity, and use a safe containment step such as revoking active sessions if policy allows. I would document the evidence and communicate clearly with the user and response team.",
+          sourceRefs: ["src-nist-nice", "src-bls-info-security", "src-microsoft-technical-interview"]
+        },
+        {
+          id: "cyber-q3-next", step: 3, type: "growth",
+          prompt: "What is one cybersecurity skill you would practice next, and how would you practice it safely?",
+          helper: "Choose a legal, isolated lab or project and name what you would record.", minWords: 12,
+          criteria: [
+            { id: "skill", label: "Names a relevant skill", signals: ["network", "linux", "log", "siem", "python", "identity", "incident", "security"] },
+            { id: "safePlan", label: "Names a safe practice plan", signals: ["lab", "sandbox", "capture", "document", "practice", "course", "isolated"] }
+          ],
+          guidance: "Name a narrow skill and a permitted environment. Good growth plans include notes, evidence, and a reflection on limitations.",
+          strongAnswer: "I would practice log analysis in an isolated lab using sample authentication events. I would write a small query or script to group failures by account and time, document the evidence that changed my hypothesis, and avoid using real credentials or scanning systems without permission.",
+          sourceRefs: ["src-nist-nice", "src-microsoft-interview-tips"]
+        }
+      ]
+    },
+    {
+      id: "interview-product-manager",
+      careerId: "product-manager",
+      title: "Product Manager interview practice",
+      intro: "Practice connecting customer needs, evidence, tradeoffs, and delivery into a clear product decision.",
+      estimatedMinutes: 4,
+      questionIds: ["pm-q1-story", "pm-q2-prioritize", "pm-q3-next"],
+      sourceRefs: ["src-amazon-product-manager", "src-microsoft-interview-tips"],
+      attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+      questions: [
+        {
+          id: "pm-q1-story", step: 1, type: "experience",
+          prompt: "Tell us about a time you helped a team choose what to do next when people wanted different things.",
+          helper: "Use a class, club, volunteer, work, or personal project. Make your tradeoff visible.", minWords: 20,
+          criteria: [
+            { id: "context", label: "Sets the customer or team context", signals: ["user", "customer", "team", "project", "goal"] },
+            { id: "tradeoff", label: "Explains a prioritization tradeoff", signals: ["priority", "tradeoff", "scope", "impact", "effort", "choose"] },
+            { id: "outcome", label: "Shows an outcome or learning", signals: ["result", "launched", "learned", "feedback", "measure", "improved"] }
+          ],
+          guidance: "Show how you listened, made the decision legible, and learned from the outcome. You do not need formal product authority to demonstrate product thinking.",
+          strongAnswer: "On a student event project, our team had requests for a new registration flow and more promotional features. I interviewed two organizers, compared expected attendee impact with the effort available, and prioritized the registration flow first. We launched on time, saw fewer incomplete forms, and kept the promotion ideas in a documented next-sprint list.",
+          sourceRefs: ["src-amazon-product-manager", "src-microsoft-interview-tips"]
+        },
+        {
+          id: "pm-q2-prioritize", step: 2, type: "scenario",
+          prompt: "Engineering can deliver one of two requests this sprint: a frequently requested convenience feature or a reliability fix affecting fewer users. How would you decide?",
+          helper: "Name the evidence, stakeholders, constraints, and follow-up measure you would use.", minWords: 22,
+          criteria: [
+            { id: "customer", label: "Clarifies customer and problem impact", signals: ["user", "customer", "problem", "severity", "impact"] },
+            { id: "evidence", label: "Uses evidence and constraints", signals: ["data", "metric", "feedback", "effort", "risk", "capacity"] },
+            { id: "decision", label: "Makes a decision and measurement plan", signals: ["choose", "prioritize", "decision", "measure", "success", "follow"] }
+          ],
+          guidance: "There is no universal feature-versus-reliability answer. Make your assumptions explicit, compare user and business impact with effort and risk, align with engineering, and define what you will measure.",
+          strongAnswer: "I would clarify the reliability issue’s severity, affected workflows, and risk of leaving it unresolved, then compare that with the convenience feature’s reach and evidence of demand. I would ask engineering for effort and mitigation options and include support or customer feedback. If the reliability issue can cause data loss or blocks a key workflow, I would prioritize it, communicate the tradeoff, and measure incident rate and task completion before reconsidering the feature.",
+          sourceRefs: ["src-amazon-product-manager", "src-microsoft-interview-tips"]
+        },
+        {
+          id: "pm-q3-next", step: 3, type: "growth",
+          prompt: "What is one product skill you would practice next, and what evidence would you collect?",
+          helper: "Connect the skill to a small product artifact or conversation.", minWords: 12,
+          criteria: [
+            { id: "skill", label: "Names a relevant product skill", signals: ["research", "priorit", "analytics", "roadmap", "writing", "communication", "sql"] },
+            { id: "evidence", label: "Names a practice artifact or evidence", signals: ["interview", "prototype", "case", "metric", "brief", "roadmap", "test"] }
+          ],
+          guidance: "Pick a skill that can become visible in a small artifact: an interview guide, opportunity brief, prioritization table, or measured prototype.",
+          strongAnswer: "I would practice customer discovery by interviewing five students about one campus workflow, with permission and no sensitive information. I would synthesize repeated needs, write the assumptions and alternatives, and propose one small test with a success metric rather than jumping straight to a full feature.",
+          sourceRefs: ["src-amazon-product-manager", "src-microsoft-interview-tips"]
+        }
+      ]
+    }
+  ]
+};
+
+/* Keep the flat authored fields convenient for content editing while also
+ * exposing the rubric shape defined by the interaction spec. */
+CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
+  interview.questions.forEach(function (question) {
+    question.rubric = {
+      criteria: question.criteria,
+      guidance: question.guidance,
+      strongAnswer: question.strongAnswer
+    };
+  });
+});
+</script>
+    <script>/*
  * IS Career Launchpad — guided RPG progression controller
  *
  * Data and visuals remain separate from this file. Mini-games plug into the
@@ -1550,10 +2456,12 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
   if (!root) return;
 
   var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var research = window.CAREER_RESEARCH_DATA || { salaryByCareerId: {}, interviews: [], sourceLedger: [] };
   var model = normalizeData(window.CAREER_LAUNCHPAD_DATA || {});
   var state = loadState();
   var modalReturnFocus = null;
   var travelTimer = null;
+  var focusAfterRenderId = null;
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -1602,6 +2510,19 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     });
 
     var careers = indexById(source.careers || []);
+    Object.keys(research.salaryByCareerId || {}).forEach(function (careerId) {
+      if (!careers[careerId]) return;
+      var salaryResearch = research.salaryByCareerId[careerId];
+      careers[careerId] = Object.assign({}, careers[careerId], {
+        salary: Object.assign({}, careers[careerId].salary || {}, {
+          status: 'researched',
+          range: salaryResearch.entryRange && salaryResearch.entryRange.label,
+          source: 'BLS OEWS May 2023 · SOC ' + salaryResearch.soc,
+          note: salaryResearch.mapping,
+          research: salaryResearch
+        })
+      });
+    });
     var domains = Array.isArray(source.domains) ? source.domains : [];
     var specializations = Array.isArray(source.specializations) ? source.specializations : [];
     var regions = (Array.isArray(source.regions) ? source.regions : []).map(function (region, index) {
@@ -1617,7 +2538,7 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
       return regionCopy;
     });
 
-    return { starterSkills: starterSkills, skills: skills, regions: regions };
+    return { starterSkills: starterSkills, skills: skills, regions: regions, careers: careers };
   }
 
   function normalizeNode(item, parentId, skills, careers) {
@@ -1655,8 +2576,64 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
       version: 2, screen: 'landing', name: '', avatar: 'comet', starterSkills: [],
       recommendedRegionId: null, activeRegionId: null, activeDomainId: null,
       completed: [], earned: [], rejected: [], selectedNodeId: null,
-      travelTargetId: null, travelFromId: null, lastCareerId: null, lastAward: false
+      travelTargetId: null, travelFromId: null, lastCareerId: null, lastAward: false,
+      reviewingNodeId: null,
+      interview: defaultInterviewState()
     };
+  }
+
+  function defaultInterviewState() {
+    return { careerId: null, questionIndex: 0, answers: {}, feedback: {}, status: 'idle', returnScreen: 'career' };
+  }
+
+  function interviewForCareer(careerId) {
+    return (research.interviews || []).filter(function (interview) { return interview.careerId === careerId; })[0] || null;
+  }
+
+  function normalizeInterview(savedInterview) {
+    var result = defaultInterviewState();
+    if (!savedInterview || typeof savedInterview !== 'object') return result;
+    var authored = interviewForCareer(savedInterview.careerId);
+    if (!authored) return result;
+    result.careerId = authored.careerId;
+    result.questionIndex = Math.max(0, Math.min(2, Number(savedInterview.questionIndex) || 0));
+    result.status = ['idle', 'in-progress', 'feedback', 'complete'].indexOf(savedInterview.status) === -1 ? 'idle' : savedInterview.status;
+    result.returnScreen = savedInterview.returnScreen === 'career' ? 'career' : 'career';
+    var validQuestionIds = authored.questions.map(function (question) { return question.id; });
+    Object.keys(savedInterview.answers || {}).forEach(function (questionId) {
+      if (validQuestionIds.indexOf(questionId) !== -1 && typeof savedInterview.answers[questionId] === 'string') result.answers[questionId] = savedInterview.answers[questionId].slice(0, 1000);
+    });
+    Object.keys(savedInterview.feedback || {}).forEach(function (questionId) {
+      if (validQuestionIds.indexOf(questionId) === -1 || !savedInterview.feedback[questionId]) return;
+      var feedback = savedInterview.feedback[questionId];
+      result.feedback[questionId] = {
+        level: feedback.level,
+        wordCount: Number(feedback.wordCount) || 0,
+        matchedCriterionIds: Array.isArray(feedback.matchedCriterionIds) ? feedback.matchedCriterionIds : [],
+        missingCriterionIds: Array.isArray(feedback.missingCriterionIds) ? feedback.missingCriterionIds : []
+      };
+    });
+    return result;
+  }
+
+  function validNodeIds(values) {
+    return (Array.isArray(values) ? values : []).filter(function (id, index, list) {
+      return typeof id === 'string' && list.indexOf(id) === index && !!findNode(id);
+    });
+  }
+
+  function validStarterSkillIds(values) {
+    return (Array.isArray(values) ? values : []).filter(function (id, index, list) {
+      return typeof id === 'string' && list.indexOf(id) === index && !!model.skills[id] && model.starterSkills.some(function (skill) { return skill.id === id; });
+    });
+  }
+
+  function validEarned(values) {
+    return (Array.isArray(values) ? values : []).filter(function (entry) {
+      return entry && typeof entry === 'object' && typeof entry.nodeId === 'string' && !!findNode(entry.nodeId) && typeof entry.skillId === 'string' && !!model.skills[entry.skillId];
+    }).map(function (entry) {
+      return { skillId: entry.skillId, nodeId: entry.nodeId, earnedAt: Number(entry.earnedAt) || 0 };
+    });
   }
 
   function loadState() {
@@ -1664,13 +2641,20 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     try {
       var saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null');
       if (!saved || saved.version !== 2) return initial;
-      return Object.assign(initial, saved, {
-        starterSkills: Array.isArray(saved.starterSkills) ? saved.starterSkills.slice(0, 4) : [],
-        completed: Array.isArray(saved.completed) ? saved.completed : [],
-        earned: Array.isArray(saved.earned) ? saved.earned : [],
-        rejected: Array.isArray(saved.rejected) ? saved.rejected : [],
-        screen: saved.screen === 'travel' ? 'map' : saved.screen
+      var restored = Object.assign(initial, saved, {
+        starterSkills: validStarterSkillIds(saved.starterSkills).slice(0, 4),
+        completed: validNodeIds(saved.completed),
+        earned: validEarned(saved.earned),
+        rejected: validNodeIds(saved.rejected),
+        screen: ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].indexOf(saved.screen) === -1 ? 'landing' : (saved.screen === 'travel' ? 'map' : saved.screen),
+        reviewingNodeId: typeof saved.reviewingNodeId === 'string' && findNode(saved.reviewingNodeId) ? saved.reviewingNodeId : null,
+        interview: normalizeInterview(saved.interview)
       });
+      if (restored.starterSkills.length === 4 && !findNode(restored.activeRegionId)) restored.activeRegionId = recommendRegion(restored.starterSkills, restored.rejected).id;
+      if (restored.screen === 'career' && !findNode(restored.selectedNodeId)) restored.screen = restored.starterSkills.length === 4 ? 'map' : 'landing';
+      if ((restored.screen === 'mini' || restored.screen === 'reflection') && !findNode(restored.selectedNodeId)) restored.screen = restored.starterSkills.length === 4 ? 'map' : 'landing';
+      if (['interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].indexOf(restored.screen) !== -1 && !interviewForCareer(restored.interview.careerId)) restored.screen = 'career';
+      return restored;
     } catch (error) { return initial; }
   }
 
@@ -1764,6 +2748,10 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     if (state.screen === 'mini') return renderMiniGame(findNode(state.selectedNodeId));
     if (state.screen === 'reflection') return renderReflection(findNode(state.selectedNodeId));
     if (state.screen === 'career') return renderCareer(findNode(state.selectedNodeId));
+    if (state.screen === 'interview-intro') return renderInterviewIntro();
+    if (state.screen === 'interview-question') return renderInterviewQuestion();
+    if (state.screen === 'interview-feedback') return renderInterviewFeedback();
+    if (state.screen === 'interview-debrief') return renderInterviewDebrief();
     return renderLanding();
   }
 
@@ -1793,6 +2781,7 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
   function renderMap() {
     var region = findNode(state.activeRegionId) || recommendRegion(state.starterSkills, state.rejected);
     if (!region) return '<section class="screen"><h1>No map data found</h1></section>';
+    var scene = region.scene || {};
     var regionDone = isCompleted(region.id);
     var domain = state.activeDomainId ? findNode(state.activeDomainId) : null;
     var domainDone = domain && isCompleted(domain.id);
@@ -1802,25 +2791,48 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     var scores = scoreRegions(state.starterSkills);
     var recommendation = region.id === state.recommendedRegionId ? 'BEST STARTING MATCH' : 'NEXT BEST MATCH';
     // Keep the lower fork above the fixed skill stack on compact phone screens.
+    // Keep both phone forks above the fixed skill HUD; the chapter label now
+    // lives in the sky band, leaving the lower terrain band available for the
+    // route card and traveling explorer.
     var lowerChoiceY = window.innerWidth <= 767 ? 43 : 70;
     var sceneNodes = [];
     if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: 43 }, kind: 'region' });
     if (stage === 1) {
-      sceneNodes.push({ node: region, position: { x: 17, y: 53 }, kind: 'past' });
-      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 66, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
+      sceneNodes.push({ node: region, position: { x: 20, y: 62 }, kind: 'past' });
+      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 72, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
     }
     if (stage === 2) {
-      sceneNodes.push({ node: region, position: { x: 8, y: 53 }, kind: 'past' });
-      sceneNodes.push({ node: domain, position: { x: 31, y: 53 }, kind: 'past' });
-      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 73, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
+      sceneNodes.push({ node: region, position: { x: 24, y: 62 }, kind: 'past-region' });
+      sceneNodes.push({ node: domain, position: { x: 47, y: 62 }, kind: 'past-domain' });
+      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 75, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
     }
     var avatarPosition = avatarMapPosition(stage, current && current.id, sceneNodes);
     var travelTarget = state.travelTargetId && sceneNodes.filter(function (entry) { return entry.node.id === state.travelTargetId; })[0];
     var travelFrom = state.travelFromId && sceneNodes.filter(function (entry) { return entry.node.id === state.travelFromId; })[0];
     var targetPosition = travelTarget ? travelTarget.position : avatarPosition;
     var fromPosition = travelFrom ? travelFrom.position : avatarPosition;
+    var routePath = scene.paths && scene.paths[stage] || 'M80 360 C220 380 355 270 580 224 S730 154 850 155';
+    var sceneStyle = '--scene-sky:' + escapeAttr(scene.sky || '#9ed8eb') + ';--scene-horizon:' + escapeAttr(scene.horizon || '#a4d477') + ';--scene-terrain:' + escapeAttr(scene.terrain || '#347c51') + ';--scene-mountain:' + escapeAttr(scene.mountain || '#6d8fa5') + ';--scene-sun:' + escapeAttr(scene.sun || '#ffb647') + ';--scene-haze:' + escapeAttr(scene.haze || '#d9f4ef') + ';--scene-accent:' + escapeAttr(scene.accent || region.color || '#2f6fed');
 
-    return '<section class="screen screen--map world-screen" aria-labelledby="map-title"><header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + (stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.') + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header><section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + '" aria-label="Interactive journey map"><div class="world-sky" aria-hidden="true"><span class="world-sun"></span><span class="cloud cloud--one"></span><span class="cloud cloud--two"></span><span class="mountain mountain--one"></span><span class="mountain mountain--two"></span></div><svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path d="M80 360 C240 375 315 260 450 260 S655 125 850 155 M450 260 C625 260 660 390 850 390"></path></svg><div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + sceneNodes.map(renderWorldStop).join('') + '<div class="map-avatar avatar-' + escapeAttr(state.avatar) + (state.screen === 'travel' ? ' is-traveling' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span aria-hidden="true">' + avatarGlyph(state.avatar) + '</span><small>' + escapeHtml(state.name || 'YOU') + '</small></div><div class="terrain terrain--front" aria-hidden="true"></div><div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style') + '</strong></div></section><div class="map-action-row"><p><strong>' + options.filter(function (node) { return !isRejected(node.id); }).length + '</strong> route' + (options.filter(function (node) { return !isRejected(node.id); }).length === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+    return '<section class="screen screen--map world-screen" aria-labelledby="map-title"><header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + (stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.') + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header><section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + '" style="' + sceneStyle + '" aria-label="Interactive journey map"><div class="world-sky" aria-hidden="true"><span class="world-haze"></span><span class="world-sun"></span><span class="cloud cloud--one"></span><span class="cloud cloud--two"></span><span class="mountain mountain--one"></span><span class="mountain mountain--two"></span>' + renderWorldLandmarks(scene.landmarks) + '</div><svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path d="' + escapeAttr(routePath) + '"></path></svg><div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + '<div class="map-avatar avatar-' + escapeAttr(state.avatar) + (state.screen === 'travel' ? ' is-traveling' : '') + (state.lastAward ? ' is-arrived' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span class="avatar-shell" aria-hidden="true"><i class="avatar-face">' + avatarGlyph(state.avatar) + '</i><b class="avatar-spark">•</b></span><small>' + escapeHtml(state.name || 'YOU') + '</small></div><div class="terrain terrain--front" aria-hidden="true"></div><div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style') + '</strong></div></section><div class="map-action-row"><p><strong>' + options.filter(function (node) { return !isRejected(node.id); }).length + '</strong> route' + (options.filter(function (node) { return !isRejected(node.id); }).length === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+  }
+
+  function renderWorldLandmarks(landmarks) {
+    return (Array.isArray(landmarks) ? landmarks : []).map(function (landmark) {
+      var type = slug(landmark.type || 'landmark');
+      return '<div class="world-landmark landmark-' + escapeAttr(type) + '" style="--x:' + Number(landmark.x || 50) + '%;--y:' + Number(landmark.y || 40) + '%" aria-hidden="true"><span class="landmark-art landmark-art--' + escapeAttr(type) + '"><i></i><b></b></span><small>' + escapeHtml(landmark.label || 'Landmark') + '</small></div>';
+    }).join('');
+  }
+
+  // Past cards are intentionally hidden on narrow maps to keep the active fork
+  // readable. These compact, non-interactive pins retain route context without
+  // competing with the avatar or the skill dock.
+  function renderWorldMilestones(stage, entries) {
+    if (stage === 0) return '';
+    var past = entries.filter(function (entry) { return entry.kind.indexOf('past') === 0; });
+    return '<div class="world-milestones" aria-label="Completed route milestones">' + past.map(function (entry, index) {
+      return '<span class="world-milestone" title="' + escapeAttr(entry.node.title) + '"><b aria-hidden="true">✓</b><small>' + String(index + 1).padStart(2, '0') + '</small></span>';
+    }).join('') + '</div>';
   }
 
   function renderWorldStop(entry) {
@@ -1828,13 +2840,17 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     var rejected = isRejected(node.id);
     var complete = isCompleted(node.id);
     var open = canOpen(node);
-    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon" aria-hidden="true">' + (rejected ? '×' : complete ? '✓' : entry.kind === 'region' ? '◆' : '●') + '</span><span class="stop-copy"><small>' + escapeHtml(rejected ? 'TRAIL CLOSED' : complete ? 'EXPLORED' : 'NEXT STOP') + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
+    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon" aria-hidden="true">' + (rejected ? '×' : complete ? '✓' : entry.kind.indexOf('past') === 0 ? '✓' : entry.kind === 'region' ? '◆' : '●') + '</span><span class="stop-copy"><small>' + escapeHtml(rejected ? 'TRAIL CLOSED' : complete ? 'EXPLORED' : 'NEXT STOP') + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
   }
 
   function avatarMapPosition(stage, currentId, entries) {
     if (!currentId) return { x: 9, y: 64 };
     var current = entries.filter(function (entry) { return entry.node.id === currentId; })[0];
-    if (current) return current.position;
+    // On phones, completed route cards collapse into milestone pins. Park the
+    // explorer in the lower-left clearing so it remains visible beside the
+    // active fork instead of inheriting the hidden past-domain card's center.
+    if (current && window.innerWidth <= 767 && stage === 2 && current.kind === 'past-domain') return { x: 16, y: 76 };
+    if (current) return { x: current.position.x, y: Math.max(17, current.position.y - 14) };
     if (stage === 2) return { x: 31, y: 49 };
     if (stage === 1) return { x: 17, y: 49 };
     return { x: 9, y: 64 };
@@ -1856,7 +2872,7 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
   function renderReflection(node) {
     var skill = skillFor(node);
     var sibling = findAlternative(node);
-    return '<section class="screen screen--reflection" aria-labelledby="reflection-title"><div class="reflection-scene"><div class="reflection-avatar avatar-' + escapeAttr(state.avatar) + '" aria-hidden="true">' + avatarGlyph(state.avatar) + '</div><div class="reflection-card"><p class="screen-kicker">TRAIL CHECKPOINT</p><h1 id="reflection-title" tabindex="-1">Did you enjoy that kind of activity?</h1><p>Your answer changes the map. There is no wrong response—this is about noticing what gives you energy.</p><div class="reflection-choice-grid"><button class="reflection-choice reflection-choice--yes" data-action="enjoy-yes"><span aria-hidden="true">✓</span><strong>Yes, keep going</strong><small>Add <b>' + escapeHtml(skill.name) + '</b> and reveal the next stage.</small></button><button class="reflection-choice reflection-choice--no" data-action="enjoy-no"><span aria-hidden="true">↶</span><strong>No, try another trail</strong><small>' + escapeHtml(sibling ? 'Return to the map and try ' + sibling.title + '.' : 'Return to the map for a different recommendation.') + '</small></button></div><button class="text-button" data-action="back-map">I’m not sure yet — return to map</button></div></div></section>';
+    return '<section class="screen screen--reflection" aria-labelledby="reflection-title"><div class="reflection-scene"><div class="reflection-avatar avatar-' + escapeAttr(state.avatar) + '" aria-hidden="true">' + avatarGlyph(state.avatar) + '</div><div class="reflection-card"><p class="screen-kicker">TRAIL CHECKPOINT</p><h1 id="reflection-title" tabindex="-1">Did you enjoy that kind of activity?</h1><p>Your answer changes the map. There is no wrong response—this is about noticing what gives you energy.</p><div class="reflection-choice-grid"><button class="reflection-choice reflection-choice--yes" data-action="enjoy-yes"><span aria-hidden="true">✓</span><strong>Yes, keep going</strong><small>Add <b>' + escapeHtml(skill.name) + '</b> and reveal the next stage.</small></button><button class="reflection-choice reflection-choice--maybe" data-action="enjoy-maybe"><span aria-hidden="true">?</span><strong>Maybe, show me more</strong><small>Keep this trail open without changing your progress.</small></button><button class="reflection-choice reflection-choice--no" data-action="enjoy-no"><span aria-hidden="true">↶</span><strong>No, try another trail</strong><small>' + escapeHtml(sibling ? 'Not for me? Confirm to try ' + sibling.title + '.' : 'Not for me? Confirm to return to the map.') + '</small></button></div><button class="text-button" data-action="back-map">I’m not sure yet — return to map</button></div></div></section>';
   }
 
   function renderCareer(node) {
@@ -1869,24 +2885,121 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
       ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.toolsAndTechnologies || career.tools],
       ['Entry-level needs', career.entryLevelNeeds || career.entryLevel], ['Strong candidate', candidate]
     ];
-    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node.id) + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p class="lede">' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-hero-meta"><span>Starter skills: <strong>4</strong></span><span>Journey skills: <strong>' + state.earned.length + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(formatSalary(career.salary)) + '</strong><small>Research-backed salary data will be added in the content phase.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.careerGrowth || career.growth)) + '</p></div><button class="button button-coral button--wide" data-action="new-path">Start another path ↗</button><button class="text-button" data-action="back-map">View this world</button></aside></div></section>';
+    var salaryResearch = research.salaryByCareerId[career.id];
+    var interview = interviewForCareer(career.id);
+    var practiceMarkup = interview
+      ? '<div class="practice-card"><span class="eyebrow">INTERVIEW PRACTICE</span><strong>Make the role feel real.</strong><p>Three short prompts on experience, judgment, and your next step.</p><button class="button button-coral button--wide" data-action="open-interview" data-career-id="' + escapeAttr(career.id) + '">' + (state.interview.careerId === career.id && state.interview.status !== 'idle' ? 'Continue practice' : 'Practice a mock interview') + ' <span aria-hidden="true">↗</span></button></div>'
+      : '<div class="practice-card practice-card--soon"><span class="eyebrow">INTERVIEW PRACTICE</span><strong>Coming next.</strong><p>We are authoring a dedicated practice path for this role. Explore the field notes above in the meantime.</p></div>';
+    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node.id) + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p class="lede">' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-hero-meta"><span>Starter skills: <strong>4</strong></span><span>Journey skills: <strong>' + state.earned.length + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE · NATIONAL PROXY</span><strong>' + escapeHtml(salaryResearch ? salaryResearch.entryRange.label : formatSalary(career.salary)) + '</strong><small>' + escapeHtml(salaryResearch ? 'BLS OEWS May 2023 · 10th–25th percentile · SOC ' + salaryResearch.soc : 'Salary context is being prepared.') + '</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.careerGrowth || career.growth)) + '</p></div>' + practiceMarkup + '<button class="button button-coral button--wide" data-action="new-path">Start another path ↗</button><button class="text-button" data-action="back-map">View this world</button></aside></div>' + (salaryResearch ? '<details class="career-sources"><summary>Sources &amp; salary methodology</summary><div class="source-disclosure"><p><strong>How to read this:</strong> The range is a national occupational benchmark, not a guaranteed offer. The role is mapped to <em>' + escapeHtml(salaryResearch.occupation) + '</em> (' + escapeHtml(salaryResearch.soc) + ') because student-facing titles do not always have one federal occupation code.</p><p>' + escapeHtml(salaryResearch.mapping) + ' ' + escapeHtml(salaryResearch.proxyLimitations) + '</p>' + renderSourceList((salaryResearch.sourceRefs || []).concat(['src-bls-oews-methods'])) + '</div></details>' : '') + '</section>';
+  }
+
+  function currentInterview() {
+    return interviewForCareer(state.interview.careerId);
+  }
+
+  function currentInterviewQuestion() {
+    var interview = currentInterview();
+    return interview && interview.questions[state.interview.questionIndex];
+  }
+
+  function renderSourceList(sourceRefs) {
+    var seen = {};
+    var sources = (sourceRefs || []).map(function (sourceId) {
+      return (research.sourceLedger || []).filter(function (source) { return source.id === sourceId; })[0];
+    }).filter(function (source) {
+      if (!source || seen[source.id]) return false;
+      seen[source.id] = true;
+      return true;
+    });
+    if (!sources.length) return '';
+    return '<ul class="source-list">' + sources.map(function (source) {
+      return '<li><a href="' + escapeAttr(source.url) + '" target="_blank" rel="noreferrer">' + escapeHtml(source.title) + '</a><span>' + escapeHtml(source.publisher) + ' · accessed ' + escapeHtml(source.accessed) + '</span></li>';
+    }).join('') + '</ul>';
+  }
+
+  function renderInterviewIntro() {
+    var interview = currentInterview();
+    var career = modelCareer(state.interview.careerId);
+    if (!interview || !career) return renderCareer(findNode(state.selectedNodeId));
+    var inProgress = state.interview.status !== 'idle';
+    return '<section class="screen interview-screen interview-intro" aria-labelledby="interview-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← Back to career</button><span class="progress-chip">3 QUESTIONS / ~4 MIN</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-intro-grid"><div><p class="screen-kicker">FIELD PRACTICE / ROLE REHEARSAL</p><h1 id="interview-title" tabindex="-1">' + escapeHtml(career.title) + '<br><em>in your own words.</em></h1><p class="interview-lede">' + escapeHtml(interview.intro) + '</p><div class="interview-expectations"><span><b>01</b> Your experience</span><span><b>02</b> Role scenario</span><span><b>03</b> Your next step</span></div></div><aside class="interview-welcome-card"><span class="eyebrow">A QUICK REHEARSAL</span><strong>This is practice, not a grade.</strong><p>Write what you would really say. The feedback is a transparent checklist based on words you chose.</p><button class="button button--primary button--wide" data-action="interview-start">' + (inProgress ? 'Continue practice' : 'Start practice') + ' <span aria-hidden="true">→</span></button>' + (inProgress ? '<button class="text-button" data-action="interview-replay">Start this interview again</button>' : '') + '</aside></div>' + renderInterviewSources(interview) + '</section>';
+  }
+
+  function renderInterviewQuestion() {
+    var interview = currentInterview();
+    var question = currentInterviewQuestion();
+    if (!interview || !question) return renderCareer(findNode(state.selectedNodeId));
+    var answer = state.interview.answers[question.id] || '';
+    return '<section class="screen interview-screen interview-question" aria-labelledby="question-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">QUESTION ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-layout"><aside class="interview-rail" aria-label="Interview progress">' + interview.questions.map(function (item, index) { return '<div class="rail-step ' + (index < state.interview.questionIndex ? 'is-done' : index === state.interview.questionIndex ? 'is-current' : '') + '"><span>' + String(index + 1).padStart(2, '0') + '</span><small>' + escapeHtml(item.type === 'experience' ? 'Experience' : item.type === 'growth' ? 'Growth' : 'Scenario') + '</small></div>'; }).join('') + '</aside><div class="question-card"><p class="eyebrow">' + escapeHtml(modelCareer(state.interview.careerId).title) + '</p><h1 id="question-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p class="question-helper">' + escapeHtml(question.helper || '') + '</p><form id="interview-answer-form"><label for="interview-answer">Your answer</label><textarea id="interview-answer" maxlength="1000" rows="8" placeholder="Start with the situation, then explain what you did…">' + escapeHtml(answer) + '</textarea><div class="answer-meta"><span id="word-count">' + wordCount(answer) + ' words</span><span>Minimum ' + question.minWords + ' words · 1,000 characters max</span></div><details class="hint-disclosure"><summary>Show a hint</summary><p>' + escapeHtml(question.guidance) + '</p></details><div class="question-actions"><button class="button button--primary" type="submit" ' + (answer.trim() ? '' : 'disabled') + '>Check my answer <span aria-hidden="true">→</span></button><button class="text-button" type="button" data-action="interview-save-exit">Save and exit</button></div></form></div></div></section>';
+  }
+
+  function renderInterviewFeedback() {
+    var interview = currentInterview();
+    var question = currentInterviewQuestion();
+    var feedback = question && state.interview.feedback[question.id];
+    if (!interview || !question || !feedback) return renderInterviewQuestion();
+    var criteria = question.criteria || question.rubric.criteria;
+    var matched = criteria.filter(function (criterion) { return feedback.matchedCriterionIds.indexOf(criterion.id) !== -1; });
+    var missing = criteria.filter(function (criterion) { return feedback.missingCriterionIds.indexOf(criterion.id) !== -1; });
+    var nextLabel = state.interview.questionIndex === interview.questions.length - 1 ? 'See my debrief' : 'Next question';
+    return '<section class="screen interview-screen interview-feedback" aria-labelledby="feedback-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">FEEDBACK / ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="feedback-grid"><div class="question-card feedback-question"><p class="eyebrow">YOUR RESPONSE</p><h1 id="feedback-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><div class="answer-quote">' + escapeHtml(state.interview.answers[question.id] || '') + '</div><button class="text-button" data-action="interview-edit">Edit and try again</button></div><div class="feedback-card"><span class="feedback-level feedback-level--' + escapeAttr(feedback.level) + '">' + escapeHtml(feedback.level === 'strong' ? 'Strong foundation' : feedback.level === 'developing' ? 'Developing answer' : 'Good starting point') + '</span><p class="feedback-summary">' + feedback.wordCount + ' words · built from your answer</p><section><h2>You mentioned</h2>' + (matched.length ? '<ul class="criteria-list criteria-list--matched">' + matched.map(function (criterion) { return '<li>✓ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul>' : '<p class="muted-copy">Not enough rubric evidence yet.</p>') + '</section>' + (missing.length ? '<section><h2>Try adding</h2><ul class="criteria-list criteria-list--missing">' + missing.map(function (criterion) { return '<li>＋ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul></section>' : '') + '<p class="feedback-guidance"><strong>Practice note:</strong> ' + escapeHtml(question.guidance) + '</p><details class="strong-answer"><summary>Show a strong-answer example</summary><p>' + escapeHtml(question.strongAnswer) + '</p></details><button class="button button--primary button--wide" data-action="interview-next">' + nextLabel + ' <span aria-hidden="true">→</span></button></div></div></section>';
+  }
+
+  function renderInterviewDebrief() {
+    var interview = currentInterview();
+    var career = modelCareer(state.interview.careerId);
+    if (!interview || !career) return renderCareer(findNode(state.selectedNodeId));
+    var summaries = interview.questions.map(function (question, index) {
+      var feedback = state.interview.feedback[question.id];
+      return '<li><span>' + String(index + 1).padStart(2, '0') + '</span><strong>' + escapeHtml(question.type === 'experience' ? 'Experience' : question.type === 'growth' ? 'Growth plan' : 'Role scenario') + '</strong><em>' + escapeHtml(feedback ? (feedback.level === 'strong' ? 'Strong foundation' : feedback.level === 'developing' ? 'Developing answer' : 'Good starting point') : 'Not answered') + '</em></li>';
+    }).join('');
+    var strongest = strongestCriterion(interview);
+    return '<section class="screen interview-screen interview-debrief" aria-labelledby="debrief-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← Back to career</button><span class="progress-chip">PRACTICE COMPLETE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="debrief-card"><p class="screen-kicker">FIELD NOTES SAVED</p><h1 id="debrief-title" tabindex="-1">You made the role<br><em>more concrete.</em></h1><p class="interview-lede">Your answers stay in this browser so you can return, revise, and build a clearer story over time.</p><div class="debrief-grid"><section><span class="eyebrow">YOUR THREE ANSWERS</span><ol class="debrief-list">' + summaries + '</ol></section><aside class="debrief-next"><span class="eyebrow">A NEXT PRACTICE MOVE</span><strong>' + escapeHtml(strongest ? 'Keep developing ' + strongest.label.toLowerCase() + '.' : 'Keep collecting specific examples.') + '</strong><p>Use one class, work, club, or personal project this week to make that idea more specific.</p></aside></div><div class="debrief-actions"><button class="button button--primary" data-action="interview-replay">Practice again</button><button class="button button--secondary" data-action="interview-back-career">Return to career</button></div></div>' + renderInterviewSources(interview) + '</section>';
+  }
+
+  function renderInterviewSources(interview) {
+    return '<details class="career-sources interview-sources"><summary>Sources &amp; attribution</summary><div class="source-disclosure"><p>These prompts and examples are authored practice content. The linked sources support role framing and interview habits; they do not publish these exact questions.</p>' + renderSourceList(interview.sourceRefs) + '</div></details>';
+  }
+
+  function modelCareer(careerId) {
+    return (model.careers || {})[careerId] || null;
+  }
+
+  function wordCount(value) { return (String(value || '').match(/[a-z0-9']+/gi) || []).length; }
+
+  function evaluateInterviewAnswer(answer, question) {
+    var normalized = String(answer || '').toLowerCase();
+    var words = wordCount(answer);
+    var criteria = question.criteria || (question.rubric && question.rubric.criteria) || [];
+    var matched = criteria.filter(function (criterion) { return (criterion.signals || []).some(function (signal) { return normalized.indexOf(String(signal).toLowerCase()) !== -1; }); });
+    var ratio = criteria.length ? matched.length / criteria.length : 0;
+    var level = words >= question.minWords && ratio >= 0.67 ? 'strong' : words >= Math.max(8, Math.floor(question.minWords / 2)) && ratio >= 0.34 ? 'developing' : 'starting';
+    return { level: level, wordCount: words, matchedCriterionIds: matched.map(function (criterion) { return criterion.id; }), missingCriterionIds: criteria.filter(function (criterion) { return matched.indexOf(criterion) === -1; }).map(function (criterion) { return criterion.id; }) };
+  }
+
+  function strongestCriterion(interview) {
+    var counts = {};
+    interview.questions.forEach(function (question) { var feedback = state.interview.feedback[question.id]; (feedback ? feedback.matchedCriterionIds : []).forEach(function (id) { counts[id] = (counts[id] || 0) + 1; }); });
+    var best = null; var bestCount = 0;
+    interview.questions.forEach(function (question) { (question.criteria || []).forEach(function (criterion) { if ((counts[criterion.id] || 0) > bestCount) { best = criterion; bestCount = counts[criterion.id]; } }); });
+    return best;
   }
 
   function renderFactList(value) {
-    var items = Array.isArray(value) ? value : value ? [value] : ['Research pending'];
+    var items = Array.isArray(value) ? value : value ? [value] : ['Details coming soon'];
     return '<ul>' + items.map(function (item) { return '<li>' + escapeHtml(typeof item === 'object' ? formatList(item) : item) + '</li>'; }).join('') + '</ul>';
   }
 
   function formatSalary(value) {
-    if (!value) return 'Research pending';
+    if (!value) return 'Details coming soon';
     if (typeof value === 'string') return value;
-    return value.range || (value.status === 'research-pending' ? 'Research pending' : value.note) || 'Research pending';
+    return value.range || value.note || 'Details coming soon';
   }
 
   function formatList(value) {
     if (Array.isArray(value)) return value.join(' · ');
     if (value && typeof value === 'object') return Object.keys(value).map(function (key) { return formatList(value[key]); }).filter(Boolean).join(' · ');
-    return value || 'Research pending';
+    return value || 'Details coming soon';
   }
 
   function renderDock() {
@@ -1903,9 +3016,22 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     });
     dock.hidden = items.length === 0;
     dock.classList.toggle('has-skills', items.length > 0);
+    var shortLandscape = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
+    var interviewScreen = /^interview-/.test(state.screen || '');
+    var inlineDock = interviewScreen || window.innerWidth <= 560 || shortLandscape;
+    var screenClass = 'dock--screen-' + slug(state.screen || 'landing');
+    ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].forEach(function (screen) {
+      dock.classList.remove('dock--screen-' + slug(screen));
+    });
+    dock.classList.add(screenClass);
+    dock.classList.toggle('dock--inline', inlineDock);
+    dock.classList.toggle('dock--floating', !inlineDock);
+    dock.classList.toggle('dock--safe-top', !inlineDock && state.screen === 'reflection');
+    document.body.classList.toggle('dock-inline', inlineDock);
+    document.body.classList.toggle('dock-floating', !inlineDock);
     if (!items.length) { dock.innerHTML = ''; return; }
-    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2>SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
-      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span aria-hidden="true">' + escapeHtml(item.skill.glyph || '✦') + '</span><strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong><small>' + escapeHtml(item.starter ? 'starter' : 'earned') + '</small></button>';
+    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2 id="skill-dock-title">SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
+      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span aria-hidden="true">' + escapeHtml(item.skill.glyph || '✦') + '</span><strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong><small>' + escapeHtml(item.starter ? 'starter' : 'earned') + '</small></button>';
     }).join('') + '</div></div>';
   }
 
@@ -1925,6 +3051,29 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     if (dock) dock.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
     var form = document.getElementById('start-form');
     if (form) form.addEventListener('submit', handleStart);
+    var interviewForm = document.getElementById('interview-answer-form');
+    var answerInput = document.getElementById('interview-answer');
+    if (interviewForm) interviewForm.addEventListener('submit', handleInterviewCheck);
+    if (answerInput) {
+      answerInput.addEventListener('input', function () {
+        var question = currentInterviewQuestion();
+        if (!question) return;
+        var answer = answerInput.value.slice(0, 1000);
+        state.interview.answers[question.id] = answer;
+        saveState();
+        var count = document.getElementById('word-count');
+        if (count) count.textContent = wordCount(answer) + ' words';
+        var check = interviewForm && interviewForm.querySelector('button[type="submit"]');
+        if (check) check.disabled = !answer.trim();
+      });
+      answerInput.addEventListener('keydown', function (event) {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && interviewForm) {
+          event.preventDefault();
+          if (interviewForm.requestSubmit) interviewForm.requestSubmit();
+          else interviewForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+      });
+    }
   }
 
   function handleStart(event) {
@@ -1947,22 +3096,43 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     if (action === 'toggle-starter') { toggleStarterSkill(element.getAttribute('data-skill-id')); return; }
     if (action === 'confirm-skills') { confirmStarterSkills(); return; }
     if (action === 'back-landing') { state.screen = 'landing'; saveState(); render(); return; }
-    if (action === 'resume') { state.screen = state.starterSkills.length === 4 ? 'map' : 'skill-select'; saveState(); render(); return; }
-    if (action === 'edit-skills') { editStarterSkills(); return; }
+    if (action === 'resume') {
+      if (state.starterSkills.length === 4 && !findNode(state.activeRegionId)) state.activeRegionId = recommendRegion(state.starterSkills, state.rejected).id;
+      state.screen = state.starterSkills.length === 4 ? 'map' : 'skill-select'; saveState(); render(); return;
+    }
+    if (action === 'edit-skills') { requestEditStarterSkills(); return; }
     if (action === 'open-node') { openNode(element.getAttribute('data-node-id')); return; }
-    if (action === 'finish-game') { state.screen = 'reflection'; saveState(); render(); return; }
+    if (action === 'finish-game') {
+      if (state.reviewingNodeId) {
+        var replayed = findNode(state.reviewingNodeId);
+        state.reviewingNodeId = null; state.screen = 'map'; saveState(); render();
+        announce(replayed ? replayed.title + ' replay complete. Your journey progress is unchanged.' : 'Replay complete. Your journey progress is unchanged.');
+      } else { state.screen = 'reflection'; saveState(); render(); }
+      return;
+    }
     if (action === 'enjoy-yes') { completeNode(state.selectedNodeId); return; }
-    if (action === 'enjoy-no') { rejectNode(state.selectedNodeId); return; }
+    if (action === 'enjoy-maybe') { pauseReflection(); return; }
+    if (action === 'enjoy-no') { requestRejectNode(element); return; }
     if (action === 'back-map') { state.screen = 'map'; state.travelTargetId = null; saveState(); render(); return; }
     if (action === 'new-path') { startAnotherPath(); return; }
+    if (action === 'open-interview') { openInterview(element.getAttribute('data-career-id')); return; }
+    if (action === 'interview-start') { startInterview(); return; }
+    if (action === 'interview-next') { nextInterviewQuestion(); return; }
+    if (action === 'interview-edit') { editInterviewAnswer(); return; }
+    if (action === 'interview-replay') { replayInterview(); return; }
+    if (action === 'interview-save-exit' || action === 'interview-back-career') { exitInterview(); return; }
     if (action === 'restart') { modalReturnFocus = element; showRestartModal(); return; }
-    if (action === 'inspect-skill') { modalReturnFocus = element; showSkillModal(element.getAttribute('data-skill-id')); }
+    if (action === 'confirm-edit-skills') { editStarterSkills(); closeModal(); return; }
+    if (action === 'confirm-reject') { rejectNode(element.getAttribute('data-node-id') || state.selectedNodeId); closeModal(); return; }
+    if (action === 'replay-node') { replayNode(element.getAttribute('data-node-id')); closeModal(); return; }
+    if (action === 'inspect-skill') { modalReturnFocus = element; showSkillModal(element.getAttribute('data-inspect-skill-id') || element.getAttribute('data-skill-id')); }
   }
 
   function toggleStarterSkill(skillId) {
     var index = state.starterSkills.indexOf(skillId);
     if (index !== -1) state.starterSkills.splice(index, 1);
     else if (state.starterSkills.length < 4 && model.skills[skillId]) state.starterSkills.push(skillId);
+    focusAfterRenderId = skillId;
     saveState(); render();
   }
 
@@ -1976,14 +3146,23 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
 
   function editStarterSkills() {
     state.screen = 'skill-select'; state.completed = []; state.earned = []; state.rejected = [];
-    state.activeDomainId = null; state.selectedNodeId = null; saveState(); render();
+    state.activeRegionId = null; state.activeDomainId = null; state.selectedNodeId = null; state.reviewingNodeId = null; saveState(); render();
+  }
+
+  function requestEditStarterSkills() {
+    if (!state.completed.length && !state.earned.length && !state.rejected.length) { editStarterSkills(); return; }
+    modalReturnFocus = document.querySelector('[data-action="edit-skills"]');
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-skills-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">EDIT STARTER LOADOUT</p><h2 id="edit-skills-title">Change your direction?</h2><p>This will clear your current route progress, including ' + state.completed.length + ' explored stops and ' + state.earned.length + ' earned skills. Your name and avatar will stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep exploring</button><button class="button button--danger" data-action="confirm-edit-skills">Edit starter skills</button></div></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
   function openNode(id) {
     var node = findNode(id);
     if (!canOpen(node)) return;
+    var replaying = isCompleted(node.id);
     var current = currentJourneyNode();
-    state.selectedNodeId = id; state.travelFromId = current ? current.id : null; state.travelTargetId = id;
+    state.selectedNodeId = id; state.reviewingNodeId = replaying ? id : null; state.travelFromId = current ? current.id : null; state.travelTargetId = id;
     if (nodeDepth(node) === 1) state.activeDomainId = id;
     state.screen = 'travel'; saveState(); render();
     if (travelTimer) window.clearTimeout(travelTimer);
@@ -2017,7 +3196,7 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
 
   function rejectNode(id) {
     var node = findNode(id);
-    if (!node) return;
+    if (!node || isCompleted(id)) return;
     if (!isRejected(id)) state.rejected.push(id);
     var depth = nodeDepth(node);
     if (depth === 0) {
@@ -2029,6 +3208,22 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     announce(alternative ? node.title + ' closed. Try ' + alternative.title + '.' : 'That trail closed. Your compass found another route.');
   }
 
+  function pauseReflection() {
+    var node = findNode(state.selectedNodeId);
+    state.selectedNodeId = null; state.travelTargetId = null; state.travelFromId = null; state.screen = 'map'; saveState(); render();
+    announce(node ? 'You can revisit ' + node.title + ' when you are ready.' : 'The trail stays open for later.');
+  }
+
+  function requestRejectNode(element) {
+    var id = element && element.getAttribute('data-node-id') || state.selectedNodeId;
+    var node = findNode(id);
+    if (!node || isCompleted(id)) return;
+    modalReturnFocus = element;
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">TRAIL DECISION</p><h2 id="reject-title">Try the other trail?</h2><p>Choosing “Not for me” closes ' + escapeHtml(node.title) + ' for this journey and opens its alternative. Your earned skills stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep this trail open</button><button class="button button--danger" data-action="confirm-reject" data-node-id="' + escapeAttr(id) + '">Close this trail</button></div></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
+  }
+
   function findAlternative(node) {
     if (!node) return null;
     if (!node.parentId) return recommendRegion(state.starterSkills, state.rejected.concat([node.id]));
@@ -2038,8 +3233,77 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
 
   function startAnotherPath() {
     state.screen = 'skill-select'; state.completed = []; state.earned = []; state.rejected = [];
-    state.activeRegionId = null; state.activeDomainId = null; state.selectedNodeId = null; state.lastCareerId = null;
+    state.activeRegionId = null; state.activeDomainId = null; state.selectedNodeId = null; state.lastCareerId = null; state.interview = defaultInterviewState();
     saveState(); render();
+  }
+
+  function openInterview(careerId) {
+    var career = modelCareer(careerId);
+    if (!career || !interviewForCareer(careerId)) return;
+    if (state.interview.careerId !== careerId) state.interview = Object.assign(defaultInterviewState(), { careerId: careerId });
+    state.interview.returnScreen = 'career'; state.screen = 'interview-intro'; saveState(); render();
+  }
+
+  function startInterview() {
+    var interview = currentInterview();
+    if (!interview) return;
+    if (state.interview.status === 'complete') { state.screen = 'interview-debrief'; saveState(); render(); return; }
+    state.interview.status = 'in-progress'; state.screen = 'interview-question'; saveState(); render();
+  }
+
+  function nextInterviewQuestion() {
+    var interview = currentInterview();
+    if (!interview) return;
+    if (state.interview.questionIndex >= interview.questions.length - 1) {
+      state.interview.status = 'complete'; state.screen = 'interview-debrief';
+    } else {
+      state.interview.questionIndex += 1; state.interview.status = 'in-progress'; state.screen = 'interview-question';
+    }
+    saveState(); render();
+  }
+
+  function editInterviewAnswer() {
+    if (!currentInterviewQuestion()) return;
+    state.interview.status = 'in-progress'; state.screen = 'interview-question'; saveState(); render();
+  }
+
+  function replayInterview() {
+    var careerId = state.interview.careerId;
+    if (!interviewForCareer(careerId)) return;
+    state.interview = Object.assign(defaultInterviewState(), { careerId: careerId, status: 'in-progress', returnScreen: 'career' });
+    state.screen = 'interview-question'; saveState(); render();
+  }
+
+  function exitInterview() {
+    state.screen = 'career'; saveState(); render();
+  }
+
+  function handleInterviewCheck(event) {
+    event.preventDefault();
+    var question = currentInterviewQuestion();
+    var input = document.getElementById('interview-answer');
+    if (!question || !input || !input.value.trim()) return;
+    var answer = input.value.slice(0, 1000);
+    state.interview.answers[question.id] = answer;
+    state.interview.feedback[question.id] = evaluateInterviewAnswer(answer, question);
+    state.interview.status = 'feedback';
+    state.screen = 'interview-feedback';
+    saveState(); render();
+  }
+
+  function showNodeReview(node) {
+    if (!modalRoot || !node) return;
+    var skill = skillFor(node);
+    modalReturnFocus = document.querySelector('[data-node-id="' + node.id + '"]');
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="review-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">EXPLORED STOP / RECAP</p><h2 id="review-title">' + escapeHtml(node.title) + '</h2><p>' + escapeHtml(node.description || node.subtitle) + '</p><p><strong>Skill earned:</strong> ' + escapeHtml(skill.name) + '</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Back to map</button><button class="button button--primary" data-action="replay-node" data-node-id="' + escapeAttr(node.id) + '">Replay challenge</button></div></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
+  }
+
+  function replayNode(id) {
+    var node = findNode(id);
+    if (!node || !isCompleted(id)) return;
+    closeModal(); state.reviewingNodeId = id; state.selectedNodeId = id; state.screen = 'mini'; saveState(); render();
   }
 
   // ---------------------------------------------------------------------------
@@ -2093,6 +3357,9 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
       element.addEventListener('click', function (event) {
         var action = element.getAttribute('data-action');
         if (action === 'confirm-restart') resetState();
+        else if (action === 'confirm-edit-skills') { editStarterSkills(); closeModal(); }
+        else if (action === 'confirm-reject') { rejectNode(element.getAttribute('data-node-id') || state.selectedNodeId); closeModal(); }
+        else if (action === 'replay-node') { replayNode(element.getAttribute('data-node-id')); closeModal(); }
         else if (action === 'close-modal' && event.target === event.currentTarget) closeModal();
       });
     });
@@ -2119,9 +3386,22 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
   }
 
   function focusAfterRender() {
-    var target = root.querySelector('h1, input, [data-action="open-node"]');
+    var target = focusAfterRenderId ? root.querySelector('[data-skill-id="' + focusAfterRenderId + '"]') : null;
+    focusAfterRenderId = null;
+    if (!target) target = root.querySelector('h1, input, [data-action="open-node"]');
     if (!target) return;
-    window.setTimeout(function () { if (document.body.contains(target) && target.focus) target.focus(); }, prefersReducedMotion ? 0 : 35);
+    window.setTimeout(function () {
+      if (document.body.contains(target) && target.focus) {
+        // Do not steal focus when a keyboard user has already moved to a new
+        // control during the short post-render delay.
+        var active = document.activeElement;
+        if (active && active !== document.body && active !== root) return;
+        try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
+        // Some older WebKit builds ignore focus({preventScroll}); enforce the
+        // screen contract after focus as a harmless second guard.
+        window.scrollTo(0, 0);
+      }
+    }, prefersReducedMotion ? 0 : 35);
   }
 
   function avatarGlyph(avatar) { return { comet: '✦', pixel: '▦', sprout: '✿', orbit: '◉' }[avatar] || '✦'; }

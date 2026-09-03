@@ -204,6 +204,60 @@ class QARunner:
             raise AssertionError(f"body horizontal overflow: {dimensions}")
 
     @staticmethod
+    def overlap_area(first: dict[str, float], second: dict[str, float]) -> float:
+        """Return the intersection area of two Playwright bounding boxes."""
+
+        horizontal = max(
+            0.0,
+            min(first["x"] + first["width"], second["x"] + second["width"])
+            - max(first["x"], second["x"]),
+        )
+        vertical = max(
+            0.0,
+            min(first["y"] + first["height"], second["y"] + second["height"])
+            - max(first["y"], second["y"]),
+        )
+        return horizontal * vertical
+
+    @classmethod
+    def assert_no_overlap(cls, first, second, label: str) -> None:
+        """Fail when two visible locators cover any of the same pixels."""
+
+        first_box = first.bounding_box()
+        second_box = second.bounding_box()
+        if not first_box or not second_box:
+            raise AssertionError(f"{label} did not render measurable boxes")
+        overlap = cls.overlap_area(first_box, second_box)
+        if overlap > 0.5:
+            raise AssertionError(
+                f"{label} overlap={overlap:.0f}px²; first={first_box}; second={second_box}"
+            )
+
+    @staticmethod
+    def contrast_ratio(locator) -> float:
+        """Calculate the text/background contrast ratio for an opaque element."""
+
+        return float(
+            locator.evaluate(
+                """element => {
+                    const style = getComputedStyle(element);
+                    const channels = value => (value.match(/[0-9.]+/g) || [])
+                        .slice(0, 3).map(Number).map(channel => channel / 255);
+                    const luminance = value => {
+                        const rgb = channels(value).map(channel => channel <= 0.04045
+                            ? channel / 12.92
+                            : Math.pow((channel + 0.055) / 1.055, 2.4));
+                        return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+                    };
+                    const foreground = luminance(style.color);
+                    const background = luminance(style.backgroundColor);
+                    return (Math.max(foreground, background) + 0.05)
+                        / (Math.min(foreground, background) + 0.05);
+                }"""
+            )
+        )
+
+    @staticmethod
     def finish_node(page: Page, node_id: str, enjoyed: bool = True) -> None:
         """Travel to a node, skip its placeholder, and answer the enjoyment check."""
 
@@ -225,6 +279,16 @@ class QARunner:
             "button", name=re.compile("Yes, keep going" if enjoyed else "No, try another trail")
         )
         choice.click()
+        if not enjoyed:
+            # Rejection is intentionally destructive, so the production flow
+            # requires an explicit confirmation after the reflection choice.
+            dialog = page.get_by_role("dialog")
+            if dialog.count() != 1:
+                raise AssertionError(f"rejection confirmation missing for {node_id}")
+            confirm = dialog.get_by_role("button", name=re.compile("Close this trail"))
+            if confirm.count() != 1:
+                raise AssertionError(f"rejection confirmation action missing for {node_id}")
+            confirm.click()
         page.wait_for_timeout(30)
 
     @staticmethod
@@ -538,6 +602,314 @@ class QARunner:
         finally:
             pass
 
+    def resume_unconfirmed_skills_loop(self) -> str:
+        """Ensure Resume initializes a playable world for an unconfirmed loadout."""
+
+        page, context, errors, _requests = self.fresh_page({"width": 1200, "height": 900})
+        try:
+            page.get_by_label("What should we call you?").fill("Pending Explorer")
+            page.get_by_role("button", name="Choose my starter skills").click()
+            for skill_id in STARTER_LOADOUTS["region-build-create"]:
+                page.locator(f'[data-skill-id="{skill_id}"]').click()
+            page.get_by_role("button", name="Back").click()
+            resume = page.get_by_role("button", name=re.compile("Resume Pending Explorer"))
+            if resume.count() != 1:
+                raise AssertionError("four chosen skills did not expose one Resume action")
+            resume.click()
+            page.locator(".screen--map").wait_for()
+            state = page.evaluate("CareerLaunchpadApp.getState()")
+            enabled_stops = page.locator(".world-stop:enabled").count()
+            if not state["activeRegionId"] or enabled_stops != 1:
+                raise AssertionError(
+                    "Resume opened a dead map: "
+                    f"activeRegionId={state['activeRegionId']!r}; enabled stops={enabled_stops}"
+                )
+            self.assert_clean(page, errors)
+            return f"Resume initialized {state['activeRegionId']} with one enabled first stop"
+        finally:
+            pass
+
+    def completed_node_revisit_loop(self) -> str:
+        """Ensure replaying a completed stop cannot reject it or duplicate rewards."""
+
+        page, context, errors, _requests = self.fresh_page()
+        try:
+            self.start(page, "Revisit Explorer")
+            self.finish_node(page, "region-build-create")
+            self.finish_node(page, "domain-software-apps")
+            before = page.evaluate("CareerLaunchpadApp.getState()")
+
+            page.locator('[data-node-id="domain-software-apps"]').click()
+            page.locator(".screen--challenge").wait_for()
+            skip = page.get_by_role("button", name=re.compile("Skip game for now"))
+            if skip.count():
+                skip.click()
+            no_choice = page.get_by_role("button", name=re.compile("No, try another trail"))
+            if no_choice.count():
+                no_choice.click()
+                dialog = page.get_by_role("dialog")
+                if dialog.count() != 1:
+                    raise AssertionError("completed-node rejection confirmation missing")
+                close = dialog.get_by_role("button", name=re.compile("Close this trail"))
+                if close.count() != 1:
+                    raise AssertionError("completed-node confirmation action missing")
+                close.click()
+            page.wait_for_timeout(60)
+
+            after = page.evaluate("CareerLaunchpadApp.getState()")
+            if "domain-software-apps" in after["rejected"]:
+                raise AssertionError("a completed domain became rejected during review")
+            if after["completed"] != before["completed"]:
+                raise AssertionError(
+                    f"review mutated completed nodes: before={before['completed']}; after={after['completed']}"
+                )
+            if after["earned"] != before["earned"]:
+                raise AssertionError(
+                    f"review mutated earned rewards: before={before['earned']}; after={after['earned']}"
+                )
+            self.assert_clean(page, errors)
+            return "completed/rejected remained mutually exclusive and reward list was unchanged"
+        finally:
+            pass
+
+    def reflection_dock_overlap_loop(self) -> str:
+        """Check that the fixed skill HUD never covers reflection choices."""
+
+        checked: list[str] = []
+        for width, height in ((320, 568), (390, 844)):
+            page, context, errors, _requests = self.fresh_page({"width": width, "height": height})
+            self.start(page, f"Reflection {width}")
+            page.locator('[data-node-id="region-build-create"]').click()
+            page.locator(".screen--challenge").wait_for()
+            page.get_by_role("button", name=re.compile("Skip game for now")).click()
+            page.locator(".screen--reflection").wait_for()
+            page.wait_for_timeout(500)
+            dock = page.locator(".skill-dock")
+            for label in ("Yes, keep going", "No, try another trail"):
+                choice = page.get_by_role("button", name=re.compile(label))
+                self.assert_no_overlap(dock, choice, f"{width}×{height} dock/{label}")
+            self.assert_clean(page, errors)
+            checked.append(f"{width}×{height}")
+        return f"reflection CTAs clear of dock at {', '.join(checked)}"
+
+    def career_dock_overlap_loop(self) -> str:
+        """Check that the desktop skill HUD does not cover the career CTA."""
+
+        page, context, errors, _requests = self.fresh_page({"width": 1440, "height": 900})
+        try:
+            self.start(page, "Career CTA Explorer")
+            for node_id in ("region-build-create", "domain-software-apps", "spec-code-build-uis"):
+                self.finish_node(page, node_id)
+            page.locator(".screen--career").wait_for()
+            page.wait_for_timeout(500)
+            self.assert_no_overlap(
+                page.locator(".skill-dock"),
+                page.get_by_role("button", name=re.compile("Start another path")),
+                "1440×900 dock/Start another path",
+            )
+            self.assert_clean(page, errors)
+            return "1440×900 career CTA has zero overlap with the skill dock"
+        finally:
+            pass
+
+    def short_landscape_dock_loop(self) -> str:
+        """Check that the fixed dock stays outside the active landscape map."""
+
+        checked: list[str] = []
+        for width, height in ((844, 390), (667, 375)):
+            page, context, errors, _requests = self.fresh_page({"width": width, "height": height})
+            self.start(page, f"Landscape {width}")
+            self.finish_node(page, "region-build-create")
+            page.locator(".screen--map").wait_for()
+            page.wait_for_timeout(500)
+            self.assert_no_overlap(
+                page.locator(".skill-dock"),
+                page.locator(".rpg-world"),
+                f"{width}×{height} dock/active map",
+            )
+            self.assert_clean(page, errors)
+            checked.append(f"{width}×{height}")
+        return f"active map clear of fixed dock at {', '.join(checked)}"
+
+    def reflection_reflow_loop(self) -> str:
+        """Require reflection pages to reflow without horizontal scrolling."""
+
+        checked: list[str] = []
+        for width, height in ((320, 568), (390, 844)):
+            page, context, errors, _requests = self.fresh_page({"width": width, "height": height})
+            self.start(page, f"Reflow {width}")
+            page.locator('[data-node-id="region-build-create"]').click()
+            page.locator(".screen--challenge").wait_for()
+            page.get_by_role("button", name=re.compile("Skip game for now")).click()
+            page.locator(".screen--reflection").wait_for()
+            page.wait_for_timeout(500)
+            self.assert_no_horizontal_overflow(page)
+            self.assert_clean(page, errors)
+            checked.append(f"{width}px")
+        return f"reflection reflows at {', '.join(checked)}"
+
+    def edit_skills_confirmation_loop(self) -> str:
+        """Require destructive loadout edits to be cancellable without data loss."""
+
+        page, context, errors, _requests = self.fresh_page()
+        try:
+            self.start(page, "Edit Safety Explorer")
+            self.finish_node(page, "region-build-create")
+            before = page.evaluate("CareerLaunchpadApp.getState()")
+            page.get_by_role("button", name="Edit starter skills").click()
+            page.wait_for_timeout(100)
+            dialog = page.get_by_role("dialog")
+            if dialog.count() != 1:
+                raise AssertionError("Edit starter skills cleared progress without confirmation")
+            dialog_text = dialog.inner_text().casefold()
+            if not any(word in dialog_text for word in ("progress", "earned", "clear", "reset")):
+                raise AssertionError("edit confirmation does not explain the progress at risk")
+            cancel = dialog.get_by_role(
+                "button", name=re.compile("Cancel|Keep exploring|Continue journey|Go back", re.I)
+            )
+            if cancel.count() < 1:
+                raise AssertionError("edit confirmation has no clear cancel action")
+            cancel.first.click()
+            page.wait_for_timeout(60)
+            after = page.evaluate("CareerLaunchpadApp.getState()")
+            for key in ("completed", "earned", "rejected"):
+                if after[key] != before[key]:
+                    raise AssertionError(
+                        f"canceling starter-skill edit mutated {key}: before={before[key]}; after={after[key]}"
+                    )
+            if after["screen"] != "map":
+                raise AssertionError(f"canceling starter-skill edit returned to {after['screen']!r}, not map")
+            self.assert_clean(page, errors)
+            return "edit warning explained data loss and cancel preserved all journey progress"
+        finally:
+            pass
+
+    def skill_focus_retention_loop(self) -> str:
+        """Require a toggled skill card to retain keyboard focus after rerender."""
+
+        page, context, errors, _requests = self.fresh_page()
+        try:
+            page.get_by_label("What should we call you?").fill("Focus Explorer")
+            page.get_by_role("button", name="Choose my starter skills").click()
+            skill_id = "starter-creative-thinking"
+            page.locator(f'[data-skill-id="{skill_id}"]').focus()
+            page.keyboard.press("Enter")
+            page.wait_for_timeout(100)
+            active = page.evaluate(
+                "document.activeElement && document.activeElement.getAttribute('data-skill-id')"
+            )
+            if active != skill_id:
+                raise AssertionError(f"focus moved away from acted skill: expected={skill_id}; active={active!r}")
+            if page.locator(f'[data-skill-id="{skill_id}"]').get_attribute("aria-pressed") != "true":
+                raise AssertionError("keyboard activation did not select the focused skill")
+            self.assert_clean(page, errors)
+            return f"keyboard focus remained on {skill_id} after selection"
+        finally:
+            pass
+
+    def dock_accessible_name_loop(self) -> str:
+        """Require every skill-dock aria-labelledby reference to resolve."""
+
+        page, context, errors, _requests = self.fresh_page()
+        try:
+            self.start(page, "ARIA Explorer")
+            dock = page.locator("#skill-dock")
+            references = (dock.get_attribute("aria-labelledby") or "").split()
+            if not references:
+                raise AssertionError("skill dock has no aria-labelledby reference")
+            unresolved = page.evaluate(
+                "ids => ids.filter(id => !document.getElementById(id) || !document.getElementById(id).textContent.trim())",
+                references,
+            )
+            if unresolved:
+                raise AssertionError(f"skill dock aria-labelledby does not resolve: {unresolved}")
+            self.assert_clean(page, errors)
+            return f"skill dock accessible name resolves through {', '.join(references)}"
+        finally:
+            pass
+
+    def malformed_storage_recovery_loop(self) -> str:
+        """Require malformed version-two persistence to recover without errors."""
+
+        payloads = (
+            {
+                "version": 2,
+                "screen": "career",
+                "selectedNodeId": "missing-career-node",
+                "earned": [],
+            },
+            {
+                "version": 2,
+                "screen": "landing",
+                "starterSkills": [],
+                "earned": [None],
+            },
+        )
+        for payload in payloads:
+            page, context, errors, _requests = self.fresh_page()
+            errors.clear()
+            page.evaluate(
+                "([key, value]) => localStorage.setItem(key, JSON.stringify(value))",
+                [STORAGE_KEY, payload],
+            )
+            page.reload(wait_until="load")
+            page.wait_for_timeout(100)
+            if page.locator(".screen").count() != 1 or not page.locator("#app").inner_text().strip():
+                raise AssertionError(f"malformed storage produced a blank app: {payload}")
+            self.assert_clean(page, errors)
+        return "invalid career node and malformed earned entry both recovered to a clean screen"
+
+    def deterministic_accessibility_metrics_loop(self) -> str:
+        """Gate deterministic touch size, HUD text size, and CTA contrast."""
+
+        page, context, errors, _requests = self.fresh_page({"width": 390, "height": 844})
+        try:
+            self.start(page, "Metrics Explorer")
+            self.finish_node(page, "region-build-create")
+            violations: list[str] = []
+
+            edit_box = page.get_by_role("button", name="Edit starter skills").bounding_box()
+            if not edit_box or edit_box["height"] < 44 or edit_box["width"] < 44:
+                violations.append(f"Edit starter skills target={edit_box}")
+
+            hex_metrics = page.locator(".hex-item").evaluate_all(
+                """items => items.map(item => {
+                    const box = item.getBoundingClientRect();
+                    const strong = item.querySelector('strong');
+                    const small = item.querySelector('small');
+                    return {
+                        label: item.getAttribute('aria-label'),
+                        width: box.width,
+                        height: box.height,
+                        strongPx: strong ? parseFloat(getComputedStyle(strong).fontSize) : 0,
+                        smallPx: small ? parseFloat(getComputedStyle(small).fontSize) : 0,
+                    };
+                })"""
+            )
+            for metric in hex_metrics:
+                if metric["width"] < 44 or metric["height"] < 44:
+                    violations.append(
+                        f"{metric['label']} target={metric['width']:.1f}×{metric['height']:.1f}"
+                    )
+                if metric["strongPx"] < 10 or metric["smallPx"] < 8:
+                    violations.append(
+                        f"{metric['label']} text={metric['strongPx']:.1f}/{metric['smallPx']:.1f}px"
+                    )
+
+            self.finish_node(page, "domain-software-apps")
+            self.finish_node(page, "spec-code-build-uis")
+            career_cta = page.get_by_role("button", name=re.compile("Start another path"))
+            contrast = self.contrast_ratio(career_cta)
+            if contrast < 4.5:
+                violations.append(f"Start another path contrast={contrast:.2f}:1")
+
+            if violations:
+                raise AssertionError("; ".join(violations))
+            self.assert_clean(page, errors)
+            return f"touch targets >=44px, HUD text >=10/8px, career CTA contrast={contrast:.2f}:1"
+        finally:
+            pass
+
     def write_log(self) -> None:
         """Write a compact, human-readable release-gate report."""
 
@@ -566,7 +938,7 @@ class QARunner:
 
 
 def main() -> int:
-    """Run exactly twenty named release loops and return a shell status."""
+    """Run all named release loops and return a shell status."""
 
     runner = QARunner()
     try:
@@ -633,6 +1005,83 @@ def main() -> int:
             "complete terminal route with request listener attached",
             "no non-file requests, no script/link runtime dependencies, and route still functions",
             runner.offline_loop,
+        )
+        runner.run_loop(
+            "Resume unconfirmed four-skill loadout",
+            "landing resume state after choosing four skills but leaving before world reveal",
+            "choose four skills; go Back; select Resume",
+            "Resume initializes an active region and exactly one playable first stop",
+            runner.resume_unconfirmed_skills_loop,
+        )
+        runner.run_loop(
+            "Completed-node revisit integrity",
+            "completed domain, earned reward, and rejected-route state",
+            "complete a domain; revisit it; attempt the no-response path",
+            "completed and rejected remain mutually exclusive; earned/completed arrays do not mutate",
+            runner.completed_node_revisit_loop,
+        )
+        runner.run_loop(
+            "Reflection CTA dock clearance",
+            "fixed HUD and both reflection choices at 320×568 and 390×844",
+            "open the first reflection at each viewport and compare settled bounding boxes",
+            "skill dock has zero pixel overlap with both reflection choices",
+            runner.reflection_dock_overlap_loop,
+        )
+        runner.run_loop(
+            "Career CTA dock clearance",
+            "fixed HUD and Start another path at 1440×900",
+            "complete Application Developer route and compare settled bounding boxes",
+            "skill dock has zero pixel overlap with the career CTA",
+            runner.career_dock_overlap_loop,
+        )
+        runner.run_loop(
+            "Short-landscape map dock clearance",
+            "fixed HUD and active map at 844×390 and 667×375",
+            "advance to the domain fork and compare settled bounding boxes",
+            "skill dock has zero pixel overlap with the active RPG map",
+            runner.short_landscape_dock_loop,
+        )
+        runner.run_loop(
+            "Reflection narrow-screen reflow",
+            "document and body widths on reflection at 320px and 390px",
+            "open the first reflection and inspect horizontal scroll dimensions",
+            "document and body widths never exceed the viewport",
+            runner.reflection_reflow_loop,
+        )
+        runner.run_loop(
+            "Starter-skill edit data-loss confirmation",
+            "earned progress before entering the destructive loadout-edit flow",
+            "select Edit starter skills; inspect warning; cancel",
+            "warning explains data loss and cancel preserves progress",
+            runner.edit_skills_confirmation_loop,
+        )
+        runner.run_loop(
+            "Skill-card keyboard focus retention",
+            "active element before and after keyboard selection of a starter skill",
+            "focus one skill card and activate it with Enter",
+            "the acted skill remains selected and retains focus after rerender",
+            runner.skill_focus_retention_loop,
+        )
+        runner.run_loop(
+            "Skill dock accessible name",
+            "rendered dock aria-labelledby references",
+            "start a journey and resolve every referenced id in the DOM",
+            "each reference exists and contains accessible naming text",
+            runner.dock_accessible_name_loop,
+        )
+        runner.run_loop(
+            "Malformed v2 storage recovery",
+            "invalid selected career node and malformed earned entry",
+            "inject each payload into localStorage and reload",
+            "app recovers to one rendered screen with no page or console errors",
+            runner.malformed_storage_recovery_loop,
+        )
+        runner.run_loop(
+            "Deterministic accessibility metrics",
+            "edit and HUD touch targets, HUD text sizes, and coral career CTA contrast",
+            "measure computed boxes, font sizes, and foreground/background luminance",
+            "targets >=44px; HUD labels >=10/8px; normal CTA text contrast >=4.5:1",
+            runner.deterministic_accessibility_metrics_loop,
         )
     finally:
         runner.write_log()

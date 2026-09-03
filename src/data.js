@@ -94,6 +94,7 @@ function makeMiniGame(id, title, concept, visualType, instructions) {
  * @param {string} input.description
  * @param {string} input.color
  * @param {string} input.theme
+ * @param {Object} [input.scene] Data-driven art direction for top-level worlds.
  * @param {EarnedSkill} input.earnedSkill
  * @param {MiniGamePlan} input.miniGame
  * @param {string|null} [input.careerId]
@@ -109,6 +110,7 @@ function makeNode(input) {
     description: input.description,
     color: input.color,
     theme: input.theme,
+    scene: input.scene || null,
     earnedSkill: input.earnedSkill,
     miniGame: input.miniGame,
     careerId: input.careerId || null,
@@ -146,6 +148,72 @@ const COLORS = {
   analyzeLight: "#c4b5fd",
   people: "#059669",
   peopleLight: "#6ee7b7",
+};
+
+/**
+ * Art direction for each world.  This stays content-owned so the renderer can
+ * add a new region without growing a second, hard-coded map implementation.
+ * Landmark types are intentionally small CSS/SVG-like primitives: the bundle
+ * remains offline and future art can replace one landmark independently.
+ */
+const WORLD_SCENES = {
+  "build-create": {
+    sky: "#9ed8eb",
+    horizon: "#a4d477",
+    terrain: "#347c51",
+    mountain: "#6d8fa5",
+    sun: "#ffb647",
+    haze: "#d9f4ef",
+    accent: COLORS.build,
+    paths: {
+      0: "M80 360 C180 408 306 390 398 302 S640 222 850 155",
+      1: "M80 360 C170 392 240 350 290 286 M290 286 C430 212 520 182 720 150 M290 286 C415 318 545 382 720 390",
+      2: "M80 360 C170 390 236 350 276 298 C350 282 408 286 472 276 M472 276 C570 222 642 181 750 150 M472 276 C580 308 658 358 750 390",
+    },
+    landmarks: [
+      { type: "workshop", x: 28, y: 44, label: "Maker's workshop" },
+      { type: "circuit", x: 52, y: 27, label: "Signal ridge" },
+      { type: "crane", x: 80, y: 45, label: "Build yard" },
+    ],
+  },
+  "analyze-solve": {
+    sky: "#ada9e4",
+    horizon: "#c7bd81",
+    terrain: "#5c587f",
+    mountain: "#595678",
+    sun: "#f9cf71",
+    haze: "#e5e2ff",
+    accent: COLORS.analyze,
+    paths: {
+      0: "M80 360 C176 318 252 174 390 214 S570 350 676 276 S760 198 850 155",
+      1: "M80 360 C150 330 188 246 244 214 M244 214 C354 164 482 194 544 274 M544 274 C602 338 660 292 720 150 M244 214 C360 296 438 374 720 390",
+      2: "M80 360 C148 334 188 270 232 232 C300 190 360 204 414 246 M414 246 C500 314 564 342 618 266 M618 266 C674 216 706 176 750 150 M414 246 C520 220 622 300 750 390",
+    },
+    landmarks: [
+      { type: "observatory", x: 26, y: 43, label: "Evidence observatory" },
+      { type: "chart", x: 54, y: 28, label: "Pattern archive" },
+      { type: "beacon", x: 81, y: 45, label: "Risk beacon" },
+    ],
+  },
+  "people-lead": {
+    sky: "#a7dfe2",
+    horizon: "#d5bd7d",
+    terrain: "#4f9b78",
+    mountain: "#618998",
+    sun: "#ffd071",
+    haze: "#e7f7e7",
+    accent: COLORS.people,
+    paths: {
+      0: "M80 360 C202 432 336 432 448 350 S594 214 850 155",
+      1: "M80 360 C192 424 284 410 344 334 M344 334 C442 222 586 214 720 150 M344 334 C470 352 578 418 720 390",
+      2: "M80 360 C174 420 266 420 324 362 C380 304 414 288 472 276 M472 276 C562 222 660 196 750 150 M472 276 C574 328 642 410 750 390",
+    },
+    landmarks: [
+      { type: "pavilion", x: 27, y: 44, label: "Team pavilion" },
+      { type: "bridge", x: 53, y: 28, label: "Commons bridge" },
+      { type: "plaza", x: 81, y: 45, label: "People's plaza" },
+    ],
+  },
 };
 
 /**
@@ -268,6 +336,7 @@ const REGIONS = [
     description: "Imagine, build, and improve the technology people use every day.",
     color: COLORS.build,
     theme: "build-create",
+    scene: WORLD_SCENES["build-create"],
     earnedSkill: SKILLS.creativity,
     miniGame: makeMiniGame(
       "minigame-build-create-door",
@@ -286,6 +355,7 @@ const REGIONS = [
     description: "Look for patterns, investigate problems, and turn evidence into answers.",
     color: COLORS.analyze,
     theme: "analyze-solve",
+    scene: WORLD_SCENES["analyze-solve"],
     earnedSkill: SKILLS.analyst,
     miniGame: makeMiniGame(
       "minigame-analyze-solve-jigsaw",
@@ -304,6 +374,7 @@ const REGIONS = [
     description: "Coordinate people, communicate clearly, and create useful experiences.",
     color: COLORS.people,
     theme: "people-lead",
+    scene: WORLD_SCENES["people-lead"],
     earnedSkill: SKILLS.peopleSkills,
     miniGame: makeMiniGame(
       "minigame-people-lead-team",

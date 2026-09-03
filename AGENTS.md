@@ -45,3 +45,7 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - The map is a focused RPG world that shifts one tier at a time; do not return to the all-branches decision-tree presentation.
 - Skill tiles live in a compact honeycomb HUD at the bottom-right rather than a full-width footer.
 - A mini-game reward is conditional on answering that the student enjoyed the activity; a no response closes that branch and forces its alternative.
+- Persistent HUD elements must become normal-flow content on compact and interview screens so they never cover decisions or response fields.
+- Modal confirmation handlers must both mutate state and close the modal so the page is never left inert after a confirmed action.
+- When a data factory gains new visual metadata, explicitly preserve that field through normalization instead of silently dropping it.
+- Programmatic focus after screen changes should use `preventScroll` and reset the new screen to the top.

@@ -292,7 +292,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   #app { min-height: calc(100vh - 66px); padding: 32px 15px calc(var(--dock-height) + 72px); }.screen-title { font-size: clamp(39px, 13vw, 64px); }.screen-subtitle { font-size: 15px; }
   .avatar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }.avatar-choice { min-height: 108px; }.avatar-portrait { width: 42px; height: 42px; margin-bottom: 7px; font-size: 18px; }.avatar-name { font-size: 12px; }
   .map-intro, .screen-heading-row { display: block; }.map-progress { margin-top: 16px; }.map-board { padding: 18px 10px 25px; border-radius: 17px; }.map-regions { grid-template-columns: 1fr; gap: 27px; }.map-region:not(:last-child)::after { top: auto; right: auto; bottom: -16px; left: 50%; width: 2px; height: 15px; }.map-domain-group::before { left: 15%; width: 70%; }.specialization-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }.map-start { margin-bottom: 31px; }
-  .career-layout, .interview-layout { grid-template-columns: 1fr; }.career-identity { position: static; }.career-facts, .results-grid { grid-template-columns: 1fr; }.fact-card--wide { grid-column: auto; }.interview-rail { order: 2; }.question-card { order: 1; }
+  .career-layout, .interview-layout { grid-template-columns: 1fr; }.career-identity { position: static; }.career-facts, .results-grid { grid-template-columns: 1fr; }.fact-card--wide { grid-column: auto; }.interview-rail { order: 2; }.interview-layout > .question-card { order: 1; }
   .mission-actions .button-secondary { margin-left: 0; }.mission-visual { min-height: 180px; }
   .dock-inner { display: block; min-height: var(--dock-height); padding: 8px 12px 7px; }.dock-label { height: 27px; gap: 7px; }.dock-pip { width: 6px; height: 24px; }.dock-label h2 { font-size: 13px; }.dock-label p { display: inline; margin-left: 7px; font-size: 9px; }.hex-track { height: 67px; padding: 1px 0 3px; }.hex-item { flex-basis: 53px; min-height: 61px; }.hex-item strong { max-width: 40px; font-size: 8px; }.hex-item small { margin-top: 2px; font-size: 6px; }.hex-empty { min-width: 120px; font-size: 9px; }.hex-empty > span:first-child { flex-basis: 32px; width: 32px; height: 36px; }
   .toast { bottom: auto; }
@@ -378,6 +378,51 @@ button, [tabindex] { scroll-margin-bottom: calc(var(--dock-height) + 28px); }
 }
 
 /* ========================================================================== */
+
+/* Interview practice and research disclosures. The visual language keeps the
+   field-guide palette, but uses a quiet editorial layout so writing remains
+   the focus. */
+.interview-screen { width: min(1120px, 100%); }
+.interview-screen .topbar .button--quiet, .screen--career > .topbar .button--quiet { border-color: var(--line-strong); color: var(--ink); background: rgba(255,255,255,.65); }
+.interview-screen .topbar .button--quiet:hover, .screen--career > .topbar .button--quiet:hover { color: var(--white); background: var(--night); }
+.interview-intro-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: clamp(28px, 7vw, 90px); align-items: center; min-height: 450px; }
+.interview-intro h1, .debrief-card h1 { max-width: 760px; margin: 0; color: var(--ink); font-family: var(--font-display); font-size: clamp(46px, 7vw, 85px); line-height: .9; text-transform: uppercase; }
+.interview-intro h1 em, .debrief-card h1 em { color: var(--blue); font-style: normal; }
+.interview-lede { max-width: 620px; margin: 20px 0 0; color: var(--ink-soft); font-size: 17px; }
+.interview-expectations { display: grid; gap: 10px; margin-top: 28px; color: var(--ink); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; }
+.interview-expectations span { display: flex; align-items: center; gap: 10px; }
+.interview-expectations b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--white); background: var(--violet); font-size: 10px; }
+.interview-welcome-card, .debrief-next { padding: clamp(22px, 4vw, 35px); border: 2px solid var(--line); border-radius: 17px; background: var(--white); box-shadow: var(--shadow); }
+.interview-welcome-card strong, .debrief-next strong { display: block; margin-top: 8px; color: var(--ink); font-family: var(--font-display); font-size: 28px; line-height: .98; text-transform: uppercase; }
+.interview-welcome-card p, .debrief-next p { margin: 10px 0 20px; color: var(--ink-soft); font-size: 13px; }
+.interview-welcome-card .text-button { width: 100%; margin-top: 14px; text-align: center; }
+.interview-layout { display: grid; grid-template-columns: 180px minmax(0, 760px); gap: clamp(22px, 5vw, 75px); align-items: start; justify-content: center; padding-top: 25px; }
+.interview-rail { position: sticky; top: 26px; display: grid; gap: 13px; padding-top: 7px; }
+.rail-step { display: grid; grid-template-columns: 35px 1fr; align-items: center; gap: 10px; color: #92a1b7; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
+.rail-step span { display: grid; place-items: center; width: 33px; height: 33px; border: 2px solid #b8c7da; border-radius: 50%; }
+.rail-step.is-current { color: var(--blue-dark); font-weight: 700; }.rail-step.is-current span { border-color: var(--blue); color: var(--white); background: var(--blue); }.rail-step.is-done { color: var(--green-dark); }.rail-step.is-done span { border-color: var(--green); color: var(--white); background: var(--green); }
+.question-card { padding: clamp(22px, 5vw, 47px); border: 2px solid var(--line); border-radius: 19px; background: var(--white); box-shadow: var(--shadow); }
+.question-card h1 { margin: 6px 0 0; color: var(--ink); font-family: var(--font-display); font-size: clamp(31px, 4.3vw, 54px); line-height: .96; text-transform: uppercase; }
+.question-helper { margin: 14px 0 26px; color: var(--ink-soft); font-size: 14px; }
+.question-card label { display: block; margin-bottom: 7px; color: var(--ink); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.question-card textarea { display: block; width: 100%; min-height: 205px; resize: vertical; padding: 15px; border: 2px solid var(--line-strong); border-radius: 11px; color: var(--ink); background: #fbfdff; font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.question-card textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(39,112,232,.13); outline: 0; }
+.answer-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 8px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; }
+.answer-meta span:first-child { color: var(--blue-dark); font-weight: 700; }
+.hint-disclosure, .strong-answer { margin-top: 22px; border-top: 1px solid var(--line); color: var(--ink-soft); }
+.hint-disclosure summary, .strong-answer summary { display: flex; align-items: center; min-height: 44px; padding: 8px 0; color: var(--blue-dark); cursor: pointer; font-family: var(--font-mono); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.hint-disclosure p, .strong-answer p { margin: 4px 0 0; font-size: 13px; }
+.question-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; margin-top: 24px; }
+.feedback-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .85fr); gap: 20px; align-items: start; padding-top: 25px; }
+.feedback-question { position: sticky; top: 20px; }.feedback-question h1 { font-size: clamp(28px, 4vw, 46px); }.answer-quote { margin: 24px 0 16px; padding: 18px; border-left: 4px solid var(--gold); border-radius: 0 10px 10px 0; color: var(--ink); background: #fffaf1; font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+.feedback-card { padding: clamp(22px, 4vw, 34px); border: 2px solid var(--line); border-radius: 17px; background: var(--white); box-shadow: var(--shadow); }.feedback-level { display: inline-block; padding: 7px 10px; border-radius: 7px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }.feedback-level--strong { color: #006d53; background: #dff9ef; }.feedback-level--developing { color: #825400; background: #fff0ca; }.feedback-level--starting { color: #8a3940; background: #ffe4e2; }.feedback-summary { margin: 10px 0 25px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; }
+.feedback-card section { margin-top: 19px; }.feedback-card h2 { margin: 0 0 8px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }.criteria-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; font-size: 13px; }.criteria-list--matched li { color: var(--green-dark); }.criteria-list--missing li { color: #a14749; }.muted-copy { margin: 0; color: var(--ink-soft); font-size: 13px; }.feedback-guidance { margin: 24px 0 0; padding: 13px; border-radius: 9px; color: var(--ink-soft); background: var(--paper-blue); font-size: 12px; }.feedback-guidance strong { color: var(--ink); }
+.debrief-card { padding: clamp(24px, 5vw, 52px); border: 2px solid var(--line); border-radius: 20px; background: var(--white); box-shadow: var(--shadow); }.debrief-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr); gap: 26px; margin-top: 36px; }.debrief-list { display: grid; gap: 10px; margin: 11px 0 0; padding: 0; list-style: none; }.debrief-list li { display: grid; grid-template-columns: 35px 1fr auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); }.debrief-list li > span { color: var(--blue-dark); font-family: var(--font-mono); font-size: 10px; font-weight: 700; }.debrief-list strong { font-size: 13px; }.debrief-list em { color: var(--green-dark); font-family: var(--font-mono); font-size: 9px; font-style: normal; text-transform: uppercase; }.debrief-next { align-self: start; box-shadow: none; background: #f7f9ff; }.debrief-actions { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 31px; }
+.career-sources { margin-top: 20px; border: 2px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.72); }.career-sources summary { padding: 15px 17px; color: var(--blue-dark); cursor: pointer; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }.source-disclosure { padding: 0 17px 17px; color: var(--ink-soft); font-size: 12px; }.source-disclosure p { margin: 0 0 11px; }.source-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }.source-list li { display: grid; gap: 2px; }.source-list a { color: var(--blue-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }.source-list span { color: var(--ink-soft); font-family: var(--font-mono); font-size: 9px; }.practice-card { padding: 18px; border: 2px solid #f5c76e; border-radius: 13px; background: #fffaf1; }.practice-card strong { display: block; margin-top: 5px; color: var(--ink); font-family: var(--font-display); font-size: 24px; line-height: 1; text-transform: uppercase; }.practice-card p { margin: 8px 0 15px; color: var(--ink-soft); font-size: 12px; }.practice-card--soon { border-color: var(--line); background: var(--paper-blue); }
+@media (max-width: 980px) { .interview-intro-grid { grid-template-columns: 1fr; min-height: 0; max-width: 720px; margin: 0 auto; }.interview-welcome-card { max-width: 480px; }.interview-layout { grid-template-columns: 1fr; max-width: 760px; margin: 0 auto; }.interview-rail { position: static; grid-template-columns: repeat(3, 1fr); gap: 9px; padding: 0; }.rail-step { grid-template-columns: 30px 1fr; }.rail-step span { width: 29px; height: 29px; }.feedback-grid { grid-template-columns: 1fr; max-width: 760px; margin: 0 auto; }.feedback-question { position: static; }.debrief-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .interview-intro h1, .debrief-card h1 { font-size: 46px; }.interview-lede { font-size: 15px; }.interview-rail { gap: 5px; }.rail-step { display: block; text-align: center; }.rail-step span { margin: 0 auto 5px; }.rail-step small { display: block; font-size: 8px; }.question-card { padding: 21px 16px; }.question-card h1 { font-size: 32px; }.question-card textarea { min-height: 180px; }.question-actions .button { width: 100%; }.debrief-card { padding: 23px 17px; }.debrief-list li { grid-template-columns: 28px 1fr; }.debrief-list em { grid-column: 2; }.debrief-actions .button { width: 100%; } }
+
+@media (prefers-reduced-motion: reduce) { .interview-screen *, .interview-screen *::before, .interview-screen *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
 /* Guided RPG journey — skill loadout, shifting world, and avatar travel      */
 /* ========================================================================== */
 
@@ -548,3 +593,272 @@ button, [tabindex] { scroll-margin-bottom: calc(var(--dock-height) + 28px); }
   .world-stage-label strong { font-size: 17px; }
   .reflection-card h1 { font-size: 42px; }
 }
+
+/* -------------------------------------------------------------------------- */
+/* World art pass                                                             */
+/* Data supplies the palette, landmarks, and route geometry. These primitives */
+/* deliberately use CSS shapes so the single-file build stays dependency-free. */
+/* -------------------------------------------------------------------------- */
+.rpg-world {
+  background:
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--scene-sun) 22%, transparent), transparent 17%),
+    linear-gradient(180deg, var(--scene-sky) 0 53%, var(--scene-horizon) 53% 100%);
+}
+.rpg-world::before {
+  opacity: .23;
+  background-image:
+    linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 46px 46px;
+}
+.rpg-world::after { background: color-mix(in srgb, var(--scene-terrain) 88%, #102b36); box-shadow: -220px 45px 0 45px color-mix(in srgb, var(--scene-terrain) 80%, #5dab62), -470px 61px 0 70px color-mix(in srgb, var(--scene-terrain) 72%, #6bb266), -720px 34px 0 45px color-mix(in srgb, var(--scene-terrain) 82%, #529a5a); }
+.world-haze { position: absolute; inset: 0; background: radial-gradient(ellipse at 48% 53%, transparent 20%, color-mix(in srgb, var(--scene-haze) 28%, transparent) 78%, transparent); mix-blend-mode: screen; }
+.world-sun { background: var(--scene-sun); box-shadow: 0 0 0 14px color-mix(in srgb, var(--scene-sun) 22%, transparent), 0 0 44px color-mix(in srgb, var(--scene-sun) 34%, transparent); }
+.mountain { background: var(--scene-mountain); filter: saturate(.85); }
+.mountain--two { opacity: .83; }
+.terrain--front { background: var(--scene-terrain); }
+.quest-path path { stroke: color-mix(in srgb, var(--scene-sun) 74%, #fff4c7); stroke-width: 24px; stroke-dasharray: 1 12; animation: route-flow 2.2s linear infinite; }
+@keyframes route-flow { to { stroke-dashoffset: -26px; } }
+
+.world-landmark:not(.start-camp) { z-index: 2; display: grid; justify-items: center; gap: 5px; color: var(--ink); pointer-events: none; transform: translate(-50%, -50%); filter: drop-shadow(0 7px 4px rgba(15,23,40,.16)); }
+.world-landmark:not(.start-camp) small { padding: 3px 6px; border: 1px solid rgba(255,255,255,.74); border-radius: 4px; color: var(--white); background: rgba(15,23,40,.72); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+.landmark-art { position: relative; display: grid; place-items: center; width: 68px; height: 60px; border: 3px solid rgba(15,23,40,.82); border-radius: 10px 10px 7px 7px; color: var(--white); background: var(--scene-accent); box-shadow: inset 0 -8px rgba(15,23,40,.14), 0 8px 0 rgba(15,23,40,.18); }
+.landmark-art::before, .landmark-art::after, .landmark-art i, .landmark-art b { position: absolute; display: block; content: ""; }
+.landmark-art::before { top: -14px; width: 54px; height: 22px; border: 3px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 8px 8px 0 0; background: color-mix(in srgb, var(--scene-accent) 72%, white); }
+.landmark-art::after { right: 9px; bottom: 9px; width: 12px; height: 21px; border: 2px solid rgba(255,255,255,.72); border-radius: 3px 3px 0 0; background: rgba(15,23,40,.45); }
+.landmark-art i { left: 10px; bottom: 13px; width: 22px; height: 13px; border: 2px solid rgba(255,255,255,.78); border-radius: 3px; background: rgba(255,255,255,.25); }
+.landmark-art b { top: 12px; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: var(--scene-sun); box-shadow: 0 0 9px var(--scene-sun); transform: translateX(-50%); }
+.landmark-art--circuit, .landmark-art--chart, .landmark-art--beacon { width: 48px; height: 78px; border-radius: 8px 8px 4px 4px; }
+.landmark-art--circuit::before, .landmark-art--chart::before, .landmark-art--beacon::before { top: -22px; width: 18px; height: 25px; border: 3px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 50% 50% 0 0; background: color-mix(in srgb, var(--scene-accent) 65%, white); }
+.landmark-art--circuit i { left: 12px; bottom: 16px; width: 22px; height: 26px; border: 2px solid rgba(255,255,255,.75); background: repeating-linear-gradient(90deg, transparent 0 4px, rgba(255,255,255,.55) 4px 6px); }
+.landmark-art--chart { border-radius: 50%; background: color-mix(in srgb, var(--scene-accent) 60%, #101a3d); }
+.landmark-art--chart::before { border-radius: 50%; border: 3px solid rgba(255,255,255,.8); background: transparent; }
+.landmark-art--chart i { left: 10px; bottom: 20px; width: 28px; height: 2px; border: 0; background: var(--scene-sun); transform: rotate(-28deg); box-shadow: 7px -9px var(--scene-sun), 15px -3px var(--scene-sun); }
+.landmark-art--beacon { background: color-mix(in srgb, var(--scene-accent) 80%, #11162b); }
+.landmark-art--beacon b { width: 18px; height: 18px; border: 3px solid var(--scene-sun); background: transparent; box-shadow: 0 0 0 8px color-mix(in srgb, var(--scene-sun) 16%, transparent), 0 0 20px var(--scene-sun); }
+.landmark-art--observatory, .landmark-art--pavilion { border-radius: 50% 50% 8px 8px; }
+.landmark-art--observatory::before, .landmark-art--pavilion::before { top: -17px; width: 75px; height: 30px; border: 3px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 50% 50% 0 0; }
+.landmark-art--observatory i { left: 50%; bottom: 14px; width: 26px; height: 26px; border: 3px solid var(--scene-sun); border-radius: 50%; background: rgba(255,255,255,.17); transform: translateX(-50%); }
+.landmark-art--bridge { width: 90px; height: 38px; margin-top: 20px; border-radius: 18px 18px 5px 5px; background: color-mix(in srgb, var(--scene-accent) 75%, #fff); }
+.landmark-art--bridge::before { top: -26px; width: 90px; height: 42px; border: 4px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 50% 50% 0 0; background: transparent; }
+.landmark-art--bridge i { left: 13px; bottom: 7px; width: 9px; height: 17px; border: 0; background: rgba(15,23,40,.4); box-shadow: 19px 0 rgba(15,23,40,.4), 38px 0 rgba(15,23,40,.4), 57px 0 rgba(15,23,40,.4); }
+.landmark-art--plaza { width: 78px; height: 50px; border-radius: 50%; background: color-mix(in srgb, var(--scene-accent) 78%, white); }
+.landmark-art--plaza::before { top: -18px; width: 43px; height: 30px; border: 3px solid rgba(15,23,40,.82); border-bottom: 0; border-radius: 50% 50% 0 0; background: transparent; }
+.landmark-art--plaza i { left: 16px; bottom: 11px; width: 8px; height: 13px; border: 0; border-radius: 50%; background: var(--scene-sun); box-shadow: 19px 0 var(--scene-sun), 38px 0 var(--scene-sun); }
+
+.map-avatar { gap: 2px; }
+.map-avatar::after { position: absolute; z-index: -1; bottom: -6px; width: 48px; height: 11px; border-radius: 50%; background: rgba(15,23,40,.28); content: ""; filter: blur(2px); }
+.map-avatar > .avatar-shell { position: relative; display: grid; place-items: center; width: 58px; height: 68px; border: 4px solid var(--white); border-radius: 20px 20px 15px 15px; color: var(--white); background: var(--coral); box-shadow: inset 0 -10px rgba(15,23,40,.16), 0 6px 0 rgba(15,23,40,.25); }
+.avatar-shell::before { position: absolute; top: 9px; width: 29px; height: 24px; border: 2px solid rgba(255,255,255,.72); border-radius: 50%; background: rgba(15,23,40,.22); content: ""; }
+.avatar-shell::after { position: absolute; bottom: -6px; width: 36px; height: 15px; border-radius: 50% 50% 6px 6px; background: color-mix(in srgb, var(--coral) 65%, #142039); content: ""; }
+.avatar-face { position: relative; z-index: 1; margin-top: -2px; color: var(--white); font-size: 22px; font-style: normal; line-height: 1; }
+.avatar-spark { position: absolute; z-index: 2; top: 7px; right: 7px; color: var(--scene-sun, var(--gold)); font-size: 14px; line-height: 1; }
+.map-avatar.avatar-pixel > .avatar-shell { background: var(--blue); }.map-avatar.avatar-pixel .avatar-shell::after { background: color-mix(in srgb, var(--blue) 65%, #142039); }
+.map-avatar.avatar-sprout > .avatar-shell { background: var(--green); }.map-avatar.avatar-sprout .avatar-shell::after { background: color-mix(in srgb, var(--green) 65%, #142039); }
+.map-avatar.avatar-orbit > .avatar-shell { background: var(--violet); }.map-avatar.avatar-orbit .avatar-shell::after { background: color-mix(in srgb, var(--violet) 65%, #142039); }
+.map-avatar.is-arrived { animation: avatar-arrive .62s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes avatar-arrive {
+  0% { transform: translate(-50%, calc(-50% + 8px)); opacity: .25; }
+  100% { transform: translate(-50%, -50%); opacity: 1; }
+}
+.world-stage-label { top: 17px; right: 19px; bottom: auto; }
+.map-action-row { justify-content: flex-start; }
+.map-action-row .button { margin-left: 0; }
+
+@media (max-width: 767px) {
+  .world-stage-label { top: 14px; right: 14px; }
+  .world-stage-label span { font-size: 9px; }
+  .world-stage-label strong { font-size: 19px; }
+  .world-landmark:not(.start-camp) { transform: translate(-50%, -50%) scale(.82); }
+  .world-stop { width: min(184px, 46vw); min-width: 0; }
+  /* Historical stops stay available in the desktop/tablet world view, but
+     yield the lower phone terrain band to the fixed skill HUD. */
+  .stage-1 .world-stop--past,
+  .stage-2 .world-stop--past-region,
+  .stage-2 .world-stop--past-domain { display: none; }
+  .stage-1 .world-stop--choice, .stage-2 .world-stop--choice { left: 72% !important; }
+  .map-avatar > .avatar-shell { width: 52px; height: 62px; }
+  .map-avatar small { font-size: 9px; }
+  /* Keep the explorer's nameplate clear of the bottom HUD on phone maps. */
+  .map-avatar { margin-top: -12px; }
+  .skill-dock { bottom: max(8px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 430px) {
+  .rpg-world { min-height: 500px; }
+  .world-stop { width: min(176px, calc(100% - 32px)); }
+  .stop-copy strong { font-size: 13px; }
+  .stop-copy small { font-size: 8px; }
+  .world-stage-label { top: 12px; right: 12px; }
+  .world-stage-label strong { font-size: 17px; }
+  .landmark-art { transform: scale(.88); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quest-path path { animation: none; }
+  .map-avatar.is-arrived { animation: none; }
+}
+
+/* Production integrity pass: reserve a safe visual band for the skill HUD. */
+.skill-dock.dock--safe-top {
+  top: 94px;
+  bottom: auto;
+}
+
+.skill-dock .hex-item {
+  flex: 0 0 78px;
+  width: 78px;
+  min-width: 78px;
+  min-height: 92px;
+}
+
+.skill-dock .hex-item strong { font-size: 10px; }
+.skill-dock .hex-item small { font-size: 10px; }
+.skill-dock .hex-item { animation-name: skill-pop-safe; }
+@keyframes skill-pop-safe {
+  from { opacity: 0; transform: translateY(18px) rotate(-4deg); }
+  to { opacity: 1; transform: translateY(0) rotate(0); }
+}
+.compass-card .text-button { min-height: 44px; padding: 4px 0; }
+.button-coral { color: var(--night); }
+.reflection-scene { overflow: hidden; }
+.reflection-choice-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.reflection-choice--maybe { border-color: var(--violet); background: #f7f3ff; }
+.reflection-choice--maybe > span { background: var(--violet); }
+
+@media (max-width: 767px) {
+  .reflection-choice-grid { grid-template-columns: 1fr; }
+  .skill-dock .hex-item {
+    flex-basis: 78px;
+    width: 78px;
+    min-width: 78px;
+    min-height: 92px;
+  }
+  .skill-dock .hex-item strong { font-size: 10px; }
+  .skill-dock .hex-item small { font-size: 8px; }
+}
+
+/* A short landscape viewport needs the map and HUD to occupy separate bands. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .skill-dock.dock--safe-top {
+    top: 82px;
+    right: 8px;
+    width: 224px;
+    min-height: 64px;
+  }
+  .skill-dock.dock--safe-top .dock-inner {
+    display: block;
+    min-height: 60px;
+    padding: 4px 8px;
+  }
+  .skill-dock.dock--safe-top .dock-label { display: none; }
+  .skill-dock.dock--safe-top .hex-track {
+    height: 54px;
+    padding: 1px 2px 4px;
+  }
+  .skill-dock.dock--safe-top .hex-item {
+    flex-basis: 48px;
+    width: 48px;
+    min-width: 48px;
+    min-height: 54px;
+    margin-left: -8px;
+  }
+  .skill-dock.dock--safe-top .hex-item strong { font-size: 9px; }
+  .skill-dock.dock--safe-top .hex-item small { font-size: 8px; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Phase-2 world polish: each region gets its own silhouette language, while  */
+/* the skill tray changes from HUD to document content when space is scarce.   */
+/* -------------------------------------------------------------------------- */
+.theme-build-create .world-sky {
+  background: linear-gradient(135deg, rgba(255,255,255,.08), transparent 42%), repeating-linear-gradient(115deg, transparent 0 42px, rgba(15,23,40,.06) 42px 44px, transparent 44px 92px);
+}
+.theme-build-create .mountain--one { clip-path: polygon(0 100%, 16% 56%, 28% 68%, 48% 21%, 61% 50%, 75% 35%, 100% 100%); }
+.theme-build-create .mountain--two { clip-path: polygon(0 100%, 22% 62%, 40% 76%, 58% 32%, 72% 58%, 100% 100%); }
+
+.theme-analyze-solve .world-sky {
+  background: radial-gradient(circle at 22% 36%, rgba(255,255,255,.18) 0 2px, transparent 3px 24px), radial-gradient(circle at 78% 28%, rgba(15,23,40,.10) 0 1px, transparent 2px 30px), linear-gradient(170deg, transparent 0 58%, rgba(15,23,40,.08) 58% 59%, transparent 59%);
+}
+.theme-analyze-solve .mountain--one { clip-path: polygon(0 100%, 12% 66%, 24% 40%, 35% 68%, 52% 18%, 67% 63%, 84% 33%, 100% 100%); }
+.theme-analyze-solve .mountain--two { clip-path: polygon(0 100%, 18% 45%, 32% 66%, 52% 27%, 68% 72%, 82% 49%, 100% 100%); }
+.theme-analyze-solve .world-sun { border-radius: 10px; transform: rotate(12deg); }
+
+.theme-people-lead .world-sky {
+  background: radial-gradient(ellipse at 16% 70%, rgba(255,255,255,.16) 0 11%, transparent 12%), radial-gradient(ellipse at 78% 72%, rgba(255,255,255,.13) 0 15%, transparent 16%), linear-gradient(180deg, transparent 0 66%, rgba(15,23,40,.08) 66% 67%, transparent 67%);
+}
+.theme-people-lead .mountain--one { height: 165px; border-radius: 46% 46% 0 0; clip-path: polygon(0 100%, 12% 57%, 29% 39%, 45% 51%, 62% 25%, 78% 43%, 100% 30%, 100% 100%); }
+.theme-people-lead .mountain--two { height: 135px; border-radius: 48% 48% 0 0; clip-path: polygon(0 100%, 16% 53%, 33% 35%, 49% 55%, 67% 31%, 84% 49%, 100% 37%, 100% 100%); }
+
+.world-milestones { position: absolute; z-index: 8; top: 16px; left: 16px; display: none; align-items: center; gap: 5px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.65); border-radius: 8px; background: rgba(15,23,40,.68); }
+.world-milestone { display: inline-grid; grid-template-columns: 18px auto; align-items: center; gap: 3px; color: var(--white); font-family: var(--font-mono); }
+.world-milestone b { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: var(--night); background: var(--scene-sun); font-size: 11px; }
+.world-milestone small { font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+
+/* A compact tray is part of the page flow. This is deliberately class-driven
+   so the controller can make the same decision for interview and viewport
+   changes without relying on browser-specific :has() support. */
+body.dock-inline { padding-bottom: 0 !important; }
+body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
+.skill-dock.dock--inline {
+  position: relative;
+  inset: auto;
+  width: min(720px, calc(100% - 32px));
+  min-height: 0;
+  margin: 0 auto 28px;
+  overflow: hidden;
+  border: 2px solid #344966;
+  border-radius: 17px;
+  box-shadow: 0 12px 32px rgba(15,23,40,.24);
+}
+.skill-dock.dock--inline .dock-inner { min-height: 0; padding: 12px 14px 10px; }
+.skill-dock.dock--inline .dock-label { flex-basis: 112px; }
+.skill-dock.dock--inline .dock-label p { font-size: 10px; }
+.skill-dock.dock--inline .hex-track { height: 101px; padding-bottom: 17px; }
+.skill-dock.dock--inline .hex-item { flex-basis: 78px; width: 78px; min-width: 78px; min-height: 92px; }
+.skill-dock.dock--inline .hex-item strong { font-size: 10px; }
+.skill-dock.dock--inline .hex-item small { font-size: 8px; }
+
+@media (max-width: 767px) {
+  .world-milestones { display: flex; }
+  .world-landmark:not(.start-camp) small { font-size: 10px; }
+  .stop-copy small { font-size: 10px; }
+  .stop-copy em { font-size: 10px; }
+}
+
+@media (max-width: 560px), (orientation: landscape) and (max-height: 500px) {
+  .skill-dock.dock--inline { width: min(720px, calc(100% - 24px)); margin-bottom: 24px; }
+  .skill-dock.dock--inline .dock-inner { display: block; }
+  .skill-dock.dock--inline .dock-label { display: flex; height: auto; min-height: 28px; }
+  .skill-dock.dock--inline .dock-label .dock-pip { width: 5px; height: 38px; }
+  .skill-dock.dock--inline .dock-label h2 { font-size: 13px; }
+  .skill-dock.dock--inline .dock-label p { margin: 2px 0 0; font-size: 10px; }
+  .skill-dock.dock--inline .hex-track { height: 101px; width: 100%; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .world-milestones { top: 12px; left: 12px; }
+  .skill-dock.dock--inline { margin-top: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-dock.dock--inline .hex-item { animation: none; }
+}
+
+/* Deterministic readability floors used by the visual release gates. */
+.world-stage-label span,
+.world-landmark:not(.start-camp) small,
+.stop-copy small,
+.map-avatar small,
+.compass-card > span,
+.compass-card small,
+.skill-dock .dock-label p,
+.skill-dock .hex-item strong { font-size: 10px; }
+.skill-dock .hex-item small { font-size: 8px; }
+.starter-skill small,
+.reflection-choice small,
+.question-card label,
+.question-helper { font-size: 12px; }
+.source-list a { display: block; min-width: 44px; min-height: 44px; padding: 11px 0; }
+.skill-dock .hex-item small,
+.skill-dock.dock--inline .hex-item small { font-size: 10px; }

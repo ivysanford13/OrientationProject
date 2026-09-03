@@ -27,6 +27,7 @@ def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
     replacements = {
         "__INLINE_CSS__": read_source("styles.css"),
         "__INLINE_DATA__": read_source("data.js"),
+        "__INLINE_RESEARCH__": read_source("research-data.js"),
         "__INLINE_APP__": read_source("app.js"),
     }
 
