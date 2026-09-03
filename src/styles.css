@@ -980,6 +980,20 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 .hex--small.badge-hex { background: var(--badge-keyline); }
 .hex--modal.badge-hex { background: var(--badge-keyline); }
 .toast-mark.badge-hex { background: var(--badge-keyline); }
+.badge-hex.badge-hex--original {
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+  filter: drop-shadow(0 3px 3px rgba(5, 16, 32, .24));
+}
+.badge-hex.badge-hex--original::before,
+.badge-hex.badge-hex--original::after { display: none; }
+.badge-hex--original .skill-badge-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
 @media (orientation: landscape) and (max-height: 500px) {
   .skill-dock.dock--safe-top .hex-item::before { inset: 2px; }
@@ -1625,6 +1639,41 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 .skill-dock .hex-face .hex-icon { width: 28px; height: 28px; }
 .skill-dock .hex-face strong { max-width: 49px; font-size: 9px; }
 
+/* Preserve the supplied hexagon artwork exactly; the dock only scales it. */
+.skill-dock .hex-item.badge-hex--original,
+.skill-dock .hex-item.badge-hex--original.is-starter,
+.skill-dock .hex-item.badge-hex--original.is-earned {
+  padding: 0;
+  background: transparent;
+  filter: drop-shadow(0 3px 3px rgba(5, 16, 32, .38));
+}
+.skill-dock .hex-item.badge-hex--original::before,
+.skill-dock .hex-item.badge-hex--original::after { display: none; }
+.skill-dock .hex-item.badge-hex--original .hex-face {
+  inset: 0;
+  padding: 0;
+}
+.skill-dock .hex-item.badge-hex--original .skill-badge-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.skill-dock .hex-item.badge-hex--original .badge-label-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  font-size: 10px;
+}
+.skill-dock .hex-item.badge-hex--original:hover,
+.skill-dock .hex-item.badge-hex--original:focus-visible {
+  filter: brightness(1.08) drop-shadow(0 5px 5px rgba(5, 16, 32, .45));
+}
+
 .skill-dock.dock--inline {
   margin-right: clamp(12px, 4vw, 52px);
   margin-left: auto;
@@ -1933,4 +1982,164 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
     opacity: 0;
     transition-property: none !important;
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Quiet map navigation                                                       */
+/* Destination badges now carry the meaning; scenery labels and animated      */
+/* light trails are intentionally removed so the world stays easy to scan.    */
+
+.world-landmark,
+.world-milestones { display: none !important; }
+
+.world-panorama::after { display: none; }
+
+.quest-path .route-shadow {
+  stroke: rgba(5, 24, 39, .48);
+  stroke-width: 12px;
+  filter: none;
+}
+
+.quest-path .route-complete {
+  stroke: rgba(143, 227, 235, .88);
+  stroke-width: 7px;
+  stroke-dasharray: none;
+  opacity: .9;
+  filter: none;
+  animation: none;
+}
+
+.quest-path .route-line {
+  stroke: rgba(226, 244, 246, .9);
+  stroke-width: 7px;
+  stroke-dasharray: 2 14;
+  filter: none;
+  animation: none;
+}
+
+.quest-path .route-pulse { display: none; }
+
+.rpg-world.has-route-focus .route-option { opacity: .34; filter: none; }
+.rpg-world.has-route-focus .route-option.is-focused { opacity: 1; }
+.rpg-world.has-route-focus .route-option.is-focused .route-line,
+.rpg-world.is-traveling .route-option.is-focused .route-line {
+  stroke: #f4fbfc;
+  stroke-width: 9px;
+  stroke-dasharray: 2 14;
+  filter: none;
+  animation: none;
+}
+
+.world-stop::after { display: none; }
+
+.world-stop.is-destination {
+  border-color: rgba(186, 235, 247, .95);
+  box-shadow:
+    0 0 0 3px rgba(5, 18, 33, .76),
+    0 13px 26px rgba(0, 12, 24, .46),
+    0 0 0 2px rgba(186, 235, 247, .22);
+  animation: none;
+}
+
+.stop-icon.stop-icon--badge {
+  position: relative;
+  overflow: visible;
+  flex-basis: 50px;
+  width: 50px;
+  height: 57px;
+  padding: 0;
+  border: 0;
+  color: #e9f8ff;
+  background: #123a69;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  filter: drop-shadow(0 4px 4px rgba(0, 10, 24, .34));
+}
+
+.stop-icon--badge .skill-badge-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  clip-path: inherit;
+}
+
+.stop-icon--badge .hex-icon {
+  width: 62%;
+  height: 62%;
+}
+
+.stop-status-mark {
+  position: absolute;
+  z-index: 2;
+  right: -2px;
+  bottom: 1px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e8f8ff;
+  border-radius: 50%;
+  color: #071a2f;
+  background: #8ee5d4;
+  box-shadow: 0 2px 5px rgba(0, 10, 24, .4);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.world-stop.is-rejected .stop-status-mark {
+  color: #fff;
+  background: #63778b;
+}
+
+.map-avatar::before { display: none; }
+.map-avatar.is-traveling {
+  animation: avatar-travel-simple .82s cubic-bezier(.3, .7, .2, 1) both;
+}
+.map-avatar.is-traveling .avatar-shell,
+.map-avatar.is-traveling .explorer-avatar--map { animation: none; }
+
+.rpg-world.is-shifting .atlas-art {
+  animation: camera-chapter-pan .82s cubic-bezier(.28, .7, .2, 1) both;
+}
+.rpg-world.is-shifting .atlas-color-grade,
+.rpg-world.is-shifting .quest-path,
+.rpg-world.is-shifting .world-stop--choice,
+.rpg-world.is-shifting .world-stage-label { animation: none; }
+
+.travel-banner i {
+  background: #8edce9;
+  animation-duration: .82s;
+}
+
+@keyframes avatar-travel-simple {
+  0% {
+    left: var(--from-x);
+    top: var(--from-y);
+    transform: translate(-50%, -50%);
+  }
+  52% {
+    transform: translate(-50%, calc(-50% - 7px));
+  }
+  100% {
+    left: var(--to-x);
+    top: var(--to-y);
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (max-width: 767px) {
+  .stop-icon.stop-icon--badge {
+    flex-basis: 42px;
+    width: 42px;
+    height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-avatar.is-traveling,
+  .rpg-world.is-shifting .atlas-art,
+  .travel-banner i { animation: none; }
 }

@@ -553,15 +553,12 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
 
         for selector in (
             ".world-stage-label span",
-            ".world-landmark:not(.start-camp) small",
             ".stop-copy small",
             ".map-avatar small",
             ".compass-card > span",
             ".compass-card small",
             ".skill-dock .dock-label h2",
             ".skill-dock .dock-label p",
-            ".skill-dock .hex-item strong",
-            ".skill-dock .hex-item small",
         ):
             inspect(selector, 10, "map/HUD")
         for selector in (
@@ -595,16 +592,13 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
 
         for region_id in REGION_PATHS:
             self.load_state(page, self.base_state(page, region_id, stage=2), ".screen--map")
-            route_paths[region_id] = page.locator(".quest-path .route-line").get_attribute("d") or ""
+            route_paths[region_id] = page.locator(".quest-path .route-line").first.get_attribute("d") or ""
             markers[region_id] = tuple(
                 page.evaluate(
                     """() => {
                         const world = document.querySelector('.rpg-world');
                         const style = getComputedStyle(world);
                         const terrain = getComputedStyle(world, '::after');
-                        const landmarkTypes = Array.from(
-                            document.querySelectorAll('.world-landmark:not(.start-camp) .landmark-art')
-                        ).map(item => item.className).sort().join('|');
                         return [
                             world.className,
                             style.getPropertyValue('--scene-sky').trim(),
@@ -613,7 +607,6 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
                             style.getPropertyValue('--scene-accent').trim(),
                             terrain.backgroundColor,
                             terrain.boxShadow,
-                            landmarkTypes,
                         ];
                     }"""
                 )
@@ -625,6 +618,43 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         if len(set(markers.values())) != 3:
             failures.append(f"computed topography markers are not region-distinct: {markers}")
         self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(errors)
+
+    def test_map_uses_skill_badges_without_decorative_landmark_chips(self) -> None:
+        """Keep destination meaning in each route card instead of side labels."""
+
+        page, errors = self.new_page(1440, 900)
+        for stage in (0, 1, 2):
+            state = self.base_state(page, "region-build-create", stage=stage)
+            self.load_state(page, state, ".screen--map")
+            self.assertEqual(page.locator(".world-landmark, .world-milestones").count(), 0)
+
+            stops = page.locator(".world-stop")
+            self.assertGreater(stops.count(), 0)
+            for index in range(stops.count()):
+                badge = stops.nth(index).locator(".stop-icon--badge")
+                self.assertEqual(badge.count(), 1)
+                artwork = badge.locator(".skill-badge-art, .hex-icon")
+                self.assertEqual(artwork.count(), 1)
+
+            quiet_motion = page.evaluate(
+                """() => ({
+                    pulse: getComputedStyle(document.querySelector('.route-pulse')).display,
+                    routeAnimation: getComputedStyle(document.querySelector('.route-line')).animationName,
+                    routeFilter: getComputedStyle(document.querySelector('.route-line')).filter,
+                    trail: getComputedStyle(document.querySelector('.map-avatar'), '::before').display,
+                })"""
+            )
+            self.assertEqual(
+                quiet_motion,
+                {
+                    "pulse": "none",
+                    "routeAnimation": "none",
+                    "routeFilter": "none",
+                    "trail": "none",
+                },
+            )
+
         self.assert_clean(errors)
 
     def test_world_camera_advances_through_three_spatial_checkpoints(self) -> None:
@@ -947,20 +977,19 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.load_state(page, map_state, ".screen--map")
         badges = page.locator("#skill-dock .hex-item")
         self.assertEqual(badges.count(), 5)
-        self.assertEqual(
-            badges.last.locator(".hex-icon").get_attribute("data-icon"),
-            "lightbulb",
-        )
+        earned_art = badges.last.locator(".skill-badge-art")
+        self.assertEqual(earned_art.count(), 1)
+        self.assertTrue((earned_art.get_attribute("src") or "").startswith("data:image/jpeg;base64,"))
         visual = badges.last.evaluate(
             """element => ({
                 clip: getComputedStyle(element).clipPath,
-                face: getComputedStyle(element, '::after').backgroundImage,
-                keyline: getComputedStyle(element).backgroundColor,
+                face: getComputedStyle(element.querySelector('.hex-face')).inset,
+                recreatedLayer: getComputedStyle(element, '::after').display,
             })"""
         )
         self.assertIn("polygon", visual["clip"])
-        self.assertIn("linear-gradient", visual["face"])
-        self.assertNotEqual(visual["keyline"], "rgba(0, 0, 0, 0)")
+        self.assertIn(visual["face"], ("0px", "0px 0px 0px"))
+        self.assertEqual(visual["recreatedLayer"], "none")
         self.assert_clean(errors)
 
     def test_skill_dock_keeps_portrait_honeycomb_geometry(self) -> None:
@@ -1030,6 +1059,10 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
 
         badges = page.locator("#skill-dock .hex-item")
         self.assertEqual(badges.count(), 8)
+        artwork_sizes = badges.locator(".skill-badge-art").evaluate_all(
+            "images => images.map(image => [image.naturalWidth, image.naturalHeight])"
+        )
+        self.assertEqual(set(map(tuple, artwork_sizes)), {(145, 167)})
         seventh = badges.nth(6).bounding_box()
         eighth = badges.nth(7).bounding_box()
         sixth = badges.nth(5).bounding_box()
