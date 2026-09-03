@@ -238,6 +238,16 @@ class InterviewModuleTests(unittest.TestCase):
         for career_id, interview in interviews.items():
             self.assertEqual(len(interview["questions"]), 3, career_id)
             self.assertEqual(interview["questionIds"], [item["id"] for item in interview["questions"]])
+            self.assertEqual(
+                [item["type"] for item in interview["questions"]],
+                ["experience", "scenario", "growth"],
+                f"{career_id}: interviews must cover behavioral evidence, technical judgment, and growth",
+            )
+            self.assertEqual(
+                len({item["prompt"] for item in interview["questions"]}),
+                3,
+                f"{career_id}: every prompt must be distinct",
+            )
             self.assertIn("authored practice content", interview["attribution"])
             for question in interview["questions"]:
                 self.assertGreaterEqual(len(question["criteria"]), 2)
@@ -246,6 +256,17 @@ class InterviewModuleTests(unittest.TestCase):
                 self.assertTrue(question["strongAnswer"].strip())
                 for source_id in question["sourceRefs"]:
                     self.assertIn(source_id, sources, f"{question['id']}: unresolved source")
+
+        all_prompts = [
+            question["prompt"]
+            for interview in interviews.values()
+            for question in interview["questions"]
+        ]
+        self.assertEqual(
+            len(set(all_prompts)),
+            len(all_prompts),
+            "Interview prompts must be authored uniquely for each role and question type",
+        )
 
         for source_id, source in sources.items():
             self.assertTrue(source["title"].strip(), source_id)
@@ -429,12 +450,19 @@ class InterviewModuleTests(unittest.TestCase):
         feedback = page.evaluate("CareerLaunchpadApp.getState().interview.feedback['appdev-q1-story']")
         self.assertEqual(feedback["matchedCriterionIds"], ["context"])
         self.assertEqual(feedback["missingCriterionIds"], ["contribution", "result"])
+        self.assertEqual(feedback["category"], "Behavioral evidence")
+        self.assertEqual(feedback["roleTitle"], "Application Developer")
+        self.assertIn("Application Developer", feedback["critique"])
+        self.assertIn("contribution", feedback["revisionAction"].casefold())
         self.assertEqual(
             page.evaluate("CareerLaunchpadApp.getState().screen"),
             "interview-feedback",
             "submitting a valid answer must navigate to the visible feedback screen",
         )
         page.locator(".interview-feedback").wait_for()
+        self.assertIn("INTERVIEWER READ", page.locator(".interviewer-read").inner_text())
+        self.assertIn("Application Developer", page.locator(".interviewer-read").inner_text())
+        self.assertIn("YOUR NEXT REVISION", page.locator(".revision-coach").inner_text())
         self.assertEqual(page.locator(".criteria-list--matched li").count(), 1)
         self.assertEqual(page.locator(".criteria-list--missing li").count(), 2)
 
@@ -468,6 +496,11 @@ class InterviewModuleTests(unittest.TestCase):
         page.locator("#interview-answer").press("Control+Enter")
         page.locator(".interview-feedback").wait_for()
         self.assertEqual(page.evaluate("CareerLaunchpadApp.getState().interview.status"), "feedback")
+        second_feedback = page.evaluate(
+            "CareerLaunchpadApp.getState().interview.feedback['appdev-q2-debug']"
+        )
+        self.assertEqual(second_feedback["category"], "Technical judgment")
+        self.assertIn("Application Developer", second_feedback["critique"])
 
         page.locator('[data-action="interview-next"]').click()
         self.assertEqual(
@@ -481,6 +514,11 @@ class InterviewModuleTests(unittest.TestCase):
         page.locator("#interview-answer").fill(third_answer)
         page.locator('#interview-answer-form button[type="submit"]').click()
         page.locator(".interview-feedback").wait_for()
+        third_feedback = page.evaluate(
+            "CareerLaunchpadApp.getState().interview.feedback['appdev-q3-next']"
+        )
+        self.assertEqual(third_feedback["category"], "Technical growth plan")
+        self.assertTrue(third_feedback["revisionAction"].strip())
         page.locator('[data-action="interview-next"]').click()
 
         debrief = page.locator(".interview-debrief")

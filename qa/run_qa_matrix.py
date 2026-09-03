@@ -326,6 +326,20 @@ class QARunner:
         continue_button.click()
 
     @staticmethod
+    def solve_minecraft_door_game(page: Page) -> None:
+        """Complete the oak-log, plank, and shaped-door recipe loop."""
+
+        page.locator('[data-action="minecraft-move-tree"]').click()
+        page.locator(".mc-action-key").click()
+        page.locator(".mc-action-key").click()
+        page.locator('[data-action="minecraft-move-table"]').first.click()
+        page.locator('[data-action="minecraft-craft-planks"]').click()
+        for grid_index in (0, 1, 3, 4, 6, 7):
+            page.locator(f'[data-grid-index="{grid_index}"]').click()
+        page.locator('[data-action="minecraft-craft-door"]').click()
+        page.locator('[data-action="finish-game"]').click()
+
+    @staticmethod
     def finish_node(page: Page, node_id: str, enjoyed: bool = True) -> None:
         """Complete a mini-game stop or open a terminal career selection."""
 
@@ -340,7 +354,9 @@ class QARunner:
             if not enjoyed:
                 raise AssertionError("terminal career selections do not support rejection")
             return
-        if page.locator(".jigsaw-console").count():
+        if page.locator(".minecraft-game").count():
+            QARunner.solve_minecraft_door_game(page)
+        elif page.locator(".jigsaw-console").count():
             QARunner.solve_jigsaw(page)
         elif page.locator(".team-builder-game").count():
             candidates = page.locator('[data-action="toggle-teammate"]:not([disabled])')
@@ -833,7 +849,7 @@ class QARunner:
             self.start(page, f"Reflection {width}")
             page.locator('[data-node-id="region-build-create"]').click()
             page.locator(".screen--challenge").wait_for()
-            page.get_by_role("button", name=re.compile("Skip game for now")).click()
+            self.solve_minecraft_door_game(page)
             page.locator(".screen--reflection").wait_for()
             page.wait_for_timeout(500)
             dock = page.locator(".skill-dock")
@@ -892,7 +908,7 @@ class QARunner:
             self.start(page, f"Reflow {width}")
             page.locator('[data-node-id="region-build-create"]').click()
             page.locator(".screen--challenge").wait_for()
-            page.get_by_role("button", name=re.compile("Skip game for now")).click()
+            self.solve_minecraft_door_game(page)
             page.locator(".screen--reflection").wait_for()
             page.wait_for_timeout(500)
             self.assert_no_horizontal_overflow(page)

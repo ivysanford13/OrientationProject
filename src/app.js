@@ -27,6 +27,7 @@
     'creativity': STARTER_BADGE_SOURCES['creative-thinking'],
     'software': '__SKILL_BADGE_SOFTWARE_DATA_URI__',
     'coder': '__SKILL_BADGE_DEVELOPER_DATA_URI__',
+    'cloud-builder': '__SKILL_BADGE_CLOUD_BUILDER_DATA_URI__',
     'designer': STARTER_BADGE_SOURCES['visual-design'],
     'hardware': STARTER_BADGE_SOURCES['hands-on-tech'],
     'analyst': STARTER_BADGE_SOURCES['problem-solving'],
@@ -235,6 +236,21 @@
 
   /** Allow demos to open a playable mini-game without guessing its map route. */
   function applyLaunchShortcut(currentState) {
+    if (window.location.hash === '#minecraft-door') {
+      return Object.assign(defaultState(), {
+        screen: 'mini',
+        name: currentState.name || 'Explorer',
+        starterSkills: currentState.starterSkills.length === 4 ? currentState.starterSkills.slice() : [
+          'starter-creative-thinking',
+          'starter-coding-curiosity',
+          'starter-hands-on-tech',
+          'starter-visual-design'
+        ],
+        recommendedRegionId: 'region-build-create',
+        activeRegionId: 'region-build-create',
+        selectedNodeId: 'region-build-create'
+      });
+    }
     if (window.location.hash === '#chart-match') {
       return Object.assign(defaultState(), {
         screen: 'mini',
@@ -874,6 +890,7 @@
 
   function renderMiniGame(node) {
     if (!node || !node.miniGame) return renderMap();
+    if (node.miniGame.visualType === 'minecraft-2d') return renderMinecraftDoorMiniGame(node);
     if (node.miniGame.visualType === 'jigsaw') return renderJigsawMiniGame(node);
     if (node.miniGame.visualType === 'team-builder') return renderTeamBuilderMiniGame(node);
     if (node.miniGame.visualType === 'deploy-drag-drop') return renderDeployMiniGame(node);
@@ -889,6 +906,77 @@
       ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>'
       : '<button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button>';
     return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + statusChip + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="back-map">Return to map</button></div></div>' + stageMarkup + '</div></section>';
+  }
+
+  /** A compact side-view crafting loop using Minecraft's real oak recipes. */
+  function renderMinecraftDoorMiniGame(node) {
+    ensureMinecraftDoorGame(node);
+    var skill = skillFor(node);
+    return '<section class="screen screen--challenge screen--minecraft" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">WOODWORK / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="mc-intro"><div><p class="eyebrow">BUILD + CREATE / WOODWORKING</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(node.miniGame.title) + '</h1></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>Craft the door, then decide if building energized you.</p></div></div></div>' + renderMinecraftDoorBody(node) + '</section>';
+  }
+
+  function ensureMinecraftDoorGame(node) {
+    if (activeMiniGame && activeMiniGame.nodeId === node.id && activeMiniGame.kind === 'minecraft-door') return activeMiniGame;
+    activeMiniGame = {
+      nodeId: node.id,
+      kind: 'minecraft-door',
+      phase: 'gather',
+      position: 'spawn',
+      logs: 0,
+      planks: 0,
+      doors: 0,
+      grid: [false, false, false, false, false, false, false, false, false],
+      mistakes: 0,
+      complete: false,
+      feedback: 'Walk to the oak tree. Your axe is already equipped.'
+    };
+    return activeMiniGame;
+  }
+
+  function renderMinecraftDoorBody(node) {
+    var mini = node.miniGame;
+    var game = ensureMinecraftDoorGame(node);
+    var selectedCount = game.grid.filter(Boolean).length;
+    var loosePlanks = game.phase === 'craft-door' ? game.planks - selectedCount : game.planks;
+    var playerX = game.position === 'tree' ? 59 : game.position === 'table' ? 82 : 17;
+    var stageNumber = game.complete ? 3 : game.phase === 'craft-door' ? 3 : game.phase === 'craft-planks' ? 2 : 1;
+    var stageTitle = game.complete ? 'Door crafted!' : game.phase === 'craft-door' ? 'Shape the door' : game.phase === 'craft-planks' ? 'Make oak planks' : 'Gather two oak logs';
+    var treeAction = game.phase !== 'gather'
+      ? '<button class="mc-target mc-tree-target" type="button" disabled aria-label="Harvested oak tree">' + renderMinecraftTree(2) + '<span>HARVESTED</span></button>'
+      : game.position !== 'tree'
+      ? '<button class="mc-target mc-tree-target" type="button" data-action="minecraft-move-tree" aria-label="Walk to the oak tree">' + renderMinecraftTree(game.logs) + '<span>OAK TREE</span></button>'
+      : '<button class="mc-target mc-tree-target is-active" type="button" data-action="minecraft-chop" aria-label="Chop oak log ' + (game.logs + 1) + ' of ' + Number(mini.logCount || 2) + '" ' + (game.logs >= Number(mini.logCount || 2) ? 'disabled' : '') + '>' + renderMinecraftTree(game.logs) + '<span>' + (game.logs >= Number(mini.logCount || 2) ? 'HARVESTED' : 'CHOP LOG') + '</span></button>';
+    var tableDisabled = game.logs < Number(mini.logCount || 2) && game.phase === 'gather';
+    var tableAction = '<button class="mc-target mc-table-target' + (game.position === 'table' ? ' is-active' : '') + '" type="button" data-action="minecraft-move-table" aria-label="Walk to the crafting table" ' + (tableDisabled ? 'disabled' : '') + '><span class="mc-crafting-table" aria-hidden="true"><i></i></span><span>CRAFTING TABLE</span></button>';
+    var worldAction = game.position === 'tree' && game.logs < Number(mini.logCount || 2)
+      ? '<button class="mc-action-key" type="button" data-action="minecraft-chop"><span aria-hidden="true">🪓</span><b>SWING AXE</b><small>' + game.logs + ' / ' + Number(mini.logCount || 2) + ' logs</small></button>'
+      : game.logs >= Number(mini.logCount || 2) && game.position !== 'table' && game.phase === 'gather'
+        ? '<button class="mc-action-key" type="button" data-action="minecraft-move-table"><span aria-hidden="true">→</span><b>GO TO TABLE</b><small>Craft the logs</small></button>'
+        : '';
+    var craftingMarkup = game.phase === 'craft-planks' ? renderMinecraftPlankRecipe(mini, game) : game.phase === 'craft-door' ? renderMinecraftDoorRecipe(mini, game, selectedCount) : game.complete ? renderMinecraftComplete(mini, game) : '';
+    return '<div class="minecraft-game" data-minecraft-game><div class="mc-mission-bar"><div><span class="mc-mission-number">0' + stageNumber + '</span><div><small>CURRENT OBJECTIVE</small><strong>' + escapeHtml(stageTitle) + '</strong></div></div><ol aria-label="Crafting progress"><li class="' + (stageNumber > 1 ? 'is-done' : 'is-active') + '">CHOP</li><li class="' + (stageNumber > 2 ? 'is-done' : stageNumber === 2 ? 'is-active' : '') + '">PLANKS</li><li class="' + (game.complete ? 'is-done' : stageNumber === 3 ? 'is-active' : '') + '">DOOR</li></ol></div><div class="mc-world" style="--player-x:' + playerX + '%"><div class="mc-sky" aria-hidden="true"><i class="mc-cloud mc-cloud--one"></i><i class="mc-cloud mc-cloud--two"></i><i class="mc-sun"></i><i class="mc-hill mc-hill--one"></i><i class="mc-hill mc-hill--two"></i></div><div class="mc-ground" aria-hidden="true"></div>' + treeAction + tableAction + '<div class="mc-player" aria-label="BYU cougar explorer holding an axe"><span class="mc-axe" aria-hidden="true"></span><img src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></div>' + worldAction + (game.complete ? '<span class="mc-built-door" aria-hidden="true"><i></i><b></b></span>' : '') + '</div><div class="mc-lower"><section class="mc-inventory" aria-labelledby="mc-inventory-title"><div class="mc-panel-title"><strong id="mc-inventory-title">INVENTORY</strong><span>HOTBAR</span></div><div class="mc-hotbar"><span class="mc-slot' + (game.logs ? ' has-item' : '') + '">' + (game.logs ? '<i class="mc-item mc-item--log"></i><b>' + game.logs + '</b>' : '') + '<small>LOG</small></span><span class="mc-slot' + (loosePlanks ? ' has-item' : '') + '">' + (loosePlanks ? '<i class="mc-item mc-item--plank"></i><b>' + loosePlanks + '</b>' : '') + '<small>PLANK</small></span><span class="mc-slot' + (game.doors ? ' has-item' : '') + '">' + (game.doors ? '<i class="mc-item mc-item--door"></i><b>' + game.doors + '</b>' : '') + '<small>DOOR</small></span><span class="mc-slot has-item is-equipped"><i class="mc-item mc-item--axe"></i><small>AXE</small></span></div><p class="mc-status" role="status" aria-live="polite">' + escapeHtml(game.feedback) + '</p></section><section class="mc-craft-panel' + (craftingMarkup ? ' is-open' : '') + '" aria-label="Crafting table workspace">' + (craftingMarkup || '<div class="mc-table-closed"><span class="mc-mini-table" aria-hidden="true"></span><div><strong>CRAFTING TABLE</strong><p>Gather two logs, then bring them here.</p></div></div>') + '</section></div><aside class="mc-recipe-note"><strong>TRUE RECIPE</strong><span>1 oak log → 4 oak planks</span><span>6 matching planks → 3 oak doors</span></aside></div>';
+  }
+
+  function renderMinecraftTree(choppedLogs) {
+    var remaining = Math.max(0, 2 - Number(choppedLogs || 0));
+    return '<span class="mc-tree' + (remaining === 0 ? ' is-cut' : '') + '" aria-hidden="true"><i class="mc-leaves mc-leaves--a"></i><i class="mc-leaves mc-leaves--b"></i><i class="mc-leaves mc-leaves--c"></i><b class="mc-trunk"><i class="mc-log-segment' + (remaining < 2 ? ' is-gone' : '') + '"></i><i class="mc-log-segment' + (remaining < 1 ? ' is-gone' : '') + '"></i></b></span>';
+  }
+
+  function renderMinecraftPlankRecipe(mini, game) {
+    return '<div class="mc-panel-title"><strong>CRAFTING</strong><span>LOGS → PLANKS</span></div><div class="mc-simple-recipe"><div class="mc-craft-grid mc-craft-grid--preview" aria-label="Two oak logs in one crafting slot"><span class="mc-craft-slot has-item"><i class="mc-item mc-item--log"></i><b>' + game.logs + '</b></span>' + new Array(8).fill('<span class="mc-craft-slot"></span>').join('') + '</div><span class="mc-recipe-arrow" aria-hidden="true">→</span><div class="mc-output-slot"><i class="mc-item mc-item--plank"></i><b>' + (Number(mini.plankYield || 4) * game.logs) + '</b><small>OAK PLANKS</small></div></div><button class="mc-craft-button" type="button" data-action="minecraft-craft-planks">Craft ' + (Number(mini.plankYield || 4) * game.logs) + ' oak planks</button>';
+  }
+
+  function renderMinecraftDoorRecipe(mini, game, selectedCount) {
+    var gridMarkup = game.grid.map(function (filled, index) {
+      var row = Math.floor(index / 3) + 1;
+      var column = (index % 3) + 1;
+      return '<button class="mc-craft-slot' + (filled ? ' has-item' : '') + '" type="button" data-action="minecraft-grid" data-grid-index="' + index + '" aria-pressed="' + filled + '" aria-label="Crafting slot row ' + row + ', column ' + column + (filled ? ', oak plank placed' : ', empty') + '">' + (filled ? '<i class="mc-item mc-item--plank"></i>' : '') + '</button>';
+    }).join('');
+    return '<div class="mc-panel-title"><strong>CRAFTING</strong><span>OAK DOOR RECIPE</span></div><div class="mc-door-workbench"><div><div class="mc-craft-grid" role="group" aria-label="Three by three crafting grid">' + gridMarkup + '</div><small>Click slots to place or remove planks</small></div><span class="mc-recipe-arrow" aria-hidden="true">→</span><div class="mc-output-slot' + (selectedCount === Number(mini.doorPlankCount || 6) ? ' is-ready' : '') + '"><i class="mc-item mc-item--door"></i><b>' + Number(mini.doorOutputCount || 3) + '</b><small>OAK DOORS</small></div></div><div class="mc-recipe-hint"><span>RECIPE SHAPE</span><i>■■□</i><i>■■□</i><i>■■□</i><small>two wide × three high</small></div><button class="mc-craft-button" type="button" data-action="minecraft-craft-door" ' + (selectedCount < Number(mini.doorPlankCount || 6) ? 'disabled' : '') + '>Craft oak door <span>' + selectedCount + ' / ' + Number(mini.doorPlankCount || 6) + ' planks</span></button>';
+  }
+
+  function renderMinecraftComplete(mini, game) {
+    return '<div class="mc-craft-success"><span class="mc-success-check" aria-hidden="true">✓</span><div><small>RECIPE COMPLETE</small><strong>Oak Door ×' + Number(mini.doorOutputCount || game.doors || 3) + '</strong><p>You used six matching planks in the correct 2 × 3 shape.</p></div></div><button class="mc-craft-button is-complete" type="button" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>';
   }
 
   function renderScratchGame(node, skill, mini) {
@@ -1435,7 +1523,7 @@
     if (!interview || !career) return renderCareer(findNode(state.selectedNodeId));
     var inProgress = state.interview.status !== 'idle';
     var backLabel = state.interview.returnScreen === 'interview-picker' ? '← Back to roles' : '← Back to career';
-    return '<section class="screen interview-screen interview-intro" aria-labelledby="interview-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">' + backLabel + '</button><span class="progress-chip">3 QUESTIONS / ~4 MIN</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-intro-grid"><div><p class="screen-kicker">FIELD PRACTICE / ROLE REHEARSAL</p><h1 id="interview-title" tabindex="-1">' + escapeHtml(career.title) + '<br><em>in your own words.</em></h1><p class="interview-lede">' + escapeHtml(interview.intro) + '</p><div class="interview-expectations"><span><b>01</b> Your experience</span><span><b>02</b> Role scenario</span><span><b>03</b> Your next step</span></div></div><aside class="interview-welcome-card"><span class="eyebrow">A QUICK REHEARSAL</span><strong>This is practice, not a grade.</strong><p>Write what you would really say. The feedback is a transparent checklist based on words you chose.</p><button class="button button--primary button--wide" data-action="interview-start">' + (inProgress ? 'Continue practice' : 'Start practice') + ' <span aria-hidden="true">→</span></button>' + (inProgress ? '<button class="text-button" data-action="interview-replay">Start this interview again</button>' : '') + '</aside></div>' + renderInterviewSources(interview) + '</section>';
+    return '<section class="screen interview-screen interview-intro" aria-labelledby="interview-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">' + backLabel + '</button><span class="progress-chip">3 QUESTIONS / ~4 MIN</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-intro-grid"><div><p class="screen-kicker">FIELD PRACTICE / ROLE REHEARSAL</p><h1 id="interview-title" tabindex="-1">' + escapeHtml(career.title) + '<br><em>in your own words.</em></h1><p class="interview-lede">' + escapeHtml(interview.intro) + '</p><div class="interview-expectations"><span><b>01</b> Behavioral evidence</span><span><b>02</b> Technical judgment</span><span><b>03</b> Technical growth</span></div></div><aside class="interview-welcome-card"><span class="eyebrow">A REALISTIC REHEARSAL</span><strong>Specific evidence beats a polished generality.</strong><p>The coach checks what an interviewer can actually verify: your ownership, role-specific reasoning, decisions, and results. Expect direct revision advice when an answer is vague.</p><button class="button button--primary button--wide" data-action="interview-start">' + (inProgress ? 'Continue practice' : 'Start practice') + ' <span aria-hidden="true">→</span></button>' + (inProgress ? '<button class="text-button" data-action="interview-replay">Start this interview again</button>' : '') + '</aside></div>' + renderInterviewSources(interview) + '</section>';
   }
 
   function renderInterviewQuestion() {
@@ -1443,7 +1531,7 @@
     var question = currentInterviewQuestion();
     if (!interview || !question) return renderCareer(findNode(state.selectedNodeId));
     var answer = state.interview.answers[question.id] || '';
-    return '<section class="screen interview-screen interview-question" aria-labelledby="question-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">QUESTION ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-layout"><aside class="interview-rail" aria-label="Interview progress">' + interview.questions.map(function (item, index) { return '<div class="rail-step ' + (index < state.interview.questionIndex ? 'is-done' : index === state.interview.questionIndex ? 'is-current' : '') + '"><span>' + String(index + 1).padStart(2, '0') + '</span><small>' + escapeHtml(item.type === 'experience' ? 'Experience' : item.type === 'growth' ? 'Growth' : 'Scenario') + '</small></div>'; }).join('') + '</aside><div class="question-card"><p class="eyebrow">' + escapeHtml(modelCareer(state.interview.careerId).title) + '</p><h1 id="question-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p class="question-helper">' + escapeHtml(question.helper || '') + '</p><form id="interview-answer-form"><label for="interview-answer">Your answer</label><textarea id="interview-answer" maxlength="1000" rows="8" placeholder="Start with the situation, then explain what you did…">' + escapeHtml(answer) + '</textarea><div class="answer-meta"><span id="word-count">' + wordCount(answer) + ' words</span><span>Minimum ' + question.minWords + ' words · 1,000 characters max</span></div><details class="hint-disclosure"><summary>Show a hint</summary><p>' + escapeHtml(question.guidance) + '</p></details><div class="question-actions"><button class="button button--primary" type="submit" ' + (answer.trim() ? '' : 'disabled') + '>Check my answer <span aria-hidden="true">→</span></button><button class="text-button" type="button" data-action="interview-save-exit">Save and exit</button></div></form></div></div></section>';
+    return '<section class="screen interview-screen interview-question" aria-labelledby="question-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">QUESTION ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-layout"><aside class="interview-rail" aria-label="Interview progress">' + interview.questions.map(function (item, index) { return '<div class="rail-step ' + (index < state.interview.questionIndex ? 'is-done' : index === state.interview.questionIndex ? 'is-current' : '') + '"><span>' + String(index + 1).padStart(2, '0') + '</span><small>' + escapeHtml(interviewQuestionCategory(item).short) + '</small></div>'; }).join('') + '</aside><div class="question-card"><p class="eyebrow">' + escapeHtml(modelCareer(state.interview.careerId).title + ' / ' + interviewQuestionCategory(question).label) + '</p><h1 id="question-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p class="question-helper">' + escapeHtml(question.helper || '') + '</p><form id="interview-answer-form"><label for="interview-answer">Your answer</label><textarea id="interview-answer" maxlength="1000" rows="8" placeholder="Start with the situation, then explain what you did…">' + escapeHtml(answer) + '</textarea><div class="answer-meta"><span id="word-count">' + wordCount(answer) + ' words</span><span>Minimum ' + question.minWords + ' words · 1,000 characters max</span></div><details class="hint-disclosure"><summary>What a strong answer must prove</summary><p>' + escapeHtml(question.guidance) + '</p></details><div class="question-actions"><button class="button button--primary" type="submit" ' + (answer.trim() ? '' : 'disabled') + '>Get critical feedback <span aria-hidden="true">→</span></button><button class="text-button" type="button" data-action="interview-save-exit">Save and exit</button></div></form></div></div></section>';
   }
 
   function renderInterviewFeedback() {
@@ -1454,8 +1542,9 @@
     var criteria = question.criteria || question.rubric.criteria;
     var matched = criteria.filter(function (criterion) { return feedback.matchedCriterionIds.indexOf(criterion.id) !== -1; });
     var missing = criteria.filter(function (criterion) { return feedback.missingCriterionIds.indexOf(criterion.id) !== -1; });
+    var coaching = interviewCoachingDetails(state.interview.answers[question.id] || '', question, feedback, matched, missing);
     var nextLabel = state.interview.questionIndex === interview.questions.length - 1 ? 'See my debrief' : 'Next question';
-    return '<section class="screen interview-screen interview-feedback" aria-labelledby="feedback-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">FEEDBACK / ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="feedback-grid"><div class="question-card feedback-question"><p class="eyebrow">YOUR RESPONSE</p><h1 id="feedback-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><div class="answer-quote">' + escapeHtml(state.interview.answers[question.id] || '') + '</div><button class="text-button" data-action="interview-edit">Edit and try again</button></div><div class="feedback-card"><span class="feedback-level feedback-level--' + escapeAttr(feedback.level) + '">' + escapeHtml(feedback.level === 'strong' ? 'Strong foundation' : feedback.level === 'developing' ? 'Developing answer' : 'Good starting point') + '</span><p class="feedback-summary">' + feedback.wordCount + ' words · built from your answer</p><section><h2>You mentioned</h2>' + (matched.length ? '<ul class="criteria-list criteria-list--matched">' + matched.map(function (criterion) { return '<li>✓ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul>' : '<p class="muted-copy">Not enough rubric evidence yet.</p>') + '</section>' + (missing.length ? '<section><h2>Try adding</h2><ul class="criteria-list criteria-list--missing">' + missing.map(function (criterion) { return '<li>＋ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul></section>' : '') + '<p class="feedback-guidance"><strong>Practice note:</strong> ' + escapeHtml(question.guidance) + '</p><details class="strong-answer"><summary>Show a strong-answer example</summary><p>' + escapeHtml(question.strongAnswer) + '</p></details><button class="button button--primary button--wide" data-action="interview-next">' + nextLabel + ' <span aria-hidden="true">→</span></button></div></div></section>';
+    return '<section class="screen interview-screen interview-feedback" aria-labelledby="feedback-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">FEEDBACK / ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="feedback-grid"><div class="question-card feedback-question"><p class="eyebrow">YOUR RESPONSE / ' + escapeHtml(interviewQuestionCategory(question).label) + '</p><h1 id="feedback-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><div class="answer-quote">' + escapeHtml(state.interview.answers[question.id] || '') + '</div><button class="text-button" data-action="interview-edit">Revise this answer</button></div><div class="feedback-card"><span class="feedback-level feedback-level--' + escapeAttr(feedback.level) + '">' + escapeHtml(feedback.level === 'strong' ? 'Interview-ready foundation' : feedback.level === 'developing' ? 'Evidence gap' : 'Too general yet') + '</span><p class="feedback-summary">' + feedback.wordCount + ' words · ' + matched.length + ' of ' + criteria.length + ' role signals demonstrated</p><section class="interviewer-read"><span class="eyebrow">INTERVIEWER READ</span><h2>' + escapeHtml(coaching.headline) + '</h2><p>' + escapeHtml(coaching.critique) + '</p></section><section><h2>Evidence that landed</h2>' + (matched.length ? '<ul class="criteria-list criteria-list--matched">' + matched.map(function (criterion) { return '<li>✓ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul>' : '<p class="muted-copy">No role-specific evidence is clear enough yet.</p>') + '</section>' + (missing.length ? '<section><h2>Evidence still missing</h2><ul class="criteria-list criteria-list--missing">' + missing.map(function (criterion) { return '<li>＋ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul></section>' : '') + '<div class="revision-coach"><span>YOUR NEXT REVISION</span><strong>' + escapeHtml(coaching.revisionAction) + '</strong></div><details class="strong-answer"><summary>Compare with a strong role-specific answer</summary><p>' + escapeHtml(question.strongAnswer) + '</p><small>Use the structure, not the wording. Your own evidence is more credible.</small></details><button class="button button--primary button--wide" data-action="interview-next">' + nextLabel + ' <span aria-hidden="true">→</span></button></div></div></section>';
   }
 
   function renderInterviewDebrief() {
@@ -1464,7 +1553,7 @@
     if (!interview || !career) return renderCareer(findNode(state.selectedNodeId));
     var summaries = interview.questions.map(function (question, index) {
       var feedback = state.interview.feedback[question.id];
-      return '<li><span>' + String(index + 1).padStart(2, '0') + '</span><strong>' + escapeHtml(question.type === 'experience' ? 'Experience' : question.type === 'growth' ? 'Growth plan' : 'Role scenario') + '</strong><em>' + escapeHtml(feedback ? (feedback.level === 'strong' ? 'Strong foundation' : feedback.level === 'developing' ? 'Developing answer' : 'Good starting point') : 'Not answered') + '</em></li>';
+      return '<li><span>' + String(index + 1).padStart(2, '0') + '</span><strong>' + escapeHtml(interviewQuestionCategory(question).label) + '</strong><em>' + escapeHtml(feedback ? (feedback.level === 'strong' ? 'Interview-ready foundation' : feedback.level === 'developing' ? 'Evidence gap' : 'Too general yet') : 'Not answered') + '</em></li>';
     }).join('');
     var strongest = strongestCriterion(interview);
     var returnLabel = state.interview.returnScreen === 'interview-picker' ? 'Choose another role' : 'Return to career';
@@ -1481,13 +1570,63 @@
 
   function wordCount(value) { return (String(value || '').match(/[a-z0-9']+/gi) || []).length; }
 
+  function interviewQuestionCategory(question) {
+    if (question.type === 'experience') return { short: 'Behavioral', label: 'Behavioral evidence' };
+    if (question.type === 'growth') return { short: 'Tech growth', label: 'Technical growth plan' };
+    return { short: 'Technical', label: 'Technical judgment' };
+  }
+
+  function readableCriterionList(criteria) {
+    var labels = criteria.map(function (criterion) {
+      return criterion.label
+        .replace(/^(Sets|Names|Explains|Shows|Uses|Checks|Connects|Clarifies|Chooses|Documents|Plans|Makes|Offers|Requests|Reviews|Suggests|Learns|Tests|Works|Triages|Assesses|Proposes)\s+/i, '')
+        .replace(/^(their|the|a|an)\s+/i, '')
+        .toLowerCase();
+    });
+    if (labels.length < 2) return labels[0] || 'specific evidence';
+    return labels.slice(0, -1).join(', ') + ' and ' + labels[labels.length - 1];
+  }
+
+  function interviewCoachingDetails(answer, question, feedback, matched, missing) {
+    var career = modelCareer(state.interview.careerId) || { title: 'this role' };
+    var role = career.title;
+    var category = interviewQuestionCategory(question);
+    var headline;
+    var critique;
+    if (feedback.level === 'starting') {
+      headline = 'An interviewer cannot verify your readiness yet.';
+      critique = 'For the ' + role + ' interview, this answer is still too general. It does not clearly demonstrate ' + readableCriterionList(missing.length ? missing : (question.criteria || [])) + '.';
+    } else if (feedback.level === 'developing') {
+      headline = 'There is a useful start, but the proof is incomplete.';
+      critique = 'You show ' + readableCriterionList(matched) + ', but the interviewer still has to infer ' + readableCriterionList(missing) + '. Make that evidence explicit instead of relying on broad claims.';
+    } else {
+      headline = 'The core evidence is present; sharpen the credibility.';
+      critique = 'This answers the ' + role + ' question, but strong candidates make one decision, constraint, or result concrete enough that an interviewer can probe it.';
+    }
+
+    var revisionAction;
+    if (missing.length) {
+      revisionAction = 'Add one or two sentences that make ' + readableCriterionList(missing) + ' explicit. ' + question.guidance;
+    } else if (question.type === 'experience') {
+      revisionAction = 'Add one concrete outcome—a number, before/after observation, user response, or lesson—and separate what you owned from what the team did.';
+    } else if (question.type === 'scenario') {
+      revisionAction = 'State your first action, why it comes first, the evidence you would inspect, and what finding would change your decision.';
+    } else {
+      revisionAction = 'Turn the plan into a commitment: name the artifact, a deadline or cadence, and how someone could verify that your skill improved.';
+    }
+    return { headline: category.label + ': ' + headline, critique: critique, revisionAction: revisionAction };
+  }
+
   function evaluateInterviewAnswer(answer, question) {
     var words = wordCount(answer);
     var criteria = question.criteria || (question.rubric && question.rubric.criteria) || [];
     var matched = criteria.filter(function (criterion) { return (criterion.signals || []).some(function (signal) { return answerHasSignal(answer, signal); }); });
     var ratio = criteria.length ? matched.length / criteria.length : 0;
     var level = words >= question.minWords && ratio >= 0.67 ? 'strong' : words >= Math.max(8, Math.floor(question.minWords / 2)) && ratio >= 0.34 ? 'developing' : 'starting';
-    return { level: level, wordCount: words, matchedCriterionIds: matched.map(function (criterion) { return criterion.id; }), missingCriterionIds: criteria.filter(function (criterion) { return matched.indexOf(criterion) === -1; }).map(function (criterion) { return criterion.id; }) };
+    var missing = criteria.filter(function (criterion) { return matched.indexOf(criterion) === -1; });
+    var base = { level: level, wordCount: words, matchedCriterionIds: matched.map(function (criterion) { return criterion.id; }), missingCriterionIds: missing.map(function (criterion) { return criterion.id; }) };
+    var coaching = interviewCoachingDetails(answer, question, base, matched, missing);
+    return Object.assign(base, coaching, { category: interviewQuestionCategory(question).label, roleTitle: (modelCareer(state.interview.careerId) || {}).title || '' });
   }
 
   /** Match authored words and word stems without accidental substring hits. */
@@ -2069,6 +2208,114 @@
     }, 0);
   }
 
+  function moveMinecraftPlayer(destination) {
+    if (!activeMiniGame || activeMiniGame.kind !== 'minecraft-door' || activeMiniGame.complete) return;
+    if (destination === 'tree' && activeMiniGame.phase !== 'gather') return;
+    if (destination === 'table' && activeMiniGame.logs < 2 && activeMiniGame.phase === 'gather') {
+      activeMiniGame.feedback = 'You still need two oak logs before you can craft.';
+      refreshMinecraftDoorGame('[data-action="minecraft-move-tree"]');
+      return;
+    }
+    activeMiniGame.position = destination;
+    if (destination === 'tree') {
+      activeMiniGame.feedback = activeMiniGame.logs >= 2 ? 'The logs are ready. Head to the crafting table.' : 'You are in range. Swing the axe to break an oak log.';
+    } else {
+      if (activeMiniGame.phase === 'gather') activeMiniGame.phase = 'craft-planks';
+      activeMiniGame.feedback = activeMiniGame.phase === 'craft-planks' ? 'Put the two-log stack in the grid and craft eight oak planks.' : 'Arrange six oak planks two wide and three high.';
+    }
+    refreshMinecraftDoorGame(destination === 'tree' ? '[data-action="minecraft-chop"]' : '[data-action="minecraft-craft-planks"]');
+    announce(activeMiniGame.feedback);
+  }
+
+  function chopMinecraftLog() {
+    if (!activeMiniGame || activeMiniGame.kind !== 'minecraft-door' || activeMiniGame.complete) return;
+    if (activeMiniGame.phase !== 'gather') return;
+    if (activeMiniGame.position !== 'tree') { moveMinecraftPlayer('tree'); return; }
+    if (activeMiniGame.logs >= 2) return;
+    activeMiniGame.logs += 1;
+    activeMiniGame.feedback = activeMiniGame.logs === 2
+      ? 'Two oak logs collected. Walk to the crafting table.'
+      : 'One oak log collected. Chop one more trunk block.';
+    refreshMinecraftDoorGame(activeMiniGame.logs === 2 ? '[data-action="minecraft-move-table"]' : '[data-action="minecraft-chop"]');
+    announce(activeMiniGame.feedback);
+  }
+
+  function craftMinecraftPlanks() {
+    if (!activeMiniGame || activeMiniGame.kind !== 'minecraft-door' || activeMiniGame.phase !== 'craft-planks' || activeMiniGame.logs < 2) return;
+    var node = findNode(activeMiniGame.nodeId);
+    var yieldPerLog = node ? Number(node.miniGame.plankYield || 4) : 4;
+    activeMiniGame.planks = activeMiniGame.logs * yieldPerLog;
+    activeMiniGame.logs = 0;
+    activeMiniGame.phase = 'craft-door';
+    activeMiniGame.feedback = activeMiniGame.planks + ' oak planks crafted. Fill two adjacent columns in the 3 × 3 grid.';
+    refreshMinecraftDoorGame('[data-action="minecraft-grid"]');
+    announce(activeMiniGame.feedback);
+  }
+
+  function toggleMinecraftGridSlot(index) {
+    if (!activeMiniGame || activeMiniGame.kind !== 'minecraft-door' || activeMiniGame.phase !== 'craft-door' || activeMiniGame.complete) return;
+    if (!Number.isFinite(index) || index < 0 || index > 8) return;
+    var filledCount = activeMiniGame.grid.filter(Boolean).length;
+    if (!activeMiniGame.grid[index] && filledCount >= activeMiniGame.planks) return;
+    activeMiniGame.grid[index] = !activeMiniGame.grid[index];
+    filledCount = activeMiniGame.grid.filter(Boolean).length;
+    activeMiniGame.feedback = filledCount === 6
+      ? 'Six planks placed. Craft to check the recipe.'
+      : 'Place six planks in a rectangle: two columns wide and three rows high.';
+    refreshMinecraftDoorGame('[data-grid-index="' + index + '"]');
+  }
+
+  function craftMinecraftDoor() {
+    if (!activeMiniGame || activeMiniGame.kind !== 'minecraft-door' || activeMiniGame.phase !== 'craft-door' || activeMiniGame.complete) return;
+    var node = findNode(activeMiniGame.nodeId);
+    var doorCount = node ? Number(node.miniGame.doorOutputCount || 3) : 3;
+    var filled = activeMiniGame.grid.map(function (value, index) { return value ? index : -1; }).filter(function (index) { return index !== -1; });
+    var leftRecipe = [0, 1, 3, 4, 6, 7];
+    var rightRecipe = [1, 2, 4, 5, 7, 8];
+    var isMatch = [leftRecipe, rightRecipe].some(function (recipe) {
+      return filled.length === recipe.length && recipe.every(function (index) { return filled.indexOf(index) !== -1; });
+    });
+    if (!isMatch) {
+      activeMiniGame.mistakes += 1;
+      activeMiniGame.feedback = 'That shape is not a door yet. Fill two adjacent columns from top to bottom.';
+      refreshMinecraftDoorGame('.mc-craft-button');
+      announce(activeMiniGame.feedback);
+      return;
+    }
+    activeMiniGame.planks -= 6;
+    activeMiniGame.doors = doorCount;
+    activeMiniGame.phase = 'complete';
+    activeMiniGame.complete = true;
+    activeMiniGame.feedback = 'Crafted ' + doorCount + ' oak doors. One is installed in the clearing.';
+    refreshMinecraftDoorGame('[data-action="finish-game"]');
+    announce(activeMiniGame.feedback);
+  }
+
+  function resetMinecraftDoorGame() {
+    var node = activeMiniGame && findNode(activeMiniGame.nodeId);
+    if (!node) return;
+    activeMiniGame = null;
+    ensureMinecraftDoorGame(node);
+    refreshMinecraftDoorGame('[data-action="minecraft-move-tree"]');
+    announce('Woodworking task reset. Walk to the oak tree.');
+  }
+
+  function refreshMinecraftDoorGame(focusSelector) {
+    var currentGame = root.querySelector('[data-minecraft-game]');
+    var node = activeMiniGame && findNode(activeMiniGame.nodeId);
+    if (!currentGame || !node) return;
+    currentGame.outerHTML = renderMinecraftDoorBody(node);
+    var nextGame = root.querySelector('[data-minecraft-game]');
+    if (!nextGame) return;
+    nextGame.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    window.setTimeout(function () {
+      var target = nextGame.querySelector(focusSelector);
+      if (target && target.focus && !target.disabled) {
+        try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
+      }
+    }, 0);
+  }
+
   function syncMiniGameLifecycle() {
     var node = state.screen === 'mini' ? findNode(state.selectedNodeId) : null;
     if (!node || !node.miniGame || node.miniGame.visualType !== 'jigsaw' || !activeMiniGame || activeMiniGame.complete) {
@@ -2151,6 +2398,13 @@
   function handleAction(event) {
     var element = event.currentTarget;
     var action = element.getAttribute('data-action');
+    if (action === 'minecraft-move-tree') { moveMinecraftPlayer('tree'); return; }
+    if (action === 'minecraft-chop') { chopMinecraftLog(); return; }
+    if (action === 'minecraft-move-table') { moveMinecraftPlayer('table'); return; }
+    if (action === 'minecraft-craft-planks') { craftMinecraftPlanks(); return; }
+    if (action === 'minecraft-grid') { toggleMinecraftGridSlot(Number(element.getAttribute('data-grid-index'))); return; }
+    if (action === 'minecraft-craft-door') { craftMinecraftDoor(); return; }
+    if (action === 'minecraft-reset') { resetMinecraftDoorGame(); return; }
     if (action === 'select-chart-sheet') { selectChartSheet(element.getAttribute('data-chart-sheet-id')); return; }
     if (action === 'match-chart-target') { attemptChartMatch(element.getAttribute('data-chart-id')); return; }
     if (action === 'reset-chart-match') { resetChartMatch(); return; }
@@ -2178,6 +2432,7 @@
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'team-builder' && activeMiniGame && !activeMiniGame.complete) return;
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'deploy-drag-drop' && activeMiniGame && !activeMiniGame.complete) return;
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'data-chart-match' && activeMiniGame && !activeMiniGame.complete) return;
+      if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'minecraft-2d' && activeMiniGame && !activeMiniGame.complete) return;
       finishMiniGame();
       return;
     }
