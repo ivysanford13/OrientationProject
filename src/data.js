@@ -80,7 +80,7 @@ function makeSkill(id, label, category, badgeIcon) {
  * @param {string} concept
  * @param {string} visualType
  * @param {string} instructions
- * @param {{answer:string,maxGuesses:number,hint:string}} [puzzle] Playable puzzle data. Omit while a game is still planned.
+ * @param {{answers:Array<{answer:string,hint:string}>,maxGuesses:number}} [puzzle] Playable puzzle data. Omit while a game is still planned.
  * @returns {MiniGamePlan}
  */
 function makeMiniGame(id, title, concept, visualType, instructions, puzzle) {
@@ -587,9 +587,17 @@ const DOMAINS = [
       "wordle-password",
       "Make guesses and use the color clues to narrow down the password before you run out of tries.",
       {
-        answer: "PHISH",
+        answers: [
+          { answer: "PHISH", hint: "It's the trick that starts with a fake email." },
+          { answer: "SPOOF", hint: "Faking a sender's identity to trick you." },
+          { answer: "TOKEN", hint: "A temporary code proving who you are." },
+          { answer: "PATCH", hint: "The fix you install to close a security hole." },
+          { answer: "ADMIN", hint: "The account role with the most system power." },
+          { answer: "PROXY", hint: "A server that stands between you and the internet." },
+          { answer: "VIRUS", hint: "Malicious code that copies itself onto your device." },
+          { answer: "CACHE", hint: "Stored data that speeds up future requests." },
+        ],
         maxGuesses: 6,
-        hint: "It's the trick that starts with a fake email.",
       }
     ),
   }),
