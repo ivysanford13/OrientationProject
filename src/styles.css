@@ -3498,7 +3498,7 @@ button.mc-craft-slot:focus-visible { outline: 4px solid #fff4a2; outline-offset:
   .mc-mission-bar ol { width: 100%; }
   .mc-mission-bar li { flex: 1; min-width: 0; }
   .mc-world { min-height: 290px; }
-  .mc-tree-target { left: 36%; transform: scale(.84); transform-origin: bottom; }
+  .mc-tree-target { left: 18%; transform: scale(.78); transform-origin: bottom; }
   .mc-table-target { right: -20px; transform: scale(.82); transform-origin: bottom; }
   .mc-player { width: 63px; height: 75px; }
   .mc-player img { width: 63px; height: 63px; }

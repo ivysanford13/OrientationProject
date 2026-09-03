@@ -329,10 +329,19 @@ class QARunner:
     def solve_minecraft_door_game(page: Page) -> None:
         """Complete the oak-log, plank, and shaped-door recipe loop."""
 
-        page.locator('[data-action="minecraft-move-tree"]').click()
-        page.locator(".mc-action-key").click()
-        page.locator(".mc-action-key").click()
-        page.locator('[data-action="minecraft-move-table"]').first.click()
+        # World targets animate and partially overlap at short-landscape sizes.
+        # Keyboard activation is deterministic under sustained CI load and also
+        # exercises the semantic-button path promised by the interface.
+        tree = page.locator('[data-action="minecraft-move-tree"]')
+        tree.focus()
+        tree.press("Enter")
+        for _ in range(2):
+            action_key = page.locator(".mc-action-key")
+            action_key.focus()
+            action_key.press("Enter")
+        table = page.locator('[data-action="minecraft-move-table"]').first
+        table.focus()
+        table.press("Enter")
         page.locator('[data-action="minecraft-craft-planks"]').click()
         for grid_index in (0, 1, 3, 4, 6, 7):
             page.locator(f'[data-grid-index="{grid_index}"]').click()
