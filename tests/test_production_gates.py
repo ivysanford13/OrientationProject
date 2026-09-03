@@ -35,6 +35,9 @@ class CareerLaunchpadProductionGateTests(unittest.TestCase):
     def test_completed_node_revisit_preserves_route_integrity(self) -> None:
         self.runner.completed_node_revisit_loop()
 
+    def test_rejecting_both_siblings_reroutes_to_a_viable_world(self) -> None:
+        self.runner.exhausted_sibling_reroute_loop()
+
     def test_reflection_ctas_are_clear_of_skill_dock(self) -> None:
         self.runner.reflection_dock_overlap_loop()
 

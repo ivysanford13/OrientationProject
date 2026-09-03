@@ -347,6 +347,7 @@
     var domainDone = domain && isCompleted(domain.id);
     var stage = domainDone ? 2 : regionDone ? 1 : 0;
     var options = stage === 0 ? [region] : stage === 1 ? region.children : domain.children;
+    var openRouteCount = options.filter(function (node) { return !isRejected(node.id) && !isCompleted(node.id); }).length;
     var current = currentJourneyNode();
     var scores = scoreRegions(state.starterSkills);
     var recommendation = region.id === state.recommendedRegionId ? 'BEST STARTING MATCH' : 'NEXT BEST MATCH';
@@ -374,7 +375,7 @@
     var routePath = scene.paths && scene.paths[stage] || 'M80 360 C220 380 355 270 580 224 S730 154 850 155';
     var sceneStyle = '--scene-sky:' + escapeAttr(scene.sky || '#9ed8eb') + ';--scene-horizon:' + escapeAttr(scene.horizon || '#a4d477') + ';--scene-terrain:' + escapeAttr(scene.terrain || '#347c51') + ';--scene-mountain:' + escapeAttr(scene.mountain || '#6d8fa5') + ';--scene-sun:' + escapeAttr(scene.sun || '#ffb647') + ';--scene-haze:' + escapeAttr(scene.haze || '#d9f4ef') + ';--scene-accent:' + escapeAttr(scene.accent || region.color || '#2f6fed');
 
-    return '<section class="screen screen--map world-screen" aria-labelledby="map-title"><header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + (stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.') + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header><section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + '" style="' + sceneStyle + '" aria-label="Interactive journey map"><div class="world-sky" aria-hidden="true"><span class="world-haze"></span><span class="world-sun"></span><span class="cloud cloud--one"></span><span class="cloud cloud--two"></span><span class="mountain mountain--one"></span><span class="mountain mountain--two"></span>' + renderWorldLandmarks(scene.landmarks) + '</div><svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path d="' + escapeAttr(routePath) + '"></path></svg><div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + '<div class="map-avatar avatar-cougar' + (state.screen === 'travel' ? ' is-traveling' : '') + (state.lastAward ? ' is-arrived' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span class="avatar-shell" aria-hidden="true"><img class="explorer-avatar explorer-avatar--map" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></span><small>' + escapeHtml(state.name || 'YOU') + '</small></div><div class="terrain terrain--front" aria-hidden="true"></div><div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style') + '</strong></div></section><div class="map-action-row"><p><strong>' + options.filter(function (node) { return !isRejected(node.id); }).length + '</strong> route' + (options.filter(function (node) { return !isRejected(node.id); }).length === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+    return '<section class="screen screen--map world-screen" aria-labelledby="map-title"><header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + (stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.') + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header><section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + '" style="' + sceneStyle + '" aria-label="Interactive journey map"><div class="world-sky" aria-hidden="true"><span class="world-haze"></span><span class="world-sun"></span><span class="cloud cloud--one"></span><span class="cloud cloud--two"></span><span class="mountain mountain--one"></span><span class="mountain mountain--two"></span>' + renderWorldLandmarks(scene.landmarks) + '</div><svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path d="' + escapeAttr(routePath) + '"></path></svg><div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + '<div class="map-avatar avatar-cougar' + (state.screen === 'travel' ? ' is-traveling' : '') + (state.lastAward ? ' is-arrived' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span class="avatar-shell" aria-hidden="true"><img class="explorer-avatar explorer-avatar--map" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></span><small>' + escapeHtml(state.name || 'YOU') + '</small></div><div class="terrain terrain--front" aria-hidden="true"></div><div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style') + '</strong></div></section><div class="map-action-row"><p><strong>' + openRouteCount + '</strong> forward route' + (openRouteCount === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
   }
 
   function renderWorldLandmarks(landmarks) {
@@ -434,8 +435,8 @@
 
   function renderReflection(node) {
     var skill = skillFor(node);
-    var sibling = findAlternative(node);
-    return '<section class="screen screen--reflection" aria-labelledby="reflection-title"><div class="reflection-scene"><div class="reflection-avatar avatar-cougar" aria-hidden="true"><img class="explorer-avatar explorer-avatar--reflection" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></div><div class="reflection-card"><p class="screen-kicker">TRAIL CHECKPOINT</p><h1 id="reflection-title" tabindex="-1">Did you enjoy that kind of activity?</h1><p>Your answer changes the map. There is no wrong response—this is about noticing what gives you energy.</p><div class="reflection-choice-grid"><button class="reflection-choice reflection-choice--yes" data-action="enjoy-yes"><span aria-hidden="true">✓</span><strong>Yes, keep going</strong><small>Add <b>' + escapeHtml(skill.name) + '</b> and reveal the next stage.</small></button><button class="reflection-choice reflection-choice--maybe" data-action="enjoy-maybe"><span aria-hidden="true">?</span><strong>Maybe, show me more</strong><small>Keep this trail open without changing your progress.</small></button><button class="reflection-choice reflection-choice--no" data-action="enjoy-no"><span aria-hidden="true">↶</span><strong>No, try another trail</strong><small>' + escapeHtml(sibling ? 'Not for me? Confirm to try ' + sibling.title + '.' : 'Not for me? Confirm to return to the map.') + '</small></button></div><button class="text-button" data-action="back-map">I’m not sure yet — return to map</button></div></div></section>';
+    var alternative = findAlternative(node);
+    return '<section class="screen screen--reflection" aria-labelledby="reflection-title"><div class="reflection-scene"><div class="reflection-avatar avatar-cougar" aria-hidden="true"><img class="explorer-avatar explorer-avatar--reflection" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></div><div class="reflection-card"><p class="screen-kicker">TRAIL CHECKPOINT</p><h1 id="reflection-title" tabindex="-1">Did you enjoy that kind of activity?</h1><p>Your answer changes the map. There is no wrong response—this is about noticing what gives you energy.</p><div class="reflection-choice-grid"><button class="reflection-choice reflection-choice--yes" data-action="enjoy-yes"><span aria-hidden="true">✓</span><strong>Yes, keep going</strong><small>Add <b>' + escapeHtml(skill.name) + '</b> and reveal the next stage.</small></button><button class="reflection-choice reflection-choice--maybe" data-action="enjoy-maybe"><span aria-hidden="true">?</span><strong>Maybe, show me more</strong><small>Keep this trail open without changing your progress.</small></button><button class="reflection-choice reflection-choice--no" data-action="enjoy-no"><span aria-hidden="true">↶</span><strong>No, try another trail</strong><small>' + escapeHtml(alternative ? 'Not for me? Confirm to try ' + alternative.title + '.' : 'Not for me? Confirm to reopen your closest matches.') + '</small></button></div><button class="text-button" data-action="back-map">I’m not sure yet — return to map</button></div></div></section>';
   }
 
   function renderCareer(node) {
@@ -787,15 +788,27 @@
   function rejectNode(id) {
     var node = findNode(id);
     if (!node || isCompleted(id)) return;
-    if (!isRejected(id)) state.rejected.push(id);
-    var depth = nodeDepth(node);
-    if (depth === 0) {
-      var nextRegion = recommendRegion(state.starterSkills, state.rejected);
-      state.activeRegionId = nextRegion.id; state.activeDomainId = null;
-    } else if (depth === 1) state.activeDomainId = null;
-    state.selectedNodeId = null; state.travelTargetId = null; state.screen = 'map'; saveState(); render();
     var alternative = findAlternative(node);
-    announce(alternative ? node.title + ' closed. Try ' + alternative.title + '.' : 'That trail closed. Your compass found another route.');
+    if (!isRejected(id)) state.rejected.push(id);
+    if (alternative) {
+      var alternativeDepth = nodeDepth(alternative);
+      if (alternativeDepth === 0) {
+        state.activeRegionId = alternative.id; state.activeDomainId = null;
+      } else if (alternativeDepth === 1) {
+        state.activeRegionId = alternative.parentId; state.activeDomainId = null;
+      } else {
+        var alternativeDomain = findNode(alternative.parentId);
+        state.activeRegionId = alternativeDomain.parentId; state.activeDomainId = alternativeDomain.id;
+      }
+    } else {
+      // A student can eventually say no to every branch. Reopen the ranked
+      // worlds rather than leaving a zero-route map with no way forward.
+      state.rejected = [];
+      state.activeRegionId = recommendRegion(state.starterSkills, []).id;
+      state.activeDomainId = null;
+    }
+    state.selectedNodeId = null; state.travelTargetId = null; state.screen = 'map'; saveState(); render();
+    announce(alternative ? node.title + ' closed. Try ' + alternative.title + '.' : 'Every route was explored. Your closest matches are open again.');
   }
 
   function pauseReflection() {
@@ -808,17 +821,46 @@
     var id = element && element.getAttribute('data-node-id') || state.selectedNodeId;
     var node = findNode(id);
     if (!node || isCompleted(id)) return;
+    var alternative = findAlternative(node);
     modalReturnFocus = element;
     setModalSurfaces(true);
-    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">TRAIL DECISION</p><h2 id="reject-title">Try the other trail?</h2><p>Choosing “Not for me” closes ' + escapeHtml(node.title) + ' for this journey and opens its alternative. Your earned skills stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep this trail open</button><button class="button button--danger" data-action="confirm-reject" data-node-id="' + escapeAttr(id) + '">Close this trail</button></div></section></div>';
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">TRAIL DECISION</p><h2 id="reject-title">Try another trail?</h2><p>Choosing “Not for me” closes ' + escapeHtml(node.title) + (alternative ? ' and points your explorer to ' + escapeHtml(alternative.title) + '.' : ' and reopens your closest matches so the journey can continue.') + ' Your earned skills stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep this trail open</button><button class="button button--danger" data-action="confirm-reject" data-node-id="' + escapeAttr(id) + '">Close this trail</button></div></section></div>';
     wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
   function findAlternative(node) {
     if (!node) return null;
-    if (!node.parentId) return recommendRegion(state.starterSkills, state.rejected.concat([node.id]));
+    var depth = nodeDepth(node);
+    if (!node.parentId) return nextOpenRegion(node.id);
     var parent = findNode(node.parentId);
-    return parent && parent.children.filter(function (candidate) { return candidate.id !== node.id && !isRejected(candidate.id); })[0] || null;
+    var sibling = parent && parent.children.filter(function (candidate) {
+      return candidate.id !== node.id && !isRejected(candidate.id) && (depth !== 1 || domainHasCareerRoute(candidate));
+    })[0];
+    if (sibling) return sibling;
+    if (depth === 2) {
+      var region = findNode(parent.parentId);
+      var nextDomain = region && region.children.filter(function (candidate) {
+        return candidate.id !== parent.id && domainHasCareerRoute(candidate);
+      })[0];
+      if (nextDomain) return nextDomain;
+      return nextOpenRegion(region && region.id);
+    }
+    if (depth === 1) return nextOpenRegion(parent && parent.id);
+    return null;
+  }
+
+  function domainHasCareerRoute(domain) {
+    return !!domain && !isRejected(domain.id) && (domain.children || []).some(function (candidate) { return !isRejected(candidate.id); });
+  }
+
+  function regionHasCareerRoute(region) {
+    return !!region && !isRejected(region.id) && (region.children || []).some(domainHasCareerRoute);
+  }
+
+  function nextOpenRegion(excludedRegionId) {
+    var excluded = state.rejected.slice();
+    if (excludedRegionId) excluded.push(excludedRegionId);
+    return rankedRegions(state.starterSkills, excluded).filter(regionHasCareerRoute)[0] || null;
   }
 
   function startAnotherPath() {

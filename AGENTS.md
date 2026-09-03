@@ -55,3 +55,5 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - After replacing a screen's DOM, treat focus left on a detached trigger as stale; move focus to the new heading so keyboard and screen-reader users receive the new context.
 - Map decision titles must wrap in full at every supported viewport; ellipses hide the meaning of a route and make the choice depend on guessing.
 - Any map-card typography or size change requires collision checks against the avatar and floating skill dock at phone, short-landscape, and desktop viewports.
+- Rejecting the last open sibling must climb to the nearest viable branch—or another ranked world—while preserving earned skills; never render a zero-route map.
+- Playwright journey setup must synchronize on persisted state after each rerendering selection; visually timed click sequences can produce flaky release evidence under sustained load.

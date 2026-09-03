@@ -172,6 +172,10 @@ class QARunner:
         page.locator(".screen--skills").wait_for()
         for skill_id in STARTER_LOADOUTS[region_id]:
             page.locator(f'[data-skill-id="{skill_id}"]').click()
+            page.wait_for_function(
+                "skillId => CareerLaunchpadApp.getState().starterSkills.includes(skillId)",
+                arg=skill_id,
+            )
         if page.locator(".hex-item").count() != 4:
             raise AssertionError("starter loadout did not create four skill hexes")
         page.get_by_role("button", name=re.compile("Reveal my world")).click()
@@ -682,6 +686,41 @@ class QARunner:
         finally:
             pass
 
+    def exhausted_sibling_reroute_loop(self) -> str:
+        """Ensure saying no to both sibling domains opens another viable world."""
+
+        page, context, errors, _requests = self.fresh_page()
+        try:
+            self.start(page, "Reroute Explorer", "region-build-create")
+            self.finish_node(page, "region-build-create")
+            self.finish_node(page, "domain-software-apps", enjoyed=False)
+            self.finish_node(page, "domain-systems-tech", enjoyed=False)
+
+            state = page.evaluate("CareerLaunchpadApp.getState()")
+            if state["screen"] != "map":
+                raise AssertionError(f"second no-response left screen={state['screen']!r}")
+            if state["activeRegionId"] == "region-build-create":
+                raise AssertionError("exhausted Build and Create world remained active")
+            expected_rejected = {"domain-software-apps", "domain-systems-tech"}
+            if not expected_rejected.issubset(set(state["rejected"])):
+                raise AssertionError(f"domain rejections were not preserved: {state['rejected']}")
+            if len(state["earned"]) != 1 or state["earned"][0]["nodeId"] != "region-build-create":
+                raise AssertionError(f"earned region skill was not preserved: {state['earned']}")
+            enabled_forward = page.locator(".world-stop:not(.is-complete):enabled")
+            if enabled_forward.count() != 1:
+                raise AssertionError(
+                    f"rerouted world should expose one first stop, found {enabled_forward.count()}"
+                )
+            if "0 forward routes open" in page.locator(".map-action-row").inner_text().casefold():
+                raise AssertionError("rerouted map still reports zero forward routes")
+            self.assert_clean(page, errors)
+            return (
+                "both rejected domains stayed closed; earned skill stayed saved; "
+                f"compass opened {state['activeRegionId']} with one forward route"
+            )
+        finally:
+            pass
+
     def reflection_dock_overlap_loop(self) -> str:
         """Check that the fixed skill HUD never covers reflection choices."""
 
@@ -1029,6 +1068,13 @@ def main() -> int:
             "complete a domain; revisit it; attempt the no-response path",
             "completed and rejected remain mutually exclusive; earned/completed arrays do not mutate",
             runner.completed_node_revisit_loop,
+        )
+        runner.run_loop(
+            "Exhausted sibling reroute",
+            "Build and Create after both domain choices receive confirmed no-responses",
+            "earn the region skill; reject Software and Apps; reject forced Systems and Tech",
+            "both domains remain closed, the earned skill remains saved, and the compass opens one viable first stop in another world",
+            runner.exhausted_sibling_reroute_loop,
         )
         runner.run_loop(
             "Reflection CTA dock clearance",
