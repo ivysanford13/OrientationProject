@@ -3141,7 +3141,7 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
   outline-offset: 6px;
 }
 
-.mc-target:disabled { opacity: .72; }
+.mc-target:disabled { opacity: .72; pointer-events: none; }
 .mc-tree-target { left: 48%; }
 .mc-table-target { right: 4%; min-width: 145px; min-height: 143px; }
 
