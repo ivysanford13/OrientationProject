@@ -58,6 +58,11 @@
   var state = loadState();
   var modalReturnFocus = null;
   var travelTimer = null;
+  var scratchNodeId = null;
+  var scratchDraft = [];
+  var scratchSolved = false;
+  var scratchFeedback = '';
+  var scratchPosition = { row: 4, col: 0, facing: 'right' };
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -582,7 +587,32 @@
     if (!node || !node.miniGame) return renderMap();
     var skill = skillFor(node);
     var mini = node.miniGame || {};
+    if (node.id === 'domain-software-apps') return renderScratchGame(node, skill, mini);
     return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
+  }
+
+  function renderScratchGame(node, skill, mini) {
+    if (scratchNodeId !== node.id) { scratchNodeId = node.id; scratchDraft = []; scratchSolved = false; scratchFeedback = ''; }
+    var blocks = [
+      { id: 'move', label: 'move forward one block', kind: 'motion', hint: 'Walk one square' },
+      { id: 'left', label: 'turn left', kind: 'turn', hint: 'Rotate 90° left' },
+      { id: 'right', label: 'turn right', kind: 'turn', hint: 'Rotate 90° right' }
+    ];
+    var draftMarkup = scratchDraft.length ? scratchDraft.map(function (id, index) {
+      var block = blocks.filter(function (candidate) { return candidate.id === id; })[0];
+      return '<li class="scratch-stack-block scratch-block--' + block.kind + '"><span>' + (index + 1) + '</span><strong>' + escapeHtml(block.label) + '</strong><button type="button" class="scratch-remove" data-action="scratch-remove" data-scratch-index="' + index + '" aria-label="Remove command ' + (index + 1) + '">×</button></li>';
+    }).join('') : '<li class="scratch-empty">Choose blocks below to build your script.</li>';
+    var availableMarkup = blocks.map(function (block, index) { return '<button type="button" class="scratch-block scratch-block--' + block.kind + '" data-action="scratch-add" data-scratch-id="' + block.id + '"><span class="scratch-block-shape" aria-hidden="true"></span><span><strong>' + escapeHtml(block.label) + '</strong><small>' + escapeHtml(block.hint) + '</small></span><b class="scratch-block-number">' + (index + 1) + '</b></button>'; }).join('');
+    var feedbackMarkup = scratchFeedback ? '<p class="scratch-feedback ' + (scratchSolved ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(scratchFeedback) + '</p>' : '';
+    var actionMarkup = scratchSolved ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>' : '<button class="button button--primary" data-action="scratch-check" ' + (scratchDraft.length === 0 ? 'disabled' : '') + '>Run my script <span aria-hidden="true">→</span></button>';
+    var cells = [];
+    for (var row = 0; row < 5; row += 1) for (var col = 0; col < 5; col += 1) {
+      var isBush = row === 4 && col === 2;
+      var isFlag = row === 2 && col === 4;
+      var isCat = row === scratchPosition.row && col === scratchPosition.col;
+      cells.push('<div class="scratch-grid-cell' + (isBush ? ' is-bush' : '') + (isFlag ? ' is-flag' : '') + (isCat ? ' is-cat' : '') + '" aria-label="' + (isBush ? 'Bush obstacle' : isFlag ? 'Goal flag' : isCat ? 'Cat position' : 'Path square') + '">' + (isBush ? '🌿' : isFlag ? '⚑' : isCat ? '🐱' : '') + '</div>');
+    }
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SCRATCH PUZZLE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout scratch-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">Guide the cat around the bush and onto the flag by building a Scratch-style command script.</p><div class="scratch-howto"><span class="eyebrow">HOW TO PLAY</span><strong>Click commands in the order the cat should use them.</strong><span>Start facing right. The cat moves one square at a time and turns in place.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="scratch-reset">Reset script</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace" role="region" aria-label="Scratch block path puzzle"><div class="scratch-puzzle-board"><div class="scratch-grid" aria-label="Cat path board">' + cells.join('') + '</div><div class="scratch-board-legend"><span>🐱 Start</span><span>🌿 Bush</span><span>⚑ Goal</span></div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR SCRIPT</span><small>' + scratchDraft.length + ' commands</small></div><ol class="scratch-stack">' + draftMarkup + '</ol><div class="scratch-divider"><span>CLICK TO ADD A COMMAND</span></div><div class="scratch-block-picker">' + availableMarkup + '</div>' + feedbackMarkup + '</div></div></div></section>';
   }
 
   function renderReflection(node) {
@@ -898,6 +928,10 @@
       } else { state.screen = 'reflection'; saveState(); render(); }
       return;
     }
+    if (action === 'scratch-add') { addScratchBlock(element.getAttribute('data-scratch-id')); return; }
+    if (action === 'scratch-remove') { removeScratchBlock(Number(element.getAttribute('data-scratch-index'))); return; }
+    if (action === 'scratch-reset') { resetScratchGame(); render(); return; }
+    if (action === 'scratch-check') { checkScratchGame(); return; }
     if (action === 'enjoy-yes') { completeNode(state.selectedNodeId); return; }
     if (action === 'enjoy-maybe') { pauseReflection(); return; }
     if (action === 'enjoy-no') { requestRejectNode(element); return; }
@@ -971,6 +1005,7 @@
     if (!canOpen(node)) return;
     var replaying = isCompleted(node.id);
     var current = currentJourneyNode();
+    if (id === 'domain-software-apps') resetScratchGame();
     state.selectedNodeId = id; state.reviewingNodeId = replaying ? id : null; state.travelFromId = current ? current.id : null; state.travelTargetId = id;
     if (nodeDepth(node) === 1) state.activeDomainId = id;
     state.screen = 'travel'; saveState(); beginMapTravel(node);
@@ -1215,7 +1250,50 @@
     if (!node || !isCompleted(id)) return;
     closeModal();
     if (!node.miniGame && node.career) { openCareerResult(node); return; }
+    if (id === 'domain-software-apps') resetScratchGame();
     state.reviewingNodeId = id; state.selectedNodeId = id; state.screen = 'mini'; saveState(); render();
+  }
+
+  function resetScratchGame() {
+    scratchNodeId = 'domain-software-apps'; scratchDraft = []; scratchSolved = false; scratchFeedback = '';
+    scratchPosition = { row: 4, col: 0, facing: 'right' };
+  }
+
+  function addScratchBlock(id) {
+    if (scratchSolved || ['move', 'left', 'right'].indexOf(id) === -1) return;
+    scratchDraft.push(id); scratchFeedback = ''; render();
+  }
+
+  function removeScratchBlock(index) {
+    if (scratchSolved) return;
+    if (index >= 0 && index < scratchDraft.length) scratchDraft.splice(index, 1);
+    scratchFeedback = ''; render();
+  }
+
+  function checkScratchGame() {
+    if (!scratchDraft.length) return;
+    var position = { row: 4, col: 0, facing: 'right' };
+    var directions = ['up', 'right', 'down', 'left'];
+    var bush = { row: 4, col: 2 };
+    var hitBush = false;
+    scratchDraft.forEach(function (command) {
+      if (command === 'left') position.facing = directions[(directions.indexOf(position.facing) + 3) % 4];
+      if (command === 'right') position.facing = directions[(directions.indexOf(position.facing) + 1) % 4];
+      if (command === 'move') {
+        var next = { row: position.row, col: position.col };
+        if (position.facing === 'up') next.row -= 1;
+        if (position.facing === 'right') next.col += 1;
+        if (position.facing === 'down') next.row += 1;
+        if (position.facing === 'left') next.col -= 1;
+        if (next.row < 0 || next.row > 4 || next.col < 0 || next.col > 4 || (next.row === bush.row && next.col === bush.col)) { hitBush = true; return; }
+        position.row = next.row; position.col = next.col;
+      }
+    });
+    scratchPosition = position;
+    if (hitBush) { scratchFeedback = 'The cat bumped into the bush. Turn before moving forward.'; announce('The cat needs a different route.'); }
+    else if (position.row === 2 && position.col === 4) { scratchSolved = true; scratchFeedback = 'Great route! The cat reached the flag.'; announce('Scratch path solved.'); }
+    else { scratchFeedback = 'The cat is safe, but has not reached the flag yet. Add more commands.'; announce('Keep building the route.'); }
+    render();
   }
 
   // ---------------------------------------------------------------------------
