@@ -63,6 +63,7 @@
   var scratchSolved = false;
   var scratchFeedback = '';
   var scratchPosition = { row: 4, col: 0, facing: 'right' };
+  var wordleSessions = {};
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -583,12 +584,165 @@
     return 'You enjoyed ' + domain.title + '. Choose the work style that sounds most like you.';
   }
 
+  // ---------------------------------------------------------------------------
+  // Mini-game: Guess the Password (Wordle-style)
+  // ---------------------------------------------------------------------------
+
+  var WORDLE_KEYBOARD_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+
+  function getWordleSession(node) {
+    var puzzle = node.miniGame && node.miniGame.puzzle;
+    if (!puzzle) return null;
+    if (!wordleSessions[node.id]) {
+      wordleSessions[node.id] = { guesses: [], current: '', status: 'playing', keyStatus: {}, message: '' };
+    }
+    return wordleSessions[node.id];
+  }
+
+  function resetWordleSession(nodeId) {
+    delete wordleSessions[nodeId];
+  }
+
+  function evaluateWordleGuess(guess, answer) {
+    var result = new Array(guess.length).fill('absent');
+    var pool = answer.split('');
+    var used = new Array(answer.length).fill(false);
+    for (var i = 0; i < guess.length; i++) {
+      if (guess[i] === pool[i]) { result[i] = 'correct'; used[i] = true; }
+    }
+    for (var j = 0; j < guess.length; j++) {
+      if (result[j] === 'correct') continue;
+      var letter = guess[j];
+      for (var k = 0; k < pool.length; k++) {
+        if (!used[k] && pool[k] === letter) { result[j] = 'present'; used[k] = true; break; }
+      }
+    }
+    return result;
+  }
+
+  var WORDLE_STATUS_RANK = { absent: 0, present: 1, correct: 2 };
+
+  function mergeWordleKeyStatus(session, guess, feedback) {
+    for (var i = 0; i < guess.length; i++) {
+      var letter = guess[i];
+      var status = feedback[i];
+      var existing = session.keyStatus[letter];
+      if (!existing || WORDLE_STATUS_RANK[status] > WORDLE_STATUS_RANK[existing]) session.keyStatus[letter] = status;
+    }
+  }
+
+  function wordleTypeLetter(node, letter) {
+    var mini = node.miniGame;
+    var session = getWordleSession(node);
+    if (!session || session.status !== 'playing') return;
+    var wordLength = mini.puzzle.answer.length;
+    if (session.current.length >= wordLength) return;
+    session.current += letter;
+    session.message = '';
+    render();
+  }
+
+  function wordleBackspace(node) {
+    var session = getWordleSession(node);
+    if (!session || session.status !== 'playing') return;
+    session.current = session.current.slice(0, -1);
+    session.message = '';
+    render();
+  }
+
+  function wordleSubmitGuess(node) {
+    var mini = node.miniGame;
+    var session = getWordleSession(node);
+    if (!session || session.status !== 'playing') return;
+    var puzzle = mini.puzzle;
+    var wordLength = puzzle.answer.length;
+    if (session.current.length !== wordLength) {
+      session.message = 'Enter ' + wordLength + ' letters.';
+      render();
+      return;
+    }
+    var guess = session.current;
+    var feedback = evaluateWordleGuess(guess, puzzle.answer);
+    session.guesses.push({ word: guess, feedback: feedback });
+    mergeWordleKeyStatus(session, guess, feedback);
+    session.current = '';
+    if (guess === puzzle.answer) {
+      session.status = 'won';
+      session.message = 'Password cracked! It was ' + puzzle.answer + '.';
+      announce('You cracked the password. It was ' + puzzle.answer + '.');
+    } else if (session.guesses.length >= puzzle.maxGuesses) {
+      session.status = 'lost';
+      session.message = 'Out of tries. The password was ' + puzzle.answer + '.';
+      announce('Out of tries. The password was ' + puzzle.answer + '.');
+    } else {
+      session.message = '';
+      announce('Guess ' + session.guesses.length + ' of ' + puzzle.maxGuesses + ' submitted.');
+    }
+    render();
+  }
+
+  function renderWordleCell(letter, status) {
+    var classes = 'wordle-cell' + (status ? ' is-' + status : letter ? ' is-filled' : '');
+    return '<span class="' + classes + '">' + escapeHtml(letter || '') + '</span>';
+  }
+
+  function renderWordleRow(word, feedback, wordLength) {
+    var cells = '';
+    for (var i = 0; i < wordLength; i++) cells += renderWordleCell(word ? word[i] : '', feedback ? feedback[i] : '');
+    return '<div class="wordle-row">' + cells + '</div>';
+  }
+
+  function renderWordleBoard(session, puzzle) {
+    var wordLength = puzzle.answer.length;
+    var rows = '';
+    for (var i = 0; i < puzzle.maxGuesses; i++) {
+      if (i < session.guesses.length) {
+        rows += renderWordleRow(session.guesses[i].word, session.guesses[i].feedback, wordLength);
+      } else if (i === session.guesses.length && session.status === 'playing') {
+        rows += renderWordleRow(session.current, null, wordLength);
+      } else {
+        rows += renderWordleRow('', null, wordLength);
+      }
+    }
+    return '<div class="wordle-board" role="group" aria-label="Password guesses">' + rows + '</div>';
+  }
+
+  function renderWordleKeyboard(session) {
+    var disabled = session.status !== 'playing';
+    var rows = WORDLE_KEYBOARD_ROWS.map(function (row, index) {
+      var keys = row.split('').map(function (letter) {
+        var status = session.keyStatus[letter];
+        return '<button type="button" class="wordle-key' + (status ? ' wordle-key--' + status : '') + '" data-action="wordle-key" data-key="' + letter + '" ' + (disabled ? 'disabled' : '') + '>' + letter + '</button>';
+      }).join('');
+      if (index === WORDLE_KEYBOARD_ROWS.length - 1) {
+        keys = '<button type="button" class="wordle-key wordle-key--wide" data-action="wordle-backspace" aria-label="Backspace" ' + (disabled ? 'disabled' : '') + '>⌫</button>' + keys
+          + '<button type="button" class="wordle-key wordle-key--wide" data-action="wordle-submit" ' + (disabled ? 'disabled' : '') + '>Enter</button>';
+      }
+      return '<div class="wordle-keyboard-row">' + keys + '</div>';
+    }).join('');
+    return '<div class="wordle-keyboard" role="group" aria-label="On-screen keyboard">' + rows + '</div>';
+  }
+
+  function renderWordleStage(node, mini, session) {
+    var puzzle = mini.puzzle;
+    var messageClass = session.status === 'won' ? ' is-won' : session.status === 'lost' ? ' is-lost' : '';
+    var message = session.message || (mini.instructions || '');
+    return '<div class="placeholder-stage placeholder-stage--wordle" role="region" aria-label="Planned mini-game workspace"><div class="wordle-game"><p class="wordle-hint">HINT: ' + escapeHtml(puzzle.hint || 'Watch the color clues.') + '</p>' + renderWordleBoard(session, puzzle) + '<p class="wordle-message' + messageClass + '" role="status">' + escapeHtml(message) + '</p>' + renderWordleKeyboard(session) + '</div></div>';
+  }
+
+  function renderPlaceholderStage(mini) {
+    return '<div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div>';
+  }
+
   function renderMiniGame(node) {
     if (!node || !node.miniGame) return renderMap();
     var skill = skillFor(node);
     var mini = node.miniGame || {};
     if (node.id === 'domain-software-apps') return renderScratchGame(node, skill, mini);
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
+    var session = mini.visualType === 'wordle-password' && mini.puzzle ? getWordleSession(node) : null;
+    var stageMarkup = session ? renderWordleStage(node, mini, session) : renderPlaceholderStage(mini);
+    var statusChip = mini.status === 'ready' ? '~60 SEC' : '~60 SEC / PLANNED';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + statusChip + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div>' + stageMarkup + '</div></section>';
   }
 
   function renderScratchGame(node, skill, mini) {
@@ -932,6 +1086,21 @@
     if (action === 'scratch-remove') { removeScratchBlock(Number(element.getAttribute('data-scratch-index'))); return; }
     if (action === 'scratch-reset') { resetScratchGame(); render(); return; }
     if (action === 'scratch-check') { checkScratchGame(); return; }
+    if (action === 'wordle-key') {
+      var wordleNode = findNode(state.selectedNodeId);
+      if (wordleNode) wordleTypeLetter(wordleNode, element.getAttribute('data-key'));
+      return;
+    }
+    if (action === 'wordle-backspace') {
+      var backspaceNode = findNode(state.selectedNodeId);
+      if (backspaceNode) wordleBackspace(backspaceNode);
+      return;
+    }
+    if (action === 'wordle-submit') {
+      var submitNode = findNode(state.selectedNodeId);
+      if (submitNode) wordleSubmitGuess(submitNode);
+      return;
+    }
     if (action === 'enjoy-yes') { completeNode(state.selectedNodeId); return; }
     if (action === 'enjoy-maybe') { pauseReflection(); return; }
     if (action === 'enjoy-no') { requestRejectNode(element); return; }
@@ -1003,6 +1172,7 @@
   function openNode(id) {
     var node = findNode(id);
     if (!canOpen(node)) return;
+    resetWordleSession(id);
     var replaying = isCompleted(node.id);
     var current = currentJourneyNode();
     if (id === 'domain-software-apps') resetScratchGame();
@@ -1248,6 +1418,7 @@
   function replayNode(id) {
     var node = findNode(id);
     if (!node || !isCompleted(id)) return;
+    resetWordleSession(id);
     closeModal();
     if (!node.miniGame && node.career) { openCareerResult(node); return; }
     if (id === 'domain-software-apps') resetScratchGame();
@@ -1407,6 +1578,14 @@
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && modalRoot && modalRoot.innerHTML) { closeModal(); return; }
     trapModalFocus(event);
+    if (state.screen !== 'mini' || (modalRoot && modalRoot.innerHTML)) return;
+    var activeTag = document.activeElement && document.activeElement.tagName;
+    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+    var node = findNode(state.selectedNodeId);
+    if (!node || !node.miniGame || node.miniGame.visualType !== 'wordle-password' || !node.miniGame.puzzle) return;
+    if (event.key === 'Enter') { event.preventDefault(); wordleSubmitGuess(node); return; }
+    if (event.key === 'Backspace') { event.preventDefault(); wordleBackspace(node); return; }
+    if (/^[a-zA-Z]$/.test(event.key)) { wordleTypeLetter(node, event.key.toUpperCase()); }
   });
 
   render();
