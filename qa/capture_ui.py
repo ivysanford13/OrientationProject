@@ -26,23 +26,42 @@ def capture() -> None:
         page.screenshot(path=SCREENSHOT_DIR / "01-landing.png", full_page=True)
 
         page.get_by_label("What should we call you?").fill("Dan")
-        page.get_by_role("button", name="Enter the field guide").click()
+        page.get_by_role("button", name="Choose my starter skills").click()
         page.wait_for_timeout(600)
-        page.screenshot(path=SCREENSHOT_DIR / "02-map.png", full_page=True)
+        page.screenshot(path=SCREENSHOT_DIR / "02-skill-loadout.png", full_page=True)
+
+        for skill_id in (
+            "starter-creative-thinking",
+            "starter-coding-curiosity",
+            "starter-hands-on-tech",
+            "starter-visual-design",
+        ):
+            page.locator(f'[data-skill-id="{skill_id}"]').click()
+        page.get_by_role("button", name="Reveal my world").click()
+        page.wait_for_timeout(600)
+        page.screenshot(path=SCREENSHOT_DIR / "03-world-map.png", full_page=True)
 
         page.locator('[data-node-id="region-build-create"]').click()
-        page.wait_for_timeout(600)
-        page.screenshot(path=SCREENSHOT_DIR / "03-placeholder.png", full_page=True)
-        page.get_by_role("button", name="Skip for now").click()
-        page.wait_for_timeout(900)
-        page.screenshot(path=SCREENSHOT_DIR / "04-reward-map.png", full_page=True)
+        page.wait_for_timeout(350)
+        page.screenshot(path=SCREENSHOT_DIR / "04-avatar-travel.png", full_page=True)
+        page.locator(".screen--challenge").wait_for()
+        page.screenshot(path=SCREENSHOT_DIR / "05-placeholder.png", full_page=True)
+        page.get_by_role("button", name="Skip game for now").click()
+        page.screenshot(path=SCREENSHOT_DIR / "06-enjoyment-check.png", full_page=True)
+        page.get_by_role("button", name="Yes, keep going").click()
+        page.wait_for_timeout(700)
+        page.screenshot(path=SCREENSHOT_DIR / "07-shifted-world.png", full_page=True)
 
         page.locator('[data-node-id="domain-software-apps"]').click()
-        page.get_by_role("button", name="Skip for now").click()
+        page.locator(".screen--challenge").wait_for()
+        page.get_by_role("button", name="Skip game for now").click()
+        page.get_by_role("button", name="Yes, keep going").click()
         page.locator('[data-node-id="spec-code-build-uis"]').click()
-        page.get_by_role("button", name="Skip for now").click()
+        page.locator(".screen--challenge").wait_for()
+        page.get_by_role("button", name="Skip game for now").click()
+        page.get_by_role("button", name="Yes, keep going").click()
         page.wait_for_timeout(600)
-        page.screenshot(path=SCREENSHOT_DIR / "05-career.png", full_page=True)
+        page.screenshot(path=SCREENSHOT_DIR / "08-career.png", full_page=True)
         browser.close()
 
 

@@ -46,23 +46,37 @@ class CareerLaunchpadSmokeTests(unittest.TestCase):
         page, errors = self.open_fresh_page()
         try:
             page.get_by_label("What should we call you?").fill("Dan")
-            page.get_by_role("button", name="Enter the field guide").click()
+            page.get_by_role("button", name="Choose my starter skills").click()
 
-            self.assertEqual(page.locator(".region-card:enabled").count(), 3)
-            self.assertEqual(page.locator(".map-node--domain:enabled").count(), 0)
+            for skill_id in (
+                "starter-creative-thinking",
+                "starter-coding-curiosity",
+                "starter-hands-on-tech",
+                "starter-visual-design",
+            ):
+                page.locator(f'[data-skill-id="{skill_id}"]').click()
+            page.get_by_role("button", name="Reveal my world").click()
 
+            self.assertEqual(page.locator(".hex-item").count(), 4)
+            self.assertIn("BUILD AND CREATE", page.locator(".compass-card").inner_text())
             page.locator('[data-node-id="region-build-create"]').click()
-            page.get_by_role("button", name="Skip for now").click()
-            self.assertEqual(page.locator(".hex-item").count(), 1)
+            page.locator(".screen--challenge").wait_for()
+            page.get_by_role("button", name="Skip game for now").click()
+            page.get_by_role("button", name="Yes, keep going").click()
+            self.assertEqual(page.locator(".hex-item").count(), 5)
 
             page.locator('[data-node-id="domain-software-apps"]').click()
-            page.get_by_role("button", name="Skip for now").click()
-            self.assertEqual(page.locator(".hex-item").count(), 2)
+            page.locator(".screen--challenge").wait_for()
+            page.get_by_role("button", name="Skip game for now").click()
+            page.get_by_role("button", name="Yes, keep going").click()
+            self.assertEqual(page.locator(".hex-item").count(), 6)
 
             page.locator('[data-node-id="spec-code-build-uis"]').click()
-            page.get_by_role("button", name="Skip for now").click()
+            page.locator(".screen--challenge").wait_for()
+            page.get_by_role("button", name="Skip game for now").click()
+            page.get_by_role("button", name="Yes, keep going").click()
 
-            self.assertEqual(page.locator(".hex-item").count(), 3)
+            self.assertEqual(page.locator(".hex-item").count(), 7)
             self.assertEqual(
                 page.locator("#career-title").text_content(), "Application Developer"
             )

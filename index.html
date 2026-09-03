@@ -384,6 +384,178 @@ button, [tabindex] { scroll-margin-bottom: calc(var(--dock-height) + 28px); }
   .button--wide { width: 100%; }
   .topbar .button, .map-side .button, .hero-actions .button { width: auto; }
 }
+
+/* ========================================================================== */
+/* Guided RPG journey — skill loadout, shifting world, and avatar travel      */
+/* ========================================================================== */
+
+.screen--skills { width: min(1220px, 100%); }
+.skills-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 36px; margin-bottom: 30px; }
+.skills-heading h1 { max-width: 920px; margin: 0; font-family: var(--font-display); font-size: clamp(43px, 6.2vw, 79px); line-height: .92; text-transform: uppercase; }
+.skills-heading h1 em { color: var(--violet); font-style: normal; }
+.skills-heading p:not(.screen-kicker) { max-width: 710px; margin: 17px 0 0; color: var(--ink-soft); font-size: 17px; }
+.selection-meter { display: grid; place-items: center; width: 130px; min-height: 130px; padding: 14px; border: 2px solid var(--night); border-radius: 50%; color: var(--white); background: var(--night); box-shadow: 0 0 0 9px rgba(39,112,232,.08), var(--shadow); text-align: center; }
+.selection-meter strong { font-family: var(--font-display); font-size: 48px; line-height: .75; }
+.selection-meter strong span { color: var(--gold); font-size: 23px; }
+.selection-meter small { color: #b8c9e2; font-family: var(--font-mono); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+
+.starter-skill-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.starter-skill { position: relative; display: grid; grid-template-rows: auto auto auto 1fr auto; min-height: 225px; overflow: hidden; padding: 17px 16px 14px; border: 2px solid #bdcde4; border-radius: 15px; color: var(--ink); background: rgba(255,255,255,.88); box-shadow: 0 5px 0 rgba(148,169,200,.35); text-align: left; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, opacity .18s ease; }
+.starter-skill::after { position: absolute; right: -36px; bottom: -40px; width: 105px; height: 105px; border-radius: 50%; opacity: .13; background: var(--skill-color); content: ""; }
+.starter-skill:hover:not([aria-disabled="true"]) { z-index: 2; border-color: var(--skill-color); box-shadow: 0 8px 0 rgba(21,34,56,.18); transform: translateY(-4px) rotate(-.4deg); }
+.starter-skill[aria-disabled="true"] { opacity: .46; }
+.starter-skill.is-picked { border-color: var(--night); background: var(--skill-color); box-shadow: 0 6px 0 var(--night); transform: translateY(-3px); }
+.starter-number { color: var(--ink-soft); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .12em; }
+.starter-glyph { display: grid; place-items: center; width: 44px; height: 50px; margin: 12px 0 10px; color: var(--night); background: var(--skill-color); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); font-family: var(--font-mono); font-size: 16px; font-weight: 900; }
+.starter-skill.is-picked .starter-glyph { color: var(--white); background: var(--night); }
+.starter-skill strong { font-family: var(--font-display); font-size: 21px; letter-spacing: .02em; line-height: 1; text-transform: uppercase; }
+.starter-skill small { margin-top: 8px; color: #536981; font-size: 11px; line-height: 1.25; }
+.starter-skill.is-picked small, .starter-skill.is-picked .starter-number { color: rgba(15,23,40,.78); }
+.pick-state { align-self: end; margin-top: 13px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.starter-skill.is-picked .pick-state { color: var(--night); }
+.skills-footer { position: sticky; z-index: 9; bottom: 14px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; margin-top: 24px; padding: 14px 16px; border: 1px solid #536981; border-radius: 14px; color: var(--white); background: rgba(15,23,40,.96); box-shadow: 0 14px 34px rgba(15,23,40,.27); }
+.skills-footer p { margin: 0; color: #b9cbe4; font-family: var(--font-mono); font-size: 10px; }
+.skills-footer .text-button { justify-self: start; color: var(--cyan); }
+.skills-footer .button { justify-self: end; }
+.skills-footer .button:disabled { color: #8392a8; background: #34445d; box-shadow: 0 4px 0 #1d2b40; }
+
+.world-screen { width: min(1380px, 100%); }
+.world-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 350px); align-items: end; gap: 35px; margin-bottom: 22px; }
+.world-header h1 { max-width: 900px; margin: 0; font-family: var(--font-display); font-size: clamp(46px, 6vw, 78px); line-height: .9; text-transform: uppercase; }
+.world-header > div:first-child > p:last-child { max-width: 750px; margin: 15px 0 0; color: var(--ink-soft); font-size: 16px; }
+.compass-card { position: relative; overflow: hidden; padding: 16px 18px; border: 2px solid var(--region-color); border-radius: 13px; background: rgba(255,255,255,.9); box-shadow: var(--shadow-tight); }
+.compass-card::before { position: absolute; top: -24px; right: -17px; width: 78px; height: 88px; opacity: .16; background: var(--region-color); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); content: ""; }
+.compass-card > span { display: block; color: var(--ink-soft); font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.compass-card strong { display: block; margin-top: 4px; color: var(--ink); font-family: var(--font-display); font-size: 27px; line-height: 1; text-transform: uppercase; }
+.compass-card small { display: block; margin-top: 6px; color: #536981; font-size: 10px; }
+.compass-card .text-button { min-height: 32px; margin-top: 7px; padding: 0; font-size: 10px; }
+
+.rpg-world { position: relative; min-height: 540px; overflow: hidden; border: 3px solid var(--night); border-radius: 23px; background: linear-gradient(#a6d9ee 0 53%, #91c86e 53% 100%); box-shadow: 0 13px 0 #1d3850, 0 28px 55px rgba(15,23,40,.22); isolation: isolate; }
+.rpg-world::before { position: absolute; z-index: 0; inset: 0; opacity: .28; background-image: repeating-linear-gradient(0deg, transparent 0 4px, rgba(255,255,255,.16) 4px 5px); content: ""; }
+.rpg-world::after { position: absolute; z-index: 2; right: -80px; bottom: -130px; width: 390px; height: 270px; border-radius: 50%; background: #4f9960; box-shadow: -220px 45px 0 45px #5dab62, -470px 61px 0 70px #6bb266, -720px 34px 0 45px #529a5a; content: ""; }
+.world-sky { position: absolute; z-index: 0; inset: 0; overflow: hidden; }
+.world-sun { position: absolute; top: 44px; right: 10%; width: 79px; height: 79px; border: 7px solid rgba(255,255,255,.42); border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 14px rgba(255,182,71,.2); }
+.cloud { position: absolute; width: 110px; height: 23px; border-radius: 999px; opacity: .7; background: var(--white); box-shadow: 28px -12px 0 6px var(--white), 61px 0 0 -2px var(--white); }
+.cloud--one { top: 72px; left: 15%; }
+.cloud--two { top: 132px; right: 29%; transform: scale(.7); }
+.mountain { position: absolute; bottom: 34%; width: 300px; height: 210px; background: #6d8fa5; clip-path: polygon(50% 0,100% 100%,0 100%); }
+.mountain::after { position: absolute; top: 0; left: 35%; width: 30%; height: 35%; background: rgba(255,255,255,.7); clip-path: polygon(50% 0,100% 100%,64% 77%,48% 92%,29% 70%,0 100%); content: ""; }
+.mountain--one { left: -55px; }
+.mountain--two { left: 25%; bottom: 38%; transform: scale(.67); }
+.quest-path { position: absolute; z-index: 3; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.quest-path path { fill: none; stroke: #f7e4aa; stroke-width: 28px; stroke-linecap: round; stroke-dasharray: 1 10; filter: drop-shadow(0 5px 0 rgba(65,91,52,.25)); }
+.terrain--front { position: absolute; z-index: 4; right: -5%; bottom: -95px; left: -5%; height: 185px; border-radius: 50% 50% 0 0; background: #347c51; box-shadow: inset 0 12px rgba(255,255,255,.08); }
+
+.world-landmark, .world-stop, .map-avatar { position: absolute; z-index: 6; left: var(--x); top: var(--y); transform: translate(-50%, -50%); }
+.start-camp { display: grid; place-items: center; color: var(--night); }
+.start-camp span { display: grid; place-items: center; width: 50px; height: 50px; border: 3px solid var(--night); border-radius: 12px 12px 5px 5px; background: var(--gold); box-shadow: 0 7px 0 rgba(15,23,40,.2); font-size: 23px; }
+.start-camp small { margin-top: 7px; padding: 3px 6px; border-radius: 4px; color: var(--white); background: var(--night); font-family: var(--font-mono); font-size: 8px; letter-spacing: .12em; }
+.world-stop { display: flex; align-items: center; gap: 10px; width: min(260px, 24vw); min-width: 175px; padding: 10px 12px; border: 3px solid var(--night); border-radius: 13px; color: var(--ink); background: var(--white); box-shadow: 0 8px 0 rgba(15,23,40,.31); text-align: left; transition: transform .18s ease, filter .18s ease, box-shadow .18s ease; }
+.world-stop:hover:not(:disabled), .world-stop:focus-visible:not(:disabled) { z-index: 12; filter: brightness(1.04); box-shadow: 0 12px 0 rgba(15,23,40,.31); transform: translate(-50%, calc(-50% - 5px)); }
+.world-stop:disabled { cursor: default; }
+.stop-icon { display: grid; flex: 0 0 43px; place-items: center; width: 43px; height: 49px; color: var(--white); background: var(--node-color); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); font-weight: 900; }
+.stop-copy { display: block; min-width: 0; }
+.stop-copy small { display: block; color: var(--blue-dark); font-family: var(--font-mono); font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.stop-copy strong { display: block; overflow: hidden; margin-top: 2px; font-family: var(--font-display); font-size: 18px; line-height: 1; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.stop-copy em { display: block; overflow: hidden; margin-top: 4px; color: #536981; font-size: 9px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.world-stop.is-complete { opacity: .86; background: #effcf8; }
+.world-stop.is-complete .stop-icon { background: var(--green); }
+.world-stop.is-rejected { opacity: .66; filter: grayscale(.8); background: #e5e9ef; }
+.world-stop.is-rejected .stop-icon { background: #65758b; }
+.map-avatar { z-index: 15; left: var(--to-x); top: var(--to-y); display: grid; place-items: center; pointer-events: none; filter: drop-shadow(0 7px 2px rgba(15,23,40,.28)); }
+.map-avatar > span { display: grid; place-items: center; width: 58px; height: 66px; border: 4px solid var(--white); color: var(--white); background: var(--coral); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); font-family: var(--font-display); font-size: 28px; }
+.map-avatar small { margin-top: -2px; padding: 3px 8px; border-radius: 999px; color: var(--white); background: var(--night); font-family: var(--font-mono); font-size: 8px; font-weight: 900; letter-spacing: .08em; }
+.map-avatar.avatar-pixel > span { background: var(--blue); }
+.map-avatar.avatar-sprout > span { background: var(--green); }
+.map-avatar.avatar-orbit > span { background: var(--violet); }
+.map-avatar.is-traveling { animation: avatar-travel .9s cubic-bezier(.32,.05,.2,1) both; }
+@keyframes avatar-travel { 0% { left: var(--from-x); top: var(--from-y); transform: translate(-50%,-50%) scale(1); } 22% { transform: translate(-50%,calc(-50% - 18px)) scale(1.05) rotate(-4deg); } 52% { transform: translate(-50%,calc(-50% - 10px)) scale(1.05) rotate(4deg); } 100% { left: var(--to-x); top: var(--to-y); transform: translate(-50%,-50%) scale(1); } }
+.world-stage-label { position: absolute; z-index: 10; right: 19px; bottom: 17px; display: grid; justify-items: end; color: var(--white); text-shadow: 0 2px var(--night); }
+.world-stage-label span { font-family: var(--font-mono); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.world-stage-label strong { font-family: var(--font-display); font-size: 23px; text-transform: uppercase; }
+.map-action-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 24px; padding-bottom: 18px; }
+.map-action-row p { margin: 0; color: var(--ink-soft); font-size: 12px; }
+.map-action-row p strong { color: var(--blue-dark); font-size: 18px; }
+.map-action-row .button--quiet { border-color: var(--line-strong); color: var(--ink); background: rgba(255,255,255,.75); }
+.map-action-row .button--quiet:hover { color: var(--white); background: var(--night); }
+
+.screen--reflection { display: grid; min-height: 610px; place-items: center; }
+.reflection-scene { position: relative; width: min(910px, 100%); padding: 90px 0 20px; }
+.reflection-scene::before { position: absolute; z-index: -1; top: 0; left: 50%; width: 440px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(70,216,220,.28), transparent 68%); content: ""; transform: translateX(-50%); }
+.reflection-avatar { position: absolute; z-index: 2; top: 30px; left: 50%; display: grid; place-items: center; width: 90px; height: 102px; border: 5px solid var(--white); color: var(--white); background: var(--coral); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); filter: drop-shadow(0 12px 8px rgba(15,23,40,.2)); font-family: var(--font-display); font-size: 38px; transform: translateX(-50%); }
+.reflection-avatar.avatar-pixel { background: var(--blue); }.reflection-avatar.avatar-sprout { background: var(--green); }.reflection-avatar.avatar-orbit { background: var(--violet); }
+.reflection-card { padding: 58px clamp(22px, 6vw, 64px) 35px; border: 3px solid var(--night); border-radius: 21px; background: var(--white); box-shadow: 0 12px 0 #b5c7df, var(--shadow); text-align: center; }
+.reflection-card h1 { max-width: 700px; margin: 0 auto; font-family: var(--font-display); font-size: clamp(42px, 6vw, 72px); line-height: .92; text-transform: uppercase; }
+.reflection-card > p:not(.screen-kicker) { max-width: 610px; margin: 16px auto 0; color: var(--ink-soft); }
+.reflection-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 15px; margin: 28px 0 17px; }
+.reflection-choice { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 3px 12px; min-height: 116px; padding: 15px; border: 2px solid var(--line-strong); border-radius: 14px; color: var(--ink); background: var(--paper-blue); box-shadow: 0 5px 0 var(--line-strong); text-align: left; transition: transform .16s ease, box-shadow .16s ease; }
+.reflection-choice:hover { transform: translateY(-4px); box-shadow: 0 9px 0 var(--line-strong); }
+.reflection-choice > span { grid-row: 1 / 3; display: grid; place-items: center; width: 48px; height: 55px; color: var(--white); background: var(--blue); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); font-size: 21px; }
+.reflection-choice strong { font-family: var(--font-display); font-size: 25px; line-height: 1; text-transform: uppercase; }
+.reflection-choice small { color: #536981; font-size: 11px; }
+.reflection-choice--yes { border-color: var(--green); background: #effcf8; box-shadow-color: var(--green); }
+.reflection-choice--yes > span { background: var(--green); }
+.reflection-choice--no { border-color: var(--coral); background: #fff3f0; }
+.reflection-choice--no > span { background: var(--coral); }
+
+/* The stack is now a compact HUD anchored to the requested bottom-right. */
+.skill-dock { right: 18px; bottom: 16px; left: auto; width: min(560px, calc(100% - 36px)); min-height: 120px; overflow: hidden; border: 2px solid #344966; border-radius: 17px; background: rgba(15,23,40,.97); box-shadow: 0 16px 45px rgba(15,23,40,.34); }
+.skill-dock .dock-inner { min-height: 116px; gap: 13px; padding: 11px 14px; }
+.skill-dock .dock-label { flex: 0 0 104px; }
+.skill-dock .dock-pip { height: 50px; }
+.skill-dock .dock-label h2 { font-size: 15px; }
+.skill-dock .dock-label p { font-size: 8px; }
+.skill-dock .hex-track { height: 94px; overflow-x: auto; overflow-y: hidden; padding: 3px 4px 17px 14px; }
+.skill-dock .hex-item { flex-basis: 63px; min-height: 73px; margin-left: -15px; background: var(--skill-color, var(--gold)); }
+.skill-dock .hex-item:first-child { margin-left: 0; }
+.skill-dock .hex-item:nth-child(even) { top: 16px; }
+.skill-dock .hex-item strong { max-width: 48px; font-size: 8px; }
+.skill-dock .hex-item small { font-size: 6px; }
+.skill-dock .hex-item.is-starter { filter: saturate(.82); }
+.skill-dock .hex-item.is-earned { outline: 2px solid rgba(255,255,255,.72); outline-offset: -7px; }
+
+@media (max-width: 1040px) {
+  .starter-skill-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .starter-skill { min-height: 185px; }
+  .world-stop { width: min(245px, 31vw); }
+}
+
+@media (max-width: 767px) {
+  body { padding-bottom: 128px; }
+  #app { padding-bottom: 175px; }
+  .skills-heading, .world-header { grid-template-columns: 1fr; align-items: start; gap: 20px; }
+  .selection-meter { grid-template-columns: auto auto; place-items: center; width: 145px; min-height: 74px; border-radius: 13px; }
+  .selection-meter strong { font-size: 39px; }.selection-meter small { text-align: left; }
+  .starter-skill { min-height: 175px; padding: 13px; }.starter-skill strong { font-size: 18px; }.starter-glyph { margin: 7px 0; }
+  .skills-footer { grid-template-columns: 1fr auto; }.skills-footer p { display: none; }.skills-footer .button { padding: 9px 13px; font-size: 11px; }
+  .rpg-world { min-height: 500px; border-radius: 16px; }
+  .world-header h1 { font-size: 49px; }
+  .world-stop { width: min(185px, 48vw); min-width: 145px; padding: 8px; }
+  .stop-icon { flex-basis: 34px; width: 34px; height: 40px; }.stop-copy strong { font-size: 14px; }.stop-copy em { display: none; }
+  .stage-1 .world-stop--past, .stage-2 .world-stop--past:first-of-type { display: none; }
+  .map-avatar > span { width: 48px; height: 55px; font-size: 23px; }
+  .map-action-row { align-items: flex-start; flex-direction: column; }
+  .reflection-choice-grid { grid-template-columns: 1fr; }.reflection-card { padding-top: 62px; }
+  .skill-dock { right: 8px; bottom: 8px; width: calc(100% - 16px); min-height: 108px; }
+  .skill-dock .dock-inner { display: grid; grid-template-columns: 82px minmax(0,1fr); min-height: 104px; padding: 7px 9px; }
+  .skill-dock .dock-label { display: flex; height: auto; }.skill-dock .dock-label .dock-pip { width: 5px; height: 42px; }.skill-dock .dock-label h2 { font-size: 12px; }.skill-dock .dock-label p { display: block; margin: 2px 0 0; font-size: 7px; }
+  .skill-dock .hex-track { width: 100%; height: 88px; }
+  .skill-dock .hex-item { flex-basis: 52px; min-height: 60px; margin-left: -11px; }.skill-dock .hex-item:nth-child(even) { top: 12px; }.skill-dock .hex-item strong { max-width: 40px; font-size: 7px; }
+  .toast-region { top: 70px; right: 8px; width: min(300px, calc(100% - 16px)); }
+  .toast-region .toast { padding: 6px 9px; font-size: 10px; }
+  .toast-region .toast-mark { flex-basis: 21px; width: 21px; height: 24px; }
+}
+
+@media (max-width: 430px) {
+  .starter-skill-grid { gap: 8px; }.starter-skill { min-height: 164px; }.starter-skill small { font-size: 9px; }.starter-number { font-size: 8px; }
+  .skills-heading h1 { font-size: 43px; }
+  .rpg-world { min-height: 475px; }
+  .world-stop { min-width: 132px; max-width: 158px; }.stop-copy small { font-size: 7px; }.stop-copy strong { font-size: 12px; }
+  .stage-0 .world-stop { left: 58%; top: 39%; }
+  .stage-1 .world-stop--choice, .stage-2 .world-stop--choice { left: 66%; }
+  .world-stage-label strong { font-size: 17px; }
+  .reflection-card h1 { font-size: 42px; }
+}
 </style>
   </head>
   <body>
@@ -576,6 +748,116 @@ const COLORS = {
   people: "#059669",
   peopleLight: "#6ee7b7",
 };
+
+/**
+ * The ten self-assessment skills shown before the world map. Each choice has
+ * a small affinity score for the three top-level regions. The controller adds
+ * the scores for the four selected skills and recommends the strongest match.
+ * Keeping the weights here makes the recommendation easy to tune without
+ * changing application behavior.
+ */
+const STARTER_SKILLS = [
+  {
+    id: "starter-creative-thinking",
+    label: "Creative Thinking",
+    shortName: "Creative",
+    description: "I enjoy imagining new ways something could work.",
+    glyph: "✦",
+    color: "#f6b347",
+    category: "starter",
+    affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 1 },
+  },
+  {
+    id: "starter-coding-curiosity",
+    label: "Coding Curiosity",
+    shortName: "Coding",
+    description: "I like learning how instructions become working software.",
+    glyph: "</>",
+    color: "#49cfe0",
+    category: "starter",
+    affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 0 },
+  },
+  {
+    id: "starter-hands-on-tech",
+    label: "Hands-on Tech",
+    shortName: "Tech",
+    description: "I enjoy setting up, fixing, and understanding devices.",
+    glyph: "⚙",
+    color: "#7da8ff",
+    category: "starter",
+    affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 0 },
+  },
+  {
+    id: "starter-visual-design",
+    label: "Visual Design",
+    shortName: "Design",
+    description: "I notice how layout, color, and flow shape an experience.",
+    glyph: "◈",
+    color: "#f49ac2",
+    category: "starter",
+    affinities: { "region-build-create": 2, "region-analyze-solve": 0, "region-people-lead": 2 },
+  },
+  {
+    id: "starter-numbers-patterns",
+    label: "Numbers & Patterns",
+    shortName: "Patterns",
+    description: "I like spotting trends and making sense of data.",
+    glyph: "▥",
+    color: "#a98df4",
+    category: "starter",
+    affinities: { "region-build-create": 0, "region-analyze-solve": 3, "region-people-lead": 1 },
+  },
+  {
+    id: "starter-problem-solving",
+    label: "Problem Solving",
+    shortName: "Solve",
+    description: "I enjoy breaking a difficult problem into smaller clues.",
+    glyph: "?",
+    color: "#8870e8",
+    category: "starter",
+    affinities: { "region-build-create": 1, "region-analyze-solve": 3, "region-people-lead": 1 },
+  },
+  {
+    id: "starter-security-mindset",
+    label: "Security Mindset",
+    shortName: "Security",
+    description: "I naturally look for risks, weak points, and safeguards.",
+    glyph: "◇",
+    color: "#ef7d78",
+    category: "starter",
+    affinities: { "region-build-create": 1, "region-analyze-solve": 3, "region-people-lead": 0 },
+  },
+  {
+    id: "starter-communication",
+    label: "Communication",
+    shortName: "Speak",
+    description: "I like making ideas clear for other people.",
+    glyph: "“”",
+    color: "#5ed4a2",
+    category: "starter",
+    affinities: { "region-build-create": 0, "region-analyze-solve": 1, "region-people-lead": 3 },
+  },
+  {
+    id: "starter-leadership",
+    label: "Leadership",
+    shortName: "Lead",
+    description: "I enjoy organizing a group around a shared goal.",
+    glyph: "▲",
+    color: "#31b98d",
+    category: "starter",
+    affinities: { "region-build-create": 0, "region-analyze-solve": 1, "region-people-lead": 3 },
+  },
+  {
+    id: "starter-empathy",
+    label: "Empathy",
+    shortName: "Empathy",
+    description: "I pay attention to what people need and how they feel.",
+    glyph: "♥",
+    color: "#78d9be",
+    category: "starter",
+    affinities: { "region-build-create": 1, "region-analyze-solve": 0, "region-people-lead": 3 },
+  },
+];
 
 const REGIONS = [
   makeNode({
@@ -1219,6 +1501,7 @@ const CAREER_LAUNCHPAD_DATA = {
   version: "1.0.0",
   title: "IS Career Launchpad",
   targetJourneyMinutes: 10,
+  starterSkills: STARTER_SKILLS,
   skills: Object.values(SKILLS),
   regions: REGIONS,
   domains: DOMAINS,
@@ -1248,194 +1531,182 @@ const DATA_ROOT = typeof window !== "undefined" ? window : globalThis;
 DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
 </script>
     <script>/*
- * IS Career Launchpad — progression controller
+ * IS Career Launchpad — guided RPG progression controller
  *
- * This module intentionally owns behavior only. The visual system lives in
- * styles.css and content is supplied by data.js as window.CAREER_LAUNCHPAD_DATA.
- * The normalizer below accepts the current tree contract as well as a few
- * obvious aliases, which keeps the app easy to evolve while the content team
- * is still iterating.
+ * Data and visuals remain separate from this file. Mini-games plug into the
+ * stable node ids in data.js; until then, every node uses the same placeholder
+ * → enjoyment check → reward/reroute contract.
  */
 (function careerLaunchpadApp() {
   'use strict';
 
-  var STORAGE_KEY = 'is-career-launchpad:v1';
+  var STORAGE_KEY = 'is-career-launchpad:v2';
   var root = document.getElementById('app');
   var dock = document.getElementById('skill-dock');
-  var toastRegion = document.getElementById('toast-region') || document.getElementById('toast');
+  var toastRegion = document.getElementById('toast-region');
   var modalRoot = document.getElementById('modal-root');
+  var headerStatus = document.getElementById('header-status-copy');
 
   if (!root) return;
 
-  var rawData = window.CAREER_LAUNCHPAD_DATA || {};
-  var model = normalizeData(rawData);
   var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var model = normalizeData(window.CAREER_LAUNCHPAD_DATA || {});
   var state = loadState();
-  var lastFocusedSelector = null;
   var modalReturnFocus = null;
+  var travelTimer = null;
 
-  // ---------- Data normalization ------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Data normalization
+  // ---------------------------------------------------------------------------
 
-  function fallbackData() {
-    var skills = [
-      { id: 'creativity', name: 'Creativity', shortName: 'Create', color: '#ffb347' },
-      { id: 'software', name: 'Software', shortName: 'Code', color: '#79d6ff' },
-      { id: 'hardware', name: 'Hardware', shortName: 'Build', color: '#b8a1ff' },
-      { id: 'coder', name: 'Coder', shortName: 'Code', color: '#7ee7b8' },
-      { id: 'designer', name: 'Designer', shortName: 'Design', color: '#f9a3d1' },
-      { id: 'analyst', name: 'Analyst', shortName: 'Analyze', color: '#b8a1ff' },
-      { id: 'numbers', name: 'Numbers', shortName: 'Data', color: '#84d8cf' },
-      { id: 'trendy', name: 'Trendy', shortName: 'Trends', color: '#ffd36b' },
-      { id: 'fortune-teller', name: 'Fortune Teller', shortName: 'Predict', color: '#f7a8ff' },
-      { id: 'hacker', name: 'Hacker', shortName: 'Secure', color: '#ef8d8d' },
-      { id: 'detective', name: 'Detective', shortName: 'Investigate', color: '#f7bd7a' },
-      { id: 'bodyguard', name: 'Bodyguard', shortName: 'Protect', color: '#94b9ff' },
-      { id: 'people-skills', name: 'People Skills', shortName: 'People', color: '#84dfae' },
-      { id: 'speech', name: 'Speech', shortName: 'Present', color: '#ffd36b' },
-      { id: 'logistical', name: 'Logistical', shortName: 'Plan', color: '#9bd8ff' },
-      { id: 'renovator', name: 'Renovator', shortName: 'Improve', color: '#79e0cc' },
-      { id: 'market-reach', name: 'Market Reach', shortName: 'Reach', color: '#f6a5cf' },
-      { id: 'creative', name: 'Creative', shortName: 'Imagine', color: '#e6a2ff' },
-      { id: 'strategist', name: 'Strategist', shortName: 'Strategy', color: '#ffd47e' }
-    ];
-
-    function node(id, title, subtitle, skill, children, career, miniTitle, miniDescription) {
+  function starterFallback() {
+    return [
+      ['starter-creative-thinking', 'Creative Thinking', 'Creative', '✦', '#f6b347', [3, 1, 1]],
+      ['starter-coding-curiosity', 'Coding Curiosity', 'Coding', '</>', '#49cfe0', [3, 1, 0]],
+      ['starter-hands-on-tech', 'Hands-on Tech', 'Tech', '⚙', '#7da8ff', [3, 1, 0]],
+      ['starter-visual-design', 'Visual Design', 'Design', '◈', '#f49ac2', [2, 0, 2]],
+      ['starter-numbers-patterns', 'Numbers & Patterns', 'Patterns', '▥', '#a98df4', [0, 3, 1]],
+      ['starter-problem-solving', 'Problem Solving', 'Solve', '?', '#8870e8', [1, 3, 1]],
+      ['starter-security-mindset', 'Security Mindset', 'Security', '◇', '#ef7d78', [1, 3, 0]],
+      ['starter-communication', 'Communication', 'Speak', '“”', '#5ed4a2', [0, 1, 3]],
+      ['starter-leadership', 'Leadership', 'Lead', '▲', '#31b98d', [0, 1, 3]],
+      ['starter-empathy', 'Empathy', 'Empathy', '♥', '#78d9be', [1, 0, 3]]
+    ].map(function (item) {
       return {
-        id: id,
-        title: title,
-        name: title,
-        subtitle: subtitle,
-        description: subtitle,
-        skill: skill,
-        earnedSkill: skill,
-        children: children || [],
-        career: career || null,
-        miniGame: {
-          id: id + '-placeholder',
-          title: miniTitle || 'A short challenge is waiting here',
-          description: miniDescription || 'This sixty-second activity is planned for a future version.',
-          status: 'planned',
-          rewardSkill: skill
-        }
+        id: item[0], label: item[1], name: item[1], shortName: item[2], glyph: item[3], color: item[4], category: 'starter',
+        description: 'Choose this if it feels like one of your strengths or interests.',
+        affinities: { 'region-build-create': item[5][0], 'region-analyze-solve': item[5][1], 'region-people-lead': item[5][2] }
       };
-    }
+    });
+  }
 
-    var developer = node('1.1.1', 'Code & build UIs', 'Turn ideas into useful interfaces.', 'coder', [], {
-      id: 'application-developer', title: 'Application Developer', whatTheyDo: 'Build and improve software products for real users.',
-      responsibilities: ['Translate ideas into working features', 'Test and debug code', 'Collaborate with designers and stakeholders'],
-      projects: ['A student portal feature', 'A mobile workflow', 'An internal automation'], workplace: 'Product teams, agencies, and technology groups',
-      industries: ['Technology', 'Healthcare', 'Finance'], companies: ['Startups', 'Enterprise IT teams', 'Software vendors'],
-      technicalSkills: ['Programming fundamentals', 'Version control', 'Web or application development'], tools: ['JavaScript', 'Python', 'GitHub'],
-      entryLevel: 'Be able to explain a small project, read unfamiliar code, and show a habit of testing.', salary: '$60,000–$85,000 (illustrative entry-level range)',
-      growth: 'Developer → Senior Developer → Technical Lead or Engineering Manager', candidate: ['Curiosity', 'Clear communication', 'A small portfolio project'], sources: []
-    }, 'Scratch studio', 'A block-coding space will let students connect logic blocks to make a tiny interface.');
-    var software = node('1.1', 'Software & Apps', 'Create digital products that people can use.', 'software', [developer, node('1.1.2', 'Architect reliable software', 'Design the systems behind dependable products.', 'designer', [], { id: 'software-engineer', title: 'Software Engineer', whatTheyDo: 'Design, build, and maintain software systems.', responsibilities: ['Break work into technical tasks', 'Review changes with teammates'], projects: ['API service', 'Data-backed feature'], workplace: 'Engineering organizations', industries: ['Technology', 'Retail', 'Financial services'], companies: ['Software companies', 'Digital teams'], technicalSkills: ['Programming', 'Data structures', 'Testing'], tools: ['GitHub', 'Cloud platforms', 'SQL'], entryLevel: 'Practice explaining trade-offs and debugging methodically.', salary: '$70,000–$95,000 (illustrative entry-level range)', growth: 'Engineer → Senior Engineer → Staff Engineer', candidate: ['Reliable execution', 'Teamwork', 'Projects that show learning'], sources: [] }, 'Block architecture', 'A future block-coding challenge will ask students to assemble a reliable feature.')], null, 'Scratch lab', 'Connect visual code blocks to make a small working feature.');
-    var hardware = node('1.2', 'Systems & Tech', 'Keep technology running and connected.', 'hardware', [node('1.2.1', 'Deploy cloud platforms', 'Set up dependable technical foundations.', 'designer', [], { id: 'cloud-engineer', title: 'Cloud Engineer', whatTheyDo: 'Help organizations run services on scalable infrastructure.', responsibilities: ['Configure environments', 'Monitor service health'], projects: ['Cloud deployment', 'Infrastructure automation'], workplace: 'Cloud operations and platform teams', industries: ['Technology', 'Education', 'Healthcare'], companies: ['Cloud consultancies', 'Enterprise technology teams'], technicalSkills: ['Networking', 'Linux', 'Cloud concepts'], tools: ['AWS or Azure', 'Terraform', 'Git'], entryLevel: 'Understand basic networking and explain how you would troubleshoot a service.', salary: '$65,000–$90,000 (illustrative entry-level range)', growth: 'Cloud Engineer → Platform Engineer → Cloud Architect', candidate: ['Calm troubleshooting', 'Documentation', 'Hands-on labs'], sources: [] }, 'CPU cross-section', 'Inspect a computer cross-section and identify the CPU.'), node('1.2.2', 'Support connected systems', 'Troubleshoot technology people depend on.', 'coder', [], { id: 'systems-engineer', title: 'Systems Engineer', whatTheyDo: 'Connect hardware, software, and people into reliable systems.', responsibilities: ['Monitor systems', 'Resolve incidents', 'Document fixes'], projects: ['Device rollout', 'Systems migration'], workplace: 'IT operations and infrastructure teams', industries: ['Government', 'Business services', 'Manufacturing'], companies: ['Managed service providers', 'Enterprise IT'], technicalSkills: ['Systems administration', 'Networking', 'Security basics'], tools: ['PowerShell', 'Linux', 'Monitoring platforms'], entryLevel: 'Show a repeatable troubleshooting process and comfort asking clarifying questions.', salary: '$58,000–$82,000 (illustrative entry-level range)', growth: 'Systems Engineer → Senior Engineer → Infrastructure Lead', candidate: ['Patience', 'Systems thinking', 'Clear notes'], sources: [] }, 'Computer anatomy', 'Identify the hardware component that keeps the computer thinking.')], null, 'Hardware lab', 'A future cross-section activity will ask learners to identify core computer components.');
-    var dataAnalyst = node('2.1.1', 'Explain trends with data', 'Turn numbers into a clear story.', 'trendy', [], { id: 'data-analyst', title: 'Data Analyst', whatTheyDo: 'Use data to explain what is happening and support decisions.', responsibilities: ['Clean and query data', 'Build clear reports', 'Explain findings to partners'], projects: ['Enrollment dashboard', 'Customer behavior report'], workplace: 'Analytics, operations, and strategy teams', industries: ['Retail', 'Healthcare', 'Education'], companies: ['Consultancies', 'Product teams', 'Large organizations'], technicalSkills: ['SQL', 'Spreadsheets', 'Descriptive statistics'], tools: ['Excel', 'SQL', 'Tableau or Power BI'], entryLevel: 'Practice asking a useful question before choosing a chart.', salary: '$55,000–$78,000 (illustrative entry-level range)', growth: 'Analyst → Senior Analyst → Analytics Manager', candidate: ['Data curiosity', 'Storytelling', 'A portfolio dashboard'], sources: [] }, 'Chart match', 'Match three small datasets to the charts that reveal their shape.');
-    var data = node('2.1', 'Data & Insights', 'Turn data into answers people can act on.', 'numbers', [dataAnalyst, node('2.1.2', 'Predict outcomes with models', 'Use evidence to make a thoughtful forecast.', 'fortune-teller', [], { id: 'data-scientist', title: 'Data Scientist', whatTheyDo: 'Use statistics and models to find patterns and forecast outcomes.', responsibilities: ['Explore datasets', 'Evaluate model performance'], projects: ['Forecasting demand', 'Experiment analysis'], workplace: 'Data science and research teams', industries: ['Technology', 'Finance', 'Healthcare'], companies: ['Research groups', 'Product organizations'], technicalSkills: ['Python', 'Statistics', 'Model evaluation'], tools: ['Python', 'Jupyter', 'SQL'], entryLevel: 'Explain a model in plain language and name its limitations.', salary: '$70,000–$100,000 (illustrative entry-level range)', growth: 'Data Scientist → Senior Data Scientist → ML Lead', candidate: ['Quantitative reasoning', 'Humility about uncertainty', 'Reproducible work'], sources: [] }, 'Forecast card sort', 'A future challenge will ask students to choose evidence before making a forecast.')], null, 'Data detective', 'Pair a dataset with the chart that makes its story easiest to see.');
-    var security = node('2.2', 'Security & Risk', 'Protect systems, people, and trust.', 'hacker', [node('2.2.1', 'Detect & investigate threats', 'Follow clues when something looks suspicious.', 'detective', [], { id: 'cybersecurity-analyst', title: 'Cybersecurity Analyst', whatTheyDo: 'Monitor systems and investigate events that may threaten them.', responsibilities: ['Triage alerts', 'Collect evidence', 'Recommend mitigations'], projects: ['Phishing investigation', 'Access review'], workplace: 'Security operations and risk teams', industries: ['Technology', 'Government', 'Financial services'], companies: ['Security providers', 'Enterprise security teams'], technicalSkills: ['Networking', 'Threat concepts', 'Log analysis'], tools: ['SIEM platforms', 'Wireshark', 'Ticketing tools'], entryLevel: 'Describe how you would preserve evidence and escalate an uncertain alert.', salary: '$60,000–$88,000 (illustrative entry-level range)', growth: 'Analyst → Incident Responder → Security Engineer', candidate: ['Attention to detail', 'Ethics', 'Calm investigation'], sources: [] }, 'Threat Wordle', 'A future Wordle-style challenge will use clues to guess a safe password.'), node('2.2.2', 'Evaluate controls & risk', 'Help teams make safer decisions.', 'bodyguard', [], { id: 'it-risk-analyst', title: 'IT Risk Analyst', whatTheyDo: 'Evaluate technology risks and help teams improve controls.', responsibilities: ['Document risks', 'Test controls', 'Communicate recommendations'], projects: ['Vendor review', 'Access-control audit'], workplace: 'Risk, compliance, and internal audit teams', industries: ['Finance', 'Healthcare', 'Government'], companies: ['Banks', 'Consultancies', 'Enterprise teams'], technicalSkills: ['Risk frameworks', 'Controls', 'Clear writing'], tools: ['GRC platforms', 'Spreadsheets', 'Documentation tools'], entryLevel: 'Connect a risk to a practical control and explain residual uncertainty.', salary: '$58,000–$82,000 (illustrative entry-level range)', growth: 'Risk Analyst → Senior Analyst → Risk Manager', candidate: ['Judgment', 'Writing', 'Constructive challenge'], sources: [] }, 'Control checkpoint', 'A future challenge will ask students to choose controls that protect a system.')], null, 'Security lab', 'Use clues to identify which account behavior needs attention.');
-    var projects = node('3.1', 'Projects & Delivery', 'Guide work from idea to outcome.', 'speech', [node('3.1.1', 'Plan timelines & delivery', 'Make a team plan people can follow.', 'logistical', [], { id: 'it-project-manager', title: 'IT Project Manager', whatTheyDo: 'Coordinate people, plans, and risks to deliver technology work.', responsibilities: ['Clarify scope', 'Track dependencies', 'Communicate status'], projects: ['System rollout', 'Student team launch'], workplace: 'Project and program teams', industries: ['Technology', 'Consulting', 'Education'], companies: ['Enterprise teams', 'Agencies'], technicalSkills: ['Planning', 'Risk management', 'Agile concepts'], tools: ['Jira', 'Roadmapping tools', 'Docs'], entryLevel: 'Show how you would break ambiguity into a next step and communicate trade-offs.', salary: '$58,000–$85,000 (illustrative entry-level range)', growth: 'Project Manager → Program Manager → Portfolio Lead', candidate: ['Organization', 'Facilitation', 'Follow-through'], sources: [] }, 'Timeline builder', 'Arrange project pieces into a clear presentation-ready plan.'), node('3.1.2', 'Improve processes & requirements', 'Turn messy needs into workable change.', 'renovator', [], { id: 'business-analyst', title: 'Business Analyst', whatTheyDo: 'Translate business needs into requirements and process improvements.', responsibilities: ['Interview stakeholders', 'Map current processes', 'Define acceptance criteria'], projects: ['Workflow redesign', 'Requirements brief'], workplace: 'Product, operations, and technology teams', industries: ['Business services', 'Healthcare', 'Retail'], companies: ['Consultancies', 'Internal technology teams'], technicalSkills: ['Requirements', 'Process mapping', 'Data literacy'], tools: ['Diagramming tools', 'SQL basics', 'Jira'], entryLevel: 'Ask precise questions and show how requirements connect to outcomes.', salary: '$55,000–$80,000 (illustrative entry-level range)', growth: 'Business Analyst → Senior Analyst → Product or Program Lead', candidate: ['Listening', 'Structured thinking', 'Process project'], sources: [] }, 'Slide renovator', 'A future activity will turn loose components into a concise project slide.')], null, 'Delivery studio', 'Assemble the pieces of a clear project plan.');
-    var users = node('3.2', 'Users & Products', 'Shape experiences people choose to use.', 'market-reach', [node('3.2.1', 'Research & design experiences', 'Learn what users need and prototype a response.', 'creative', [], { id: 'ux-designer', title: 'UX Designer', whatTheyDo: 'Research, design, and test experiences that solve user problems.', responsibilities: ['Interview users', 'Prototype flows', 'Test and iterate'], projects: ['Onboarding flow', 'Service blueprint'], workplace: 'Design and product teams', industries: ['Technology', 'Consumer services', 'Education'], companies: ['Product companies', 'Design agencies'], technicalSkills: ['Interaction design', 'Research', 'Prototyping'], tools: ['Figma', 'Whiteboarding tools', 'Analytics'], entryLevel: 'Show a case study with the problem, decisions, and evidence behind the design.', salary: '$55,000–$82,000 (illustrative entry-level range)', growth: 'UX Designer → Product Designer → Design Lead', candidate: ['Empathy', 'Iteration', 'A clear case study'], sources: [] }, 'Publish the flow', 'A future drag-and-drop activity will connect a design file to its host.'), node('3.2.2', 'Set strategy & prioritize value', 'Choose what to build next and why.', 'strategist', [], { id: 'product-manager', title: 'Product Manager', whatTheyDo: 'Set direction and align teams around valuable product outcomes.', responsibilities: ['Understand users', 'Prioritize opportunities', 'Define success'], projects: ['Product roadmap', 'Feature launch'], workplace: 'Product organizations and startups', industries: ['Technology', 'Finance', 'Consumer products'], companies: ['Startups', 'Platform companies', 'Digital teams'], technicalSkills: ['Product discovery', 'Metrics', 'Technical fluency'], tools: ['Roadmapping tools', 'Analytics', 'Docs'], entryLevel: 'Explain a prioritization decision with evidence and a clear trade-off.', salary: '$65,000–$95,000 (illustrative entry-level range)', growth: 'Product Manager → Senior PM → Group Product Manager', candidate: ['Customer focus', 'Decisiveness', 'A shipped project'], sources: [] }, 'Strategy sort', 'A future activity will ask students to prioritize a product opportunity.')], null, 'Product studio', 'Move a project toward its users, then identify where it should be hosted.');
-
-    return { skills: skills, regions: [
-      { id: 'build-create', number: '1', title: 'Build + Create', subtitle: 'I like making technology work.', color: '#3b82f6', skill: 'creativity', children: [software, hardware] },
-      { id: 'analyze-solve', number: '2', title: 'Analyze + Solve', subtitle: 'I like finding answers in complexity.', color: '#8b5cf6', skill: 'analyst', children: [data, security] },
-      { id: 'people-lead', number: '3', title: 'People + Lead', subtitle: 'I like helping people move forward.', color: '#10a879', skill: 'people-skills', children: [projects, users] }
-    ] };
+  function normalizeSkill(skill) {
+    var id = String(skill.id || skill.key || slug(skill.label || skill.name));
+    return Object.assign({
+      id: id,
+      name: skill.name || skill.label || titleCase(id),
+      label: skill.label || skill.name || titleCase(id),
+      shortName: skill.shortName || skill.label || skill.name || titleCase(id),
+      category: skill.category || 'discovery',
+      color: skill.color || '#f6b347',
+      glyph: skill.glyph || '✦'
+    }, skill);
   }
 
   function normalizeData(source) {
-    var fallback = fallbackData();
-    var data = source && typeof source === 'object' ? source : {};
-    var sourceSkills = data.skills || data.skillPool || data.skillOptions;
-    var skillMap = {};
-    (Array.isArray(sourceSkills) ? sourceSkills : fallback.skills).forEach(function (skill) {
-      if (!skill) return;
-      var id = String(skill.id || skill.key || slug(skill.name || skill.title));
-      skillMap[id] = Object.assign({ id: id, name: skill.name || skill.label || skill.title || id, shortName: skill.shortName || skill.name || skill.label || id }, skill);
+    var starterSkills = (Array.isArray(source.starterSkills) && source.starterSkills.length === 10 ? source.starterSkills : starterFallback()).map(normalizeSkill);
+    var skills = {};
+    starterSkills.concat(Array.isArray(source.skills) ? source.skills : []).forEach(function (skill) {
+      var normalized = normalizeSkill(skill);
+      skills[normalized.id] = normalized;
     });
-    var regions = data.regions || (data.map && data.map.regions) || data.map || data.tree;
-    // The source-of-truth file is intentionally flat. Stitch its parent IDs
-    // into a nested tree for rendering while retaining the original IDs.
-    if (Array.isArray(data.regions) && (Array.isArray(data.domains) || Array.isArray(data.specializations))) {
-      var domains = Array.isArray(data.domains) ? data.domains : [];
-      var specs = Array.isArray(data.specializations) ? data.specializations : [];
-      var careers = data.careerById || indexById(data.careers || []);
-      regions = data.regions.map(function (region, regionIndex) {
-        var regionCopy = Object.assign({ number: String(regionIndex + 1) }, region);
-        regionCopy.children = domains.filter(function (domain) { return domain.parentId === region.id; }).map(function (domain) {
-          var domainCopy = Object.assign({}, domain);
-          domainCopy.children = specs.filter(function (spec) { return spec.parentId === domain.id; }).map(function (spec) {
-            return Object.assign({}, spec, { career: spec.career || careers[spec.careerId] || null });
-          });
-          return domainCopy;
+
+    var careers = indexById(source.careers || []);
+    var domains = Array.isArray(source.domains) ? source.domains : [];
+    var specializations = Array.isArray(source.specializations) ? source.specializations : [];
+    var regions = (Array.isArray(source.regions) ? source.regions : []).map(function (region, index) {
+      var regionCopy = normalizeNode(region, null, skills, careers);
+      regionCopy.number = String(index + 1);
+      regionCopy.children = domains.filter(function (domain) { return domain.parentId === region.id; }).map(function (domain) {
+        var domainCopy = normalizeNode(domain, region.id, skills, careers);
+        domainCopy.children = specializations.filter(function (spec) { return spec.parentId === domain.id; }).map(function (spec) {
+          return normalizeNode(spec, domain.id, skills, careers);
         });
-        return regionCopy;
+        return domainCopy;
       });
-    }
-    if (!Array.isArray(regions)) regions = fallback.regions;
-    regions = regions.map(function (region, index) { return normalizeNode(region, index, null, skillMap, fallback.regions[index]); });
-    if (!regions.length) regions = fallback.regions;
-    return { skills: Object.keys(skillMap).length ? skillMap : indexSkills(fallback.skills), regions: regions };
+      return regionCopy;
+    });
+
+    return { starterSkills: starterSkills, skills: skills, regions: regions };
   }
 
-  function indexSkills(list) {
-    var map = {};
-    list.forEach(function (skill) { map[skill.id] = skill; });
-    return map;
+  function normalizeNode(item, parentId, skills, careers) {
+    var reward = item.earnedSkill || item.skill || {};
+    var rewardSkill = typeof reward === 'string' ? skills[reward] : normalizeSkill(reward);
+    if (rewardSkill) {
+      if (!reward.color && item.color) rewardSkill.color = item.color;
+      skills[rewardSkill.id] = Object.assign({}, skills[rewardSkill.id] || {}, rewardSkill);
+    }
+    return Object.assign({}, item, {
+      id: String(item.id),
+      parentId: item.parentId || parentId || null,
+      title: item.title || item.name || titleCase(item.id),
+      subtitle: item.subtitle || item.description || '',
+      description: item.description || item.subtitle || '',
+      earnedSkill: rewardSkill ? rewardSkill.id : null,
+      miniGame: Object.assign({ title: 'Planned mini-game', concept: 'A focused sixty-second challenge will live here.', durationSeconds: 60 }, item.miniGame || {}),
+      career: item.career || careers[item.careerId] || null,
+      children: []
+    });
   }
 
   function indexById(list) {
-    var map = {};
-    (Array.isArray(list) ? list : []).forEach(function (item) { if (item && item.id) map[item.id] = item; });
-    return map;
+    var result = {};
+    (Array.isArray(list) ? list : []).forEach(function (item) { if (item && item.id) result[item.id] = item; });
+    return result;
   }
 
-  function normalizeNode(item, index, parentId, skillMap, fallback) {
-    item = item || {};
-    fallback = fallback || {};
-    var id = String(item.id || item.key || item.pathId || fallback.id || ('node-' + index));
-    var children = item.children || item.nodes || item.options || item.specializations || [];
-    if (!Array.isArray(children)) children = [];
-    if (!children.length && fallback.children) children = fallback.children;
-    var skillValue = item.skill || item.earnedSkill || item.rewardSkill || (item.miniGame && (item.miniGame.rewardSkill || item.miniGame.skill)) || fallback.skill || id;
-    var skillId = typeof skillValue === 'object' ? String(skillValue.id || skillValue.key || slug(skillValue.name || skillValue.title)) : String(skillValue);
-    if (!skillMap[skillId]) skillMap[skillId] = typeof skillValue === 'object' ? Object.assign({ id: skillId, name: skillValue.name || skillValue.label || skillValue.title || skillId, shortName: skillValue.shortName || skillValue.name || skillValue.label || skillId }, skillValue) : { id: skillId, name: titleCase(skillId), shortName: titleCase(skillId) };
-    var career = item.career || item.careerMatch || item.outcome || fallback.career || null;
-    if (typeof career === 'string') career = { title: career };
-    var mini = item.miniGame || item.minigame || item.challenge || fallback.miniGame || {};
-    var node = Object.assign({}, item, {
-      id: id, parentId: parentId, title: item.title || item.name || fallback.title || titleCase(id), name: item.name || item.title || fallback.name || titleCase(id),
-      subtitle: item.subtitle || item.description || fallback.subtitle || '', description: item.description || item.subtitle || fallback.description || '',
-      skill: skillId, earnedSkill: skillId, career: career, miniGame: Object.assign({ status: 'planned', rewardSkill: skillId }, mini, { rewardSkill: mini.rewardSkill || skillId }),
-      children: children.map(function (child, childIndex) { return normalizeNode(child, childIndex, id, skillMap, (fallback.children || [])[childIndex]); })
-    });
-    return node;
-  }
-
-  function slug(value) { return String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
-  function titleCase(value) { return String(value || '').replace(/[-_]/g, ' ').replace(/\b\w/g, function (letter) { return letter.toUpperCase(); }); }
-
-  // ---------- State --------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // State and recommendation logic
+  // ---------------------------------------------------------------------------
 
   function defaultState() {
-    return { version: 1, screen: 'landing', name: '', avatar: 'comet', completed: [], earned: [], selectedNodeId: null, lastCareerId: null };
+    return {
+      version: 2, screen: 'landing', name: '', avatar: 'comet', starterSkills: [],
+      recommendedRegionId: null, activeRegionId: null, activeDomainId: null,
+      completed: [], earned: [], rejected: [], selectedNodeId: null,
+      travelTargetId: null, travelFromId: null, lastCareerId: null, lastAward: false
+    };
   }
 
   function loadState() {
     var initial = defaultState();
     try {
       var saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null');
-      if (!saved || saved.version !== 1) return initial;
-      return Object.assign(initial, saved, { completed: Array.isArray(saved.completed) ? saved.completed : [], earned: Array.isArray(saved.earned) ? saved.earned : [] });
+      if (!saved || saved.version !== 2) return initial;
+      return Object.assign(initial, saved, {
+        starterSkills: Array.isArray(saved.starterSkills) ? saved.starterSkills.slice(0, 4) : [],
+        completed: Array.isArray(saved.completed) ? saved.completed : [],
+        earned: Array.isArray(saved.earned) ? saved.earned : [],
+        rejected: Array.isArray(saved.rejected) ? saved.rejected : [],
+        screen: saved.screen === 'travel' ? 'map' : saved.screen
+      });
     } catch (error) { return initial; }
   }
 
   function saveState() {
-    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { /* private browsing can disable storage */ }
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { /* Storage can be unavailable in private mode. */ }
   }
 
-  function resetState() { state = defaultState(); saveState(); closeModal(); render(); announce('Journey restarted. Choose your explorer.'); }
+  function resetState() {
+    if (travelTimer) window.clearTimeout(travelTimer);
+    state = defaultState(); saveState(); closeModal(); render();
+    announce('Journey restarted. Choose your explorer.');
+  }
+
+  function scoreRegions(selection) {
+    var scores = {};
+    model.regions.forEach(function (region) { scores[region.id] = 0; });
+    selection.forEach(function (skillId) {
+      var skill = model.skills[skillId];
+      if (!skill || !skill.affinities) return;
+      model.regions.forEach(function (region) { scores[region.id] += Number(skill.affinities[region.id] || 0); });
+    });
+    return scores;
+  }
+
+  function rankedRegions(selection, excluded) {
+    var scores = scoreRegions(selection);
+    var blocked = excluded || [];
+    return model.regions.slice().sort(function (a, b) {
+      var difference = scores[b.id] - scores[a.id];
+      return difference || model.regions.indexOf(a) - model.regions.indexOf(b);
+    }).filter(function (region) { return blocked.indexOf(region.id) === -1; });
+  }
+
+  function recommendRegion(selection, excluded) {
+    return rankedRegions(selection, excluded)[0] || rankedRegions(selection, [])[0] || model.regions[0];
+  }
 
   function findNode(id, nodes) {
     nodes = nodes || model.regions;
@@ -1447,38 +1718,53 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     return null;
   }
 
-  function getDepth(node) { var depth = 0; while (node && node.parentId) { depth += 1; node = findNode(node.parentId); } return depth; }
+  function nodeDepth(node) {
+    var depth = 0;
+    while (node && node.parentId) { depth += 1; node = findNode(node.parentId); }
+    return depth;
+  }
+
   function isCompleted(id) { return state.completed.indexOf(id) !== -1; }
+  function isRejected(id) { return state.rejected.indexOf(id) !== -1; }
+  function skillFor(node) { return model.skills[node && node.earnedSkill] || normalizeSkill({ id: 'discovery', label: 'Discovery' }); }
 
-  function isVisible(node) {
-    if (!node.parentId) return true;
-    var parent = findNode(node.parentId);
-    // A child opens only after its parent challenge has been acknowledged.
-    // This makes the map read as a journey rather than a flat career picker.
-    return !!parent && isCompleted(parent.id);
+  function currentJourneyNode() {
+    if (state.activeDomainId && isCompleted(state.activeDomainId)) return findNode(state.activeDomainId);
+    if (state.activeRegionId && isCompleted(state.activeRegionId)) return findNode(state.activeRegionId);
+    return null;
   }
 
-  function skillFor(node) {
-    var id = node && (node.earnedSkill || node.skill);
-    return model.skills[id] || { id: id || 'new-skill', name: titleCase(id || 'New Skill'), shortName: titleCase(id || 'Skill'), color: '#f6c453' };
+  function canOpen(node) {
+    if (!node || isRejected(node.id)) return false;
+    var depth = nodeDepth(node);
+    // Completed stops stay reviewable, but only inside the route currently on screen.
+    if (isCompleted(node.id)) {
+      if (depth === 0) return node.id === state.activeRegionId;
+      if (depth === 1) return node.parentId === state.activeRegionId;
+      return node.parentId === state.activeDomainId;
+    }
+    if (depth === 0) return node.id === state.activeRegionId;
+    if (depth === 1) return node.parentId === state.activeRegionId && isCompleted(state.activeRegionId);
+    return node.parentId === state.activeDomainId && isCompleted(state.activeDomainId);
   }
 
-  // ---------- Rendering -----------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------------------------
 
   function render() {
-    root.innerHTML = renderScreen();
-    renderDock();
-    wireEvents();
-    window.scrollTo(0, 0);
-    focusAfterRender();
+    root.innerHTML = renderScreen(); renderDock(); updateHeader(); wireEvents();
+    window.scrollTo(0, 0); focusAfterRender();
   }
 
   function renderScreen() {
     if (state.screen === 'landing') return renderLanding();
-    if (state.screen === 'map') return renderMap();
+    if (state.screen === 'skill-select') return renderSkillSelect();
+    if (state.screen === 'map' || state.screen === 'travel') return renderMap();
     if (state.screen === 'mini') return renderMiniGame(findNode(state.selectedNodeId));
+    if (state.screen === 'reflection') return renderReflection(findNode(state.selectedNodeId));
     if (state.screen === 'career') return renderCareer(findNode(state.selectedNodeId));
-    return renderMap();
+    return renderLanding();
   }
 
   function renderLanding() {
@@ -1488,90 +1774,151 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     ];
     return '<section class="screen hero-screen screen--landing" aria-labelledby="welcome-title">' +
       '<div class="landing-sky" aria-hidden="true"><span class="star star--one"></span><span class="star star--two"></span><span class="star star--three"></span><span class="planet"></span></div>' +
-      '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS / FIELD GUIDE 01</p><h1 id="welcome-title" class="screen-title" tabindex="-1">Find the work<br><em>that feels like you.</em></h1><p class="screen-subtitle">Build a little world of skills, follow your curiosity, and meet the IS career paths waiting on the other side.</p>' +
-      '<form id="start-form" class="launch-card start-card"><p class="card-label">Start your field guide</p><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><fieldset><legend>Choose your explorer</legend><div class="avatar-grid">' + avatars.map(function (avatar) { return '<button class="avatar-choice' + (state.avatar === avatar.id ? ' is-selected' : '') + '" type="button" data-action="choose-avatar" data-avatar="' + avatar.id + '" aria-pressed="' + (state.avatar === avatar.id) + '"><span class="avatar-portrait" aria-hidden="true">' + avatar.glyph + '</span><span class="avatar-name">' + avatar.label + '</span><small class="avatar-tag">ready to explore</small></button>'; }).join('') + '</div></fieldset><button class="button button--primary button--wide" type="submit">Enter the field guide <span aria-hidden="true">↗</span></button></form>' +
-      (state.name ? '<button class="text-button" data-action="resume">Resume ' + escapeHtml(state.name) + '’s journey</button>' : '') + '</div>' +
-      '<p class="landing-note">A short, self-guided exploration · no wrong turns</p></section>';
+      '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS / FIELD GUIDE 02</p><h1 id="welcome-title" class="screen-title" tabindex="-1">Build your skills.<br><em>Find your world.</em></h1><p class="screen-subtitle">Choose the strengths that feel like you, then watch your explorer travel through an IS career world built around them.</p>' +
+      '<form id="start-form" class="launch-card start-card"><p class="card-label">Create your explorer</p><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><fieldset><legend>Choose your explorer</legend><div class="avatar-grid">' + avatars.map(function (avatar) {
+        return '<button class="avatar-choice' + (state.avatar === avatar.id ? ' is-selected' : '') + '" type="button" data-action="choose-avatar" data-avatar="' + avatar.id + '" aria-pressed="' + (state.avatar === avatar.id) + '"><span class="avatar-portrait" aria-hidden="true">' + avatar.glyph + '</span><span class="avatar-name">' + avatar.label + '</span><small class="avatar-tag">ready to travel</small></button>';
+      }).join('') + '</div></fieldset><button class="button button--primary button--wide" type="submit">Choose my starter skills <span aria-hidden="true">→</span></button></form>' +
+      (state.name && state.starterSkills.length === 4 ? '<button class="text-button" data-action="resume">Resume ' + escapeHtml(state.name) + '’s journey</button>' : '') + '</div><p class="landing-note">Four starter skills · three worlds · one career path</p></section>';
+  }
+
+  function renderSkillSelect() {
+    var selected = state.starterSkills;
+    return '<section class="screen screen--skills" aria-labelledby="skills-title"><div class="skills-heading"><div><p class="screen-kicker">LOADOUT / CHOOSE 4 OF 10</p><h1 id="skills-title" tabindex="-1">What are you good at—<br><em>or excited to become good at?</em></h1><p>Select exactly four. Your combination becomes your first skill stack and points your compass toward a career world.</p></div><div class="selection-meter" aria-live="polite"><strong>' + selected.length + '<span>/4</span></strong><small>skills selected</small></div></div><div class="starter-skill-grid">' + model.starterSkills.map(function (skill, index) {
+      var picked = selected.indexOf(skill.id) !== -1;
+      var unavailable = selected.length >= 4 && !picked;
+      return '<button class="starter-skill' + (picked ? ' is-picked' : '') + '" type="button" data-action="toggle-starter" data-skill-id="' + escapeAttr(skill.id) + '" aria-pressed="' + picked + '" ' + (unavailable ? 'aria-disabled="true"' : '') + ' style="--skill-color:' + escapeAttr(skill.color) + '"><span class="starter-number">' + String(index + 1).padStart(2, '0') + '</span><span class="starter-glyph" aria-hidden="true">' + escapeHtml(skill.glyph) + '</span><strong>' + escapeHtml(skill.label) + '</strong><small>' + escapeHtml(skill.description) + '</small><span class="pick-state">' + (picked ? 'Selected ✓' : 'Choose +') + '</span></button>';
+    }).join('') + '</div><div class="skills-footer"><button class="text-button" data-action="back-landing">← Back</button><p>' + (selected.length === 4 ? 'Your compass is ready.' : 'Choose ' + (4 - selected.length) + ' more to continue.') + '</p><button class="button button--primary" data-action="confirm-skills" ' + (selected.length === 4 ? '' : 'disabled') + '>Reveal my world <span aria-hidden="true">↗</span></button></div></section>';
   }
 
   function renderMap() {
-    var allComplete = state.completed.length;
-    return '<section class="screen map-screen screen--map" aria-labelledby="map-title"><div class="map-intro"><div><p class="screen-kicker">FIELD GUIDE / MAP</p><h1 id="map-title" class="screen-title" tabindex="-1">Which kind of work<br><em>gives you energy?</em></h1><p class="screen-subtitle">Choose a point that feels natural. Every stop is a planned sixty-second challenge.</p></div><div class="map-side"><div class="map-progress"><strong>' + allComplete + ' discoveries</strong><span>Every skip grows your stack.</span></div><button class="button button--quiet map-restart" data-action="restart">Restart journey</button></div></div><div class="map-legend"><span class="legend-open"><i></i> Open route</span><span class="legend-done"><i></i> Explored</span><span class="legend-lock"><i></i> Ahead</span></div><section class="map-board" aria-labelledby="map-title"><div class="map-start"><small>START / ' + escapeHtml(state.name || 'EXPLORER') + '</small><strong>What gives you energy?</strong></div><div class="map-regions">' + model.regions.map(renderRegion).join('') + '</div><div class="map-footer">SKIP A CHALLENGE · ADD A SKILL · FIND YOUR NEXT PATH</div></section></section>';
+    var region = findNode(state.activeRegionId) || recommendRegion(state.starterSkills, state.rejected);
+    if (!region) return '<section class="screen"><h1>No map data found</h1></section>';
+    var regionDone = isCompleted(region.id);
+    var domain = state.activeDomainId ? findNode(state.activeDomainId) : null;
+    var domainDone = domain && isCompleted(domain.id);
+    var stage = domainDone ? 2 : regionDone ? 1 : 0;
+    var options = stage === 0 ? [region] : stage === 1 ? region.children : domain.children;
+    var current = currentJourneyNode();
+    var scores = scoreRegions(state.starterSkills);
+    var recommendation = region.id === state.recommendedRegionId ? 'BEST STARTING MATCH' : 'NEXT BEST MATCH';
+    // Keep the lower fork above the fixed skill stack on compact phone screens.
+    var lowerChoiceY = window.innerWidth <= 767 ? 43 : 70;
+    var sceneNodes = [];
+    if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: 43 }, kind: 'region' });
+    if (stage === 1) {
+      sceneNodes.push({ node: region, position: { x: 17, y: 53 }, kind: 'past' });
+      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 66, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
+    }
+    if (stage === 2) {
+      sceneNodes.push({ node: region, position: { x: 8, y: 53 }, kind: 'past' });
+      sceneNodes.push({ node: domain, position: { x: 31, y: 53 }, kind: 'past' });
+      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 73, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
+    }
+    var avatarPosition = avatarMapPosition(stage, current && current.id, sceneNodes);
+    var travelTarget = state.travelTargetId && sceneNodes.filter(function (entry) { return entry.node.id === state.travelTargetId; })[0];
+    var travelFrom = state.travelFromId && sceneNodes.filter(function (entry) { return entry.node.id === state.travelFromId; })[0];
+    var targetPosition = travelTarget ? travelTarget.position : avatarPosition;
+    var fromPosition = travelFrom ? travelFrom.position : avatarPosition;
+
+    return '<section class="screen screen--map world-screen" aria-labelledby="map-title"><header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + (stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.') + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header><section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + '" aria-label="Interactive journey map"><div class="world-sky" aria-hidden="true"><span class="world-sun"></span><span class="cloud cloud--one"></span><span class="cloud cloud--two"></span><span class="mountain mountain--one"></span><span class="mountain mountain--two"></span></div><svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path d="M80 360 C240 375 315 260 450 260 S655 125 850 155 M450 260 C625 260 660 390 850 390"></path></svg><div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + sceneNodes.map(renderWorldStop).join('') + '<div class="map-avatar avatar-' + escapeAttr(state.avatar) + (state.screen === 'travel' ? ' is-traveling' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span aria-hidden="true">' + avatarGlyph(state.avatar) + '</span><small>' + escapeHtml(state.name || 'YOU') + '</small></div><div class="terrain terrain--front" aria-hidden="true"></div><div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style') + '</strong></div></section><div class="map-action-row"><p><strong>' + options.filter(function (node) { return !isRejected(node.id); }).length + '</strong> route' + (options.filter(function (node) { return !isRejected(node.id); }).length === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
   }
 
-  function renderRegion(region) {
-    var open = isVisible(region);
-    return '<div class="map-region map-region--' + escapeAttr(slug(region.id)) + (open ? '' : ' is-future') + '"><button class="region-card region-ribbon" type="button" data-action="open-node" data-node-id="' + escapeAttr(region.id) + '" ' + (open ? '' : 'disabled') + ' style="--region-color:' + escapeAttr(region.color || '#5b8def') + '" aria-label="' + escapeAttr(region.title + ', earns ' + skillFor(region).name) + '"><span class="region-index">' + escapeHtml(region.number || '') + '</span><span><span class="region-heading">' + escapeHtml(region.title) + '</span><span class="region-description">' + escapeHtml(region.subtitle || region.description || '') + '</span></span><span class="region-skill">+' + escapeHtml(skillFor(region).name) + '</span><span class="node-status" aria-hidden="true">' + (isCompleted(region.id) ? '✓' : '↗') + '</span></button><div class="map-domain-group">' + region.children.map(function (child) { return renderDomain(child, region); }).join('') + '</div></div>';
+  function renderWorldStop(entry) {
+    var node = entry.node;
+    var rejected = isRejected(node.id);
+    var complete = isCompleted(node.id);
+    var open = canOpen(node);
+    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon" aria-hidden="true">' + (rejected ? '×' : complete ? '✓' : entry.kind === 'region' ? '◆' : '●') + '</span><span class="stop-copy"><small>' + escapeHtml(rejected ? 'TRAIL CLOSED' : complete ? 'EXPLORED' : 'NEXT STOP') + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
   }
 
-  function renderDomain(node, region) {
-    var open = isVisible(node);
-    var done = isCompleted(node.id);
-    return '<div class="map-domain ' + (open ? 'is-open' : 'is-locked') + ' ' + (done ? 'is-complete' : '') + '"><button class="map-node map-node--domain" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + (done ? ', explored' : '')) + '"><strong>' + escapeHtml(node.title) + '</strong><small>' + escapeHtml(node.subtitle || '') + '</small><span class="node-state" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button><div class="specialization-row">' + node.children.map(renderSpecialization).join('') + '</div></div>';
+  function avatarMapPosition(stage, currentId, entries) {
+    if (!currentId) return { x: 9, y: 64 };
+    var current = entries.filter(function (entry) { return entry.node.id === currentId; })[0];
+    if (current) return current.position;
+    if (stage === 2) return { x: 31, y: 49 };
+    if (stage === 1) return { x: 17, y: 49 };
+    return { x: 9, y: 64 };
   }
 
-  function renderSpecialization(node) {
-    var open = isVisible(node), done = isCompleted(node.id);
-    return '<button class="map-node map-node--specialization ' + (open ? 'is-open' : 'is-locked') + ' ' + (done ? 'is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + ', ' + (node.career && (node.career.title || node.career.name) || 'career match')) + '"><strong>' + escapeHtml(node.title) + '</strong><small>' + escapeHtml(node.career && (node.career.title || node.career.name) || 'Career match') + '</small><span class="node-state" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button>';
+  function mapPrompt(stage, region, domain) {
+    if (stage === 0) return 'Your four starter skills brought you to ' + region.title + '. Move your explorer to the first challenge.';
+    if (stage === 1) return 'The world shifts forward. Choose the kind of ' + region.title.toLowerCase() + ' work you want to try.';
+    return 'You enjoyed ' + domain.title + '. Choose the work style that sounds most like you.';
   }
 
   function renderMiniGame(node) {
     if (!node) return renderMap();
-    var skill = skillFor(node), mini = node.miniGame || {};
-    var done = isCompleted(node.id);
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + (done ? 'EXPLORED' : 'NEXT STOP') + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / PLANNED MINI-GAME</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title || node.title) + '</h1><p class="lede">' + escapeHtml(mini.description || mini.concept || 'A focused, sixty-second activity is planned for this point on the map.') + '</p><div class="reward-callout"><span class="hex hex--small" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><div><span class="eyebrow">YOU WILL ADD</span><strong>' + escapeHtml(skill.name) + '</strong><p>One more tile in your growing skill stack.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="skip-node">' + (done ? 'Keep this skill' : 'Skip for now') + ' <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE</span><h2>' + escapeHtml(mini.title || 'Mini-game') + '</h2><p>Placeholder ready for a future interactive build.</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>skill reward</span></div></div></div></div></section>';
+    var skill = skillFor(node);
+    var mini = node.miniGame || {};
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small" style="--skill-color:' + escapeAttr(skill.color) + '" aria-hidden="true">✦</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
+  }
+
+  function renderReflection(node) {
+    var skill = skillFor(node);
+    var sibling = findAlternative(node);
+    return '<section class="screen screen--reflection" aria-labelledby="reflection-title"><div class="reflection-scene"><div class="reflection-avatar avatar-' + escapeAttr(state.avatar) + '" aria-hidden="true">' + avatarGlyph(state.avatar) + '</div><div class="reflection-card"><p class="screen-kicker">TRAIL CHECKPOINT</p><h1 id="reflection-title" tabindex="-1">Did you enjoy that kind of activity?</h1><p>Your answer changes the map. There is no wrong response—this is about noticing what gives you energy.</p><div class="reflection-choice-grid"><button class="reflection-choice reflection-choice--yes" data-action="enjoy-yes"><span aria-hidden="true">✓</span><strong>Yes, keep going</strong><small>Add <b>' + escapeHtml(skill.name) + '</b> and reveal the next stage.</small></button><button class="reflection-choice reflection-choice--no" data-action="enjoy-no"><span aria-hidden="true">↶</span><strong>No, try another trail</strong><small>' + escapeHtml(sibling ? 'Return to the map and try ' + sibling.title + '.' : 'Return to the map for a different recommendation.') + '</small></button></div><button class="text-button" data-action="back-map">I’m not sure yet — return to map</button></div></div></section>';
   }
 
   function renderCareer(node) {
-    var career = node && node.career || { title: 'Career match', whatTheyDo: 'A career path is ready to explore.' };
-    var title = career.title || career.name || 'Career match';
-    var candidate = career.candidate || career.strongCandidate;
+    var career = node && node.career || { title: 'Career match', summary: 'A career path is ready to explore.' };
+    var candidate = career.strongCandidate || career.candidate;
     if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) candidate = (candidate.skills || []).concat(candidate.experience || [], candidate.projects || [], candidate.certifications || []);
     var lists = [
-      ['Day to day', career.responsibilities || career.dayToDay], ['Typical projects', career.projects || career.typicalProjects],
-      ['Where they work', career.workplace || career.workSettings], ['Industries', career.industries], ['Company types', career.companies || career.companyTypes],
-      ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.tools || career.toolsAndTechnologies || career.technologies],
-      ['Entry-level needs', career.entryLevel || career.entryLevelNeeds], ['Strong candidate', candidate]
+      ['Day to day', career.dayToDay || career.responsibilities], ['Typical projects', career.typicalProjects || career.projects],
+      ['Where they work', career.workSettings || career.workplace], ['Industries', career.industries], ['Company types', career.companyTypes || career.companies],
+      ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.toolsAndTechnologies || career.tools],
+      ['Entry-level needs', career.entryLevelNeeds || career.entryLevel], ['Strong candidate', candidate]
     ];
-    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node && node.id || '') + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(title) + '</h1><p class="lede">' + escapeHtml(career.whatTheyDo || career.summary || 'Explore the kind of work this path opens up.') + '</p><div class="career-hero-meta"><span>Skill unlocked: <strong>' + escapeHtml(skillFor(node).name) + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(formatSalary(career.salary)) + '</strong><small>Research-backed salary data will be added in the content phase.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.growth || career.careerGrowth || 'Build experience, then choose your next direction.')) + '</p></div><button class="button button-coral button--wide" data-action="explore-another">Explore another path ↗</button><button class="text-button" data-action="back-map">View the full map</button></aside></div></section>';
-  }
-
-  function renderFact(label, value) {
-    var values = Array.isArray(value) ? value : (value ? [value] : ['Add this detail in the content file.']);
-    return '<section class="fact"><h2>' + escapeHtml(label) + '</h2><ul>' + values.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul></section>';
+    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node.id) + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p class="lede">' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-hero-meta"><span>Starter skills: <strong>4</strong></span><span>Journey skills: <strong>' + state.earned.length + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(formatSalary(career.salary)) + '</strong><small>Research-backed salary data will be added in the content phase.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.careerGrowth || career.growth)) + '</p></div><button class="button button-coral button--wide" data-action="new-path">Start another path ↗</button><button class="text-button" data-action="back-map">View this world</button></aside></div></section>';
   }
 
   function renderFactList(value) {
-    var values = Array.isArray(value) ? value : (value ? [value] : ['Add this detail in the content file.']);
-    return '<ul>' + values.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul>';
+    var items = Array.isArray(value) ? value : value ? [value] : ['Research pending'];
+    return '<ul>' + items.map(function (item) { return '<li>' + escapeHtml(typeof item === 'object' ? formatList(item) : item) + '</li>'; }).join('') + '</ul>';
   }
 
-  function formatList(value) { return Array.isArray(value) ? value.join(' · ') : String(value || ''); }
+  function formatSalary(value) {
+    if (!value) return 'Research pending';
+    if (typeof value === 'string') return value;
+    return value.range || (value.status === 'research-pending' ? 'Research pending' : value.note) || 'Research pending';
+  }
 
-  function formatSalary(salary) {
-    if (!salary) return 'Research pending';
-    if (typeof salary === 'string') return salary;
-    if (typeof salary === 'object') {
-      var range = salary.range || salary.entryRange || salary.amount;
-      if (range) return String(range) + (salary.note ? ' · ' + String(salary.note) : '');
-      if (salary.status === 'research-pending') return 'Research pending';
-    }
-    return 'Research pending';
+  function formatList(value) {
+    if (Array.isArray(value)) return value.join(' · ');
+    if (value && typeof value === 'object') return Object.keys(value).map(function (key) { return formatList(value[key]); }).filter(Boolean).join(' · ');
+    return value || 'Research pending';
   }
 
   function renderDock() {
     if (!dock) return;
-    var earned = state.earned.map(function (entry) { return typeof entry === 'string' ? { skillId: entry, nodeId: '' } : entry; });
-    var items = earned.map(function (entry, index) {
-      var skill = model.skills[entry.skillId] || { id: entry.skillId, name: titleCase(entry.skillId), color: '#f6c453' };
-      var node = findNode(entry.nodeId);
-      return '<button class="hex-item' + (index === earned.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-skill-id="' + escapeAttr(skill.id) + '" aria-label="' + escapeAttr(skill.name + ' skill, earned from ' + (node ? node.title : 'your journey')) + '" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '"><span aria-hidden="true">✦</span><strong>' + escapeHtml(skill.shortName || skill.name) + '</strong><small>' + escapeHtml(skill.category || 'discovery') + '</small></button>';
+    var items = [];
+    state.starterSkills.forEach(function (skillId) {
+      var skill = model.skills[skillId];
+      if (skill) items.push({ skill: skill, source: 'Starter skill', starter: true });
     });
-    dock.className = 'skill-dock' + (items.length ? ' has-skills' : '');
-    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2>SKILL STACK</h2><p>' + (items.length ? items.length + ' discovered' : 'Your launch kit is empty') + '</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Skills earned during this journey">' + (items.length ? items.join('') : '<div class="hex-empty" role="listitem"><span aria-hidden="true">+</span><span>Earn skills<br>as you explore</span></div>') + '</div><div class="dock-tip"><span aria-hidden="true">⌁</span> Each mission adds a new edge</div></div>';
+    state.earned.forEach(function (entry) {
+      var skill = model.skills[entry.skillId];
+      var node = findNode(entry.nodeId);
+      if (skill) items.push({ skill: skill, source: node ? node.title : 'Journey skill', starter: false });
+    });
+    dock.hidden = items.length === 0;
+    dock.classList.toggle('has-skills', items.length > 0);
+    if (!items.length) { dock.innerHTML = ''; return; }
+    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2>SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
+      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span aria-hidden="true">' + escapeHtml(item.skill.glyph || '✦') + '</span><strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong><small>' + escapeHtml(item.starter ? 'starter' : 'earned') + '</small></button>';
+    }).join('') + '</div></div>';
   }
 
-  // ---------- Events and transitions --------------------------------------------
+  function updateHeader() {
+    if (!headerStatus) return;
+    if (state.screen === 'skill-select') headerStatus.textContent = state.starterSkills.length + ' OF 4 SKILLS';
+    else if (state.starterSkills.length === 4) headerStatus.textContent = (state.earned.length + 4) + ' SKILLS · WORLD ACTIVE';
+    else headerStatus.textContent = 'READY TO EXPLORE';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Events and progression
+  // ---------------------------------------------------------------------------
 
   function wireEvents() {
     root.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
@@ -1584,144 +1931,216 @@ DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
     event.preventDefault();
     var input = document.getElementById('player-name');
     var name = input && input.value.trim();
-    if (!name) { if (input) { input.focus(); input.setCustomValidity('Add your first name to begin.'); input.reportValidity(); } return; }
+    if (!name) {
+      if (input) { input.setCustomValidity('Add your first name to begin.'); input.reportValidity(); input.focus(); }
+      return;
+    }
     if (input) input.setCustomValidity('');
-    state.name = name; state.screen = 'map'; saveState(); render(); announce('Welcome, ' + name + '. Choose a starting region.');
+    state.name = name; state.screen = 'skill-select'; saveState(); render();
+    announce('Choose four starter skills.');
   }
 
   function handleAction(event) {
-    var element = event.currentTarget, action = element.getAttribute('data-action');
-    if (action === 'choose-avatar') { state.avatar = element.getAttribute('data-avatar') || 'comet'; render(); return; }
-    if (action === 'resume') { state.screen = 'map'; saveState(); render(); announce('Journey resumed.'); return; }
+    var element = event.currentTarget;
+    var action = element.getAttribute('data-action');
+    if (action === 'choose-avatar') { state.avatar = element.getAttribute('data-avatar') || 'comet'; saveState(); render(); return; }
+    if (action === 'toggle-starter') { toggleStarterSkill(element.getAttribute('data-skill-id')); return; }
+    if (action === 'confirm-skills') { confirmStarterSkills(); return; }
+    if (action === 'back-landing') { state.screen = 'landing'; saveState(); render(); return; }
+    if (action === 'resume') { state.screen = state.starterSkills.length === 4 ? 'map' : 'skill-select'; saveState(); render(); return; }
+    if (action === 'edit-skills') { editStarterSkills(); return; }
     if (action === 'open-node') { openNode(element.getAttribute('data-node-id')); return; }
-    if (action === 'skip-node') { completeNode(state.selectedNodeId); return; }
-    if (action === 'back-map' || action === 'explore-another') { state.screen = 'map'; state.selectedNodeId = null; saveState(); render(); announce('Back on the map. Choose another point to explore.'); return; }
+    if (action === 'finish-game') { state.screen = 'reflection'; saveState(); render(); return; }
+    if (action === 'enjoy-yes') { completeNode(state.selectedNodeId); return; }
+    if (action === 'enjoy-no') { rejectNode(state.selectedNodeId); return; }
+    if (action === 'back-map') { state.screen = 'map'; state.travelTargetId = null; saveState(); render(); return; }
+    if (action === 'new-path') { startAnotherPath(); return; }
     if (action === 'restart') { modalReturnFocus = element; showRestartModal(); return; }
-    if (action === 'inspect-skill') { modalReturnFocus = element; showSkillModal(element.getAttribute('data-skill-id')); return; }
+    if (action === 'inspect-skill') { modalReturnFocus = element; showSkillModal(element.getAttribute('data-skill-id')); }
+  }
+
+  function toggleStarterSkill(skillId) {
+    var index = state.starterSkills.indexOf(skillId);
+    if (index !== -1) state.starterSkills.splice(index, 1);
+    else if (state.starterSkills.length < 4 && model.skills[skillId]) state.starterSkills.push(skillId);
+    saveState(); render();
+  }
+
+  function confirmStarterSkills() {
+    if (state.starterSkills.length !== 4) return;
+    var recommendation = recommendRegion(state.starterSkills, []);
+    state.recommendedRegionId = recommendation.id; state.activeRegionId = recommendation.id; state.activeDomainId = null;
+    state.completed = []; state.earned = []; state.rejected = []; state.selectedNodeId = null; state.screen = 'map';
+    saveState(); render(); announce('Your starter skills point to ' + recommendation.title + '.');
+  }
+
+  function editStarterSkills() {
+    state.screen = 'skill-select'; state.completed = []; state.earned = []; state.rejected = [];
+    state.activeDomainId = null; state.selectedNodeId = null; saveState(); render();
   }
 
   function openNode(id) {
     var node = findNode(id);
-    if (!node || !isVisible(node)) return;
-    state.selectedNodeId = id;
-    if (node.children && node.children.length && !node.career) {
-      // Domain nodes still get their own planned challenge; its children become available after Skip.
-    }
-    state.screen = 'mini'; saveState(); render(); announce(node.title + ' opened. Planned mini-game placeholder.');
+    if (!canOpen(node)) return;
+    var current = currentJourneyNode();
+    state.selectedNodeId = id; state.travelFromId = current ? current.id : null; state.travelTargetId = id;
+    if (nodeDepth(node) === 1) state.activeDomainId = id;
+    state.screen = 'travel'; saveState(); render();
+    if (travelTimer) window.clearTimeout(travelTimer);
+    travelTimer = window.setTimeout(function () {
+      state.screen = 'mini'; state.travelTargetId = null; state.travelFromId = null; saveState(); render();
+      announce(node.title + ' challenge opened.');
+    }, prefersReducedMotion ? 70 : 900);
   }
 
   function completeNode(id) {
-    var node = findNode(id); if (!node) return;
-    var alreadyDone = isCompleted(id);
-    if (!alreadyDone) state.completed.push(id);
+    var node = findNode(id);
+    if (!node) return;
+    var alreadyCompleted = isCompleted(id);
+    if (!alreadyCompleted) state.completed.push(id);
     var skill = skillFor(node);
-    var hasReward = state.earned.some(function (entry) { return (typeof entry === 'string' ? entry : entry.nodeId) === id; });
-    if (!hasReward) state.earned.push({ skillId: skill.id, nodeId: id, earnedAt: Date.now() });
-    state.lastAward = true;
-    state.selectedNodeId = id;
-    saveState();
-    if (node.career) { state.lastCareerId = node.career.id || node.career.title; state.screen = 'career'; saveState(); render(); animateSkillReward(skill); announce('Career match unlocked: ' + (node.career.title || node.career.name) + '.'); return; }
-    state.screen = 'map'; saveState(); render();
-    if (!alreadyDone) animateSkillReward(skill);
-    announce(alreadyDone ? skill.name + ' is already in your stack.' : skill.name + ' added to your skill stack.');
-    showToast(alreadyDone ? 'Skill already discovered' : '+' + skill.name + ' added to your stack', skill, !alreadyDone);
+    var alreadyEarned = state.earned.some(function (entry) { return entry.nodeId === id; });
+    if (!alreadyEarned) state.earned.push({ skillId: skill.id, nodeId: id, earnedAt: Date.now() });
+    state.lastAward = !alreadyEarned; state.selectedNodeId = id;
+    if (node.career) { state.lastCareerId = node.career.id || node.career.title; state.screen = 'career'; }
+    else state.screen = 'map';
+    saveState(); render();
+    if (!alreadyEarned) {
+      animateSkillReward(skill); showToast('+' + skill.name + ' added to your stack', skill);
+      announce(skill.name + ' earned. The next stage is open.');
+    } else {
+      showToast(skill.name + ' is already in your stack', skill);
+      announce(skill.name + ' activity reviewed.');
+    }
     window.setTimeout(function () { state.lastAward = false; renderDock(); }, prefersReducedMotion ? 0 : 850);
   }
 
-  function showToast(message, skill, reward) {
+  function rejectNode(id) {
+    var node = findNode(id);
+    if (!node) return;
+    if (!isRejected(id)) state.rejected.push(id);
+    var depth = nodeDepth(node);
+    if (depth === 0) {
+      var nextRegion = recommendRegion(state.starterSkills, state.rejected);
+      state.activeRegionId = nextRegion.id; state.activeDomainId = null;
+    } else if (depth === 1) state.activeDomainId = null;
+    state.selectedNodeId = null; state.travelTargetId = null; state.screen = 'map'; saveState(); render();
+    var alternative = findAlternative(node);
+    announce(alternative ? node.title + ' closed. Try ' + alternative.title + '.' : 'That trail closed. Your compass found another route.');
+  }
+
+  function findAlternative(node) {
+    if (!node) return null;
+    if (!node.parentId) return recommendRegion(state.starterSkills, state.rejected.concat([node.id]));
+    var parent = findNode(node.parentId);
+    return parent && parent.children.filter(function (candidate) { return candidate.id !== node.id && !isRejected(candidate.id); })[0] || null;
+  }
+
+  function startAnotherPath() {
+    state.screen = 'skill-select'; state.completed = []; state.earned = []; state.rejected = [];
+    state.activeRegionId = null; state.activeDomainId = null; state.selectedNodeId = null; state.lastCareerId = null;
+    saveState(); render();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Feedback, motion, and dialogs
+  // ---------------------------------------------------------------------------
+
+  function showToast(message, skill) {
     if (!toastRegion) return;
-    toastRegion.innerHTML = '<div class="toast ' + (reward ? 'toast--reward' : '') + '" role="status"><span class="toast-mark" style="--skill-color:' + escapeAttr(skill && skill.color || '#f6c453') + '" aria-hidden="true">✦</span><span>' + escapeHtml(message) + '</span></div>';
-    window.setTimeout(function () { if (toastRegion) toastRegion.innerHTML = ''; }, 3200);
+    toastRegion.innerHTML = '<div class="toast toast--reward" role="status"><span class="toast-mark" style="--skill-color:' + escapeAttr(skill.color) + '" aria-hidden="true">✦</span><span>' + escapeHtml(message) + '</span></div>';
+    window.setTimeout(function () { if (toastRegion) toastRegion.innerHTML = ''; }, 3000);
   }
 
   function animateSkillReward(skill) {
     if (prefersReducedMotion || !dock) return;
     var target = dock.getBoundingClientRect();
-    var startX = window.innerWidth * 0.5;
-    var startY = window.innerHeight * 0.42;
-    var endX = Math.min(target.right - 90, target.left + Math.max(250, target.width * 0.42));
-    var endY = target.top + 34;
+    var startX = window.innerWidth * 0.48; var startY = window.innerHeight * 0.42;
     var flight = document.createElement('span');
-    flight.className = 'hex-flight';
-    flight.setAttribute('aria-hidden', 'true');
-    flight.style.left = startX + 'px';
-    flight.style.top = startY + 'px';
-    flight.style.setProperty('--skill-color', skill && skill.color || '#f6c453');
-    flight.style.setProperty('--flight-x', (endX - startX) + 'px');
-    flight.style.setProperty('--flight-y', (endY - startY) + 'px');
+    flight.className = 'hex-flight'; flight.setAttribute('aria-hidden', 'true');
+    flight.style.left = startX + 'px'; flight.style.top = startY + 'px';
+    flight.style.setProperty('--skill-color', skill.color);
+    flight.style.setProperty('--flight-x', (target.left + target.width * 0.62 - startX) + 'px');
+    flight.style.setProperty('--flight-y', (target.top + 45 - startY) + 'px');
     document.body.appendChild(flight);
-    window.setTimeout(function () { if (flight.parentNode) flight.parentNode.removeChild(flight); }, 760);
+    window.setTimeout(function () { if (flight.parentNode) flight.remove(); }, 760);
   }
 
   function announce(message) {
-    if (toastRegion) {
-      toastRegion.setAttribute('aria-live', 'polite');
-      // Keep map/challenge transitions audible even when there is no visual toast.
-      toastRegion.innerHTML = '<span class="sr-only" role="status">' + escapeHtml(message) + '</span>';
-    }
+    if (toastRegion && !toastRegion.querySelector('.toast')) toastRegion.innerHTML = '<span class="sr-only" role="status">' + escapeHtml(message) + '</span>';
     if (window.console && window.console.debug) window.console.debug('[Launchpad]', message);
   }
-
-  // ---------- Small modal surfaces ------------------------------------------------
 
   function showRestartModal() {
     if (!modalRoot) { resetState(); return; }
     setModalSurfaces(true);
-    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="restart-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">RESET FIELD GUIDE</p><h2 id="restart-title">Start a fresh journey?</h2><p>Your current name, map progress, and skill stack will be cleared from this browser.</p><div class="modal-actions"><button class="button button--quiet" data-action="close-modal">Keep exploring</button><button class="button button--danger" data-action="confirm-restart">Restart journey</button></div></section></div>';
-    modalRoot.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', function (event) { if (event.target === event.currentTarget && element.getAttribute('data-action') === 'close-modal') closeModal(); else if (element.getAttribute('data-action') === 'close-modal') closeModal(); else if (element.getAttribute('data-action') === 'confirm-restart') resetState(); }); });
-    var close = modalRoot.querySelector('.modal-close'); if (close) close.focus();
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="restart-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">RESET FIELD GUIDE</p><h2 id="restart-title">Start a fresh journey?</h2><p>Your starter skills, map decisions, and earned skills will be cleared from this browser.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep exploring</button><button class="button button--danger" data-action="confirm-restart">Restart journey</button></div></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
   function showSkillModal(skillId) {
-    var skill = model.skills[skillId] || { name: titleCase(skillId), color: '#f6c453' };
-    var earned = state.earned.find(function (entry) { return (typeof entry === 'string' ? entry : entry.skillId) === skillId; });
-    var node = earned && typeof earned !== 'string' ? findNode(earned.nodeId) : null;
-    if (!modalRoot) return;
+    var skill = model.skills[skillId];
+    if (!skill || !modalRoot) return;
+    var earned = state.earned.filter(function (entry) { return entry.skillId === skillId; })[0];
+    var node = earned ? findNode(earned.nodeId) : null;
     setModalSurfaces(true);
-    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="skill-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><span class="hex hex--modal" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><p class="eyebrow">SKILL DISCOVERED</p><h2 id="skill-title">' + escapeHtml(skill.name) + '</h2><p>' + escapeHtml((node ? 'You found this by exploring “' + node.title + '.”' : 'A building block in your career field guide.')) + '</p><button class="button button--primary button--wide" data-action="close-modal">Back to journey</button></section></div>';
-    modalRoot.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', function () { closeModal(); }); });
-    var close = modalRoot.querySelector('.modal-close'); if (close) close.focus();
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="skill-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><span class="hex hex--modal" style="--skill-color:' + escapeAttr(skill.color) + '" aria-hidden="true">' + escapeHtml(skill.glyph || '✦') + '</span><p class="eyebrow">' + (skill.category === 'starter' ? 'STARTER SKILL' : 'SKILL EARNED') + '</p><h2 id="skill-title">' + escapeHtml(skill.name) + '</h2><p>' + escapeHtml(node ? 'You earned this by enjoying “' + node.title + '.”' : 'One of the four strengths that set your initial direction.') + '</p><button class="button button--primary button--wide" data-action="close-modal">Back to journey</button></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
+  }
+
+  function wireModalEvents() {
+    modalRoot.querySelectorAll('[data-action]').forEach(function (element) {
+      element.addEventListener('click', function (event) {
+        var action = element.getAttribute('data-action');
+        if (action === 'confirm-restart') resetState();
+        else if (action === 'close-modal' && event.target === event.currentTarget) closeModal();
+      });
+    });
   }
 
   function closeModal() {
     if (modalRoot) modalRoot.innerHTML = '';
     setModalSurfaces(false);
-    var returnTarget = modalReturnFocus;
-    modalReturnFocus = null;
-    if (returnTarget && document.body.contains(returnTarget)) returnTarget.focus();
+    var target = modalReturnFocus; modalReturnFocus = null;
+    if (target && document.body.contains(target)) target.focus();
   }
 
   function setModalSurfaces(isOpen) {
-    [root, dock, document.querySelector('.site-header')].forEach(function (surface) {
-      if (surface) surface.inert = isOpen;
-    });
+    [root, dock, document.querySelector('.site-header')].forEach(function (surface) { if (surface) surface.inert = isOpen; });
   }
 
   function trapModalFocus(event) {
     if (!modalRoot || !modalRoot.innerHTML || event.key !== 'Tab') return;
-    var focusable = Array.prototype.slice.call(modalRoot.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(function (element) { return !element.disabled; });
+    var focusable = Array.prototype.slice.call(modalRoot.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')).filter(function (element) { return !element.disabled; });
     if (!focusable.length) { event.preventDefault(); return; }
-    var first = focusable[0], last = focusable[focusable.length - 1];
+    var first = focusable[0]; var last = focusable[focusable.length - 1];
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   }
 
   function focusAfterRender() {
     var target = root.querySelector('h1, input, [data-action="open-node"]');
-    if (!target || document.activeElement === target) return;
-    window.setTimeout(function () { if (target && document.body.contains(target)) target.focus && target.focus(); }, prefersReducedMotion ? 0 : 40);
+    if (!target) return;
+    window.setTimeout(function () { if (document.body.contains(target) && target.focus) target.focus(); }, prefersReducedMotion ? 0 : 35);
   }
+
+  function avatarGlyph(avatar) { return { comet: '✦', pixel: '▦', sprout: '✿', orbit: '◉' }[avatar] || '✦'; }
+  function slug(value) { return String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  function titleCase(value) { return String(value || '').replace(/[-_]/g, ' ').replace(/\b\w/g, function (letter) { return letter.toUpperCase(); }); }
+  function escapeHtml(value) { return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
+  function escapeAttr(value) { return escapeHtml(value); }
 
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && modalRoot && modalRoot.innerHTML) { closeModal(); return; }
     trapModalFocus(event);
   });
 
-  function escapeHtml(value) { return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
-  function escapeAttr(value) { return escapeHtml(value); }
-
   render();
-  window.CareerLaunchpadApp = { render: render, reset: resetState, getState: function () { return state; }, getModel: function () { return model; } };
+  window.CareerLaunchpadApp = {
+    render: render, reset: resetState,
+    getState: function () { return state; }, getModel: function () { return model; },
+    recommendRegion: function (skillIds) { var region = recommendRegion(skillIds || state.starterSkills, []); return region && region.id; }
+  };
 }());
 </script>
   </body>

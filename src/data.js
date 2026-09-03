@@ -148,6 +148,116 @@ const COLORS = {
   peopleLight: "#6ee7b7",
 };
 
+/**
+ * The ten self-assessment skills shown before the world map. Each choice has
+ * a small affinity score for the three top-level regions. The controller adds
+ * the scores for the four selected skills and recommends the strongest match.
+ * Keeping the weights here makes the recommendation easy to tune without
+ * changing application behavior.
+ */
+const STARTER_SKILLS = [
+  {
+    id: "starter-creative-thinking",
+    label: "Creative Thinking",
+    shortName: "Creative",
+    description: "I enjoy imagining new ways something could work.",
+    glyph: "✦",
+    color: "#f6b347",
+    category: "starter",
+    affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 1 },
+  },
+  {
+    id: "starter-coding-curiosity",
+    label: "Coding Curiosity",
+    shortName: "Coding",
+    description: "I like learning how instructions become working software.",
+    glyph: "</>",
+    color: "#49cfe0",
+    category: "starter",
+    affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 0 },
+  },
+  {
+    id: "starter-hands-on-tech",
+    label: "Hands-on Tech",
+    shortName: "Tech",
+    description: "I enjoy setting up, fixing, and understanding devices.",
+    glyph: "⚙",
+    color: "#7da8ff",
+    category: "starter",
+    affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 0 },
+  },
+  {
+    id: "starter-visual-design",
+    label: "Visual Design",
+    shortName: "Design",
+    description: "I notice how layout, color, and flow shape an experience.",
+    glyph: "◈",
+    color: "#f49ac2",
+    category: "starter",
+    affinities: { "region-build-create": 2, "region-analyze-solve": 0, "region-people-lead": 2 },
+  },
+  {
+    id: "starter-numbers-patterns",
+    label: "Numbers & Patterns",
+    shortName: "Patterns",
+    description: "I like spotting trends and making sense of data.",
+    glyph: "▥",
+    color: "#a98df4",
+    category: "starter",
+    affinities: { "region-build-create": 0, "region-analyze-solve": 3, "region-people-lead": 1 },
+  },
+  {
+    id: "starter-problem-solving",
+    label: "Problem Solving",
+    shortName: "Solve",
+    description: "I enjoy breaking a difficult problem into smaller clues.",
+    glyph: "?",
+    color: "#8870e8",
+    category: "starter",
+    affinities: { "region-build-create": 1, "region-analyze-solve": 3, "region-people-lead": 1 },
+  },
+  {
+    id: "starter-security-mindset",
+    label: "Security Mindset",
+    shortName: "Security",
+    description: "I naturally look for risks, weak points, and safeguards.",
+    glyph: "◇",
+    color: "#ef7d78",
+    category: "starter",
+    affinities: { "region-build-create": 1, "region-analyze-solve": 3, "region-people-lead": 0 },
+  },
+  {
+    id: "starter-communication",
+    label: "Communication",
+    shortName: "Speak",
+    description: "I like making ideas clear for other people.",
+    glyph: "“”",
+    color: "#5ed4a2",
+    category: "starter",
+    affinities: { "region-build-create": 0, "region-analyze-solve": 1, "region-people-lead": 3 },
+  },
+  {
+    id: "starter-leadership",
+    label: "Leadership",
+    shortName: "Lead",
+    description: "I enjoy organizing a group around a shared goal.",
+    glyph: "▲",
+    color: "#31b98d",
+    category: "starter",
+    affinities: { "region-build-create": 0, "region-analyze-solve": 1, "region-people-lead": 3 },
+  },
+  {
+    id: "starter-empathy",
+    label: "Empathy",
+    shortName: "Empathy",
+    description: "I pay attention to what people need and how they feel.",
+    glyph: "♥",
+    color: "#78d9be",
+    category: "starter",
+    affinities: { "region-build-create": 1, "region-analyze-solve": 0, "region-people-lead": 3 },
+  },
+];
+
 const REGIONS = [
   makeNode({
     id: "region-build-create",
@@ -790,6 +900,7 @@ const CAREER_LAUNCHPAD_DATA = {
   version: "1.0.0",
   title: "IS Career Launchpad",
   targetJourneyMinutes: 10,
+  starterSkills: STARTER_SKILLS,
   skills: Object.values(SKILLS),
   regions: REGIONS,
   domains: DOMAINS,
