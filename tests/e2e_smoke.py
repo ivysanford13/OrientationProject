@@ -61,7 +61,15 @@ class CareerLaunchpadSmokeTests(unittest.TestCase):
             self.assertIn("BUILD AND CREATE", page.locator(".compass-card").inner_text())
             page.locator('[data-node-id="region-build-create"]').click()
             page.locator(".screen--challenge").wait_for()
-            page.get_by_role("button", name="Skip game for now").click()
+            page.locator('[data-action="minecraft-move-tree"]').click()
+            page.locator(".mc-action-key").click()
+            page.locator(".mc-action-key").click()
+            page.locator('[data-action="minecraft-move-table"]').first.click()
+            page.locator('[data-action="minecraft-craft-planks"]').click()
+            for grid_index in (0, 1, 3, 4, 6, 7):
+                page.locator(f'[data-grid-index="{grid_index}"]').click()
+            page.locator('[data-action="minecraft-craft-door"]').click()
+            page.locator('[data-action="finish-game"]').click()
             page.get_by_role("button", name="Yes, keep going").click()
             self.assertEqual(page.locator(".hex-item").count(), 5)
 
