@@ -69,6 +69,14 @@
   var miniGameTimer = null;
   var chartMatchResizeHandler = null;
   var chartMatchPointerCleanup = null;
+  var slideNodeId = null;
+  var slidePositions = {};
+  var slideSelected = null;
+  var slideSolved = false;
+  var slideFeedback = '';
+  var slideQnaIndex = -1;
+  var slideQnaScore = 0;
+  var slideQnaFeedback = '';
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -833,6 +841,7 @@
     var skill = skillFor(node);
     var mini = node.miniGame || {};
     if (node.id === 'domain-software-apps') return renderScratchGame(node, skill, mini);
+    if (node.id === 'domain-projects-delivery') return renderSlideGame(node, skill, mini);
     var session = mini.visualType === 'wordle-password' && mini.puzzle ? getWordleSession(node) : null;
     var stageMarkup = session ? renderWordleStage(node, mini, session) : renderPlaceholderStage(mini);
     var statusChip = mini.status === 'ready' ? '~60 SEC' : '~60 SEC / PLANNED';
@@ -864,6 +873,102 @@
       cells.push('<div class="scratch-grid-cell' + (isBush ? ' is-bush' : '') + (isFlag ? ' is-flag' : '') + (isCat ? ' is-cat' : '') + '" aria-label="' + (isBush ? 'Bush obstacle' : isFlag ? 'Goal flag' : isCat ? 'Cat position' : 'Path square') + '">' + (isBush ? '🌿' : isFlag ? '⚑' : isCat ? '🐱' : '') + '</div>');
     }
     return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SCRATCH PUZZLE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout scratch-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">Guide the cat around the bush and onto the flag by building a Scratch-style command script.</p><div class="scratch-howto"><span class="eyebrow">HOW TO PLAY</span><strong>Click commands in the order the cat should use them.</strong><span>Start facing right. The cat moves one square at a time and turns in place.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="scratch-reset">Reset script</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace" role="region" aria-label="Scratch block path puzzle"><div class="scratch-puzzle-board"><div class="scratch-grid" aria-label="Cat path board">' + cells.join('') + '</div><div class="scratch-board-legend"><span>🐱 Start</span><span>🌿 Bush</span><span>⚑ Goal</span></div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR SCRIPT</span><small>' + scratchDraft.length + ' commands</small></div><ol class="scratch-stack">' + draftMarkup + '</ol><div class="scratch-divider"><span>CLICK TO ADD A COMMAND</span></div><div class="scratch-block-picker">' + availableMarkup + '</div>' + feedbackMarkup + '</div></div></div></section>';
+  }
+
+  function renderSlideGame(node, skill, mini) {
+    if (slideNodeId !== node.id) resetSlideGame();
+    if (slideQnaIndex >= 0) return renderSlideQna(node, skill);
+    var components = [
+      { id: 'title', text: 'Information Systems: Build What Matters', kind: 'looks' },
+      { id: 'subtitle', text: 'Technology, people, and possibility', kind: 'looks' },
+      { id: 'illustration', text: 'People + technology pathway', kind: 'motion', image: true },
+      { id: 'facts', text: 'IS connects people and technology. Every industry needs IS thinkers. You can start building skills today.', kind: 'data', facts: true },
+      { id: 'cta', text: 'Explore your IS path →', kind: 'events' }
+    ];
+    var zones = [
+      { id: 'headline', className: 'slide-zone--headline', aria: 'Large headline area' },
+      { id: 'subline', className: 'slide-zone--subline', aria: 'Supporting line area' },
+      { id: 'visual', className: 'slide-zone--visual', aria: 'Illustration area' },
+      { id: 'facts', className: 'slide-zone--facts', aria: 'Supporting information area' },
+      { id: 'cta', className: 'slide-zone--cta', aria: 'Action area' }
+    ];
+    var componentAt = function (slot) { return components.filter(function (item) { return slidePositions[item.id] === slot; })[0]; };
+    var placedMarkup = function (slot) {
+      var item = componentAt(slot);
+      if (!item) return '<span class="slide-zone-prompt">Drop a piece here</span>';
+      var content = item.image ? '<img src="' + SLIDE_ILLUSTRATION_SRC + '" alt="BYU cougar explorer representing an Information Systems pathway">' : item.facts ? '<ul><li>IS connects people and technology.</li><li>Every industry needs IS thinkers.</li><li>You can start building skills today.</li></ul>' : '<strong>' + escapeHtml(item.text) + '</strong>';
+      return '<div class="slide-placed slide-placed--' + item.kind + (item.image ? ' is-image' : '') + (slideSelected === item.id ? ' is-selected' : '') + '" draggable="true" data-slide-id="' + item.id + '" tabindex="0" aria-label="' + escapeAttr(item.text) + '">' + content + '</div>';
+    };
+    var zoneMarkup = zones.map(function (zone) { return '<div class="slide-zone ' + zone.className + '" data-slide-slot="' + zone.id + '" aria-label="' + zone.aria + '">' + placedMarkup(zone.id) + '</div>'; }).join('');
+    var palette = components.map(function (item) {
+      var placed = Boolean(slidePositions[item.id]);
+      return '<button type="button" class="slide-component scratch-block--' + item.kind + (slideSelected === item.id ? ' is-selected' : '') + (placed ? ' is-placed' : '') + '" draggable="true" data-action="slide-select" data-slide-id="' + item.id + '" aria-pressed="' + (slideSelected === item.id) + '"><span class="scratch-block-shape" aria-hidden="true"></span>' + (item.image ? '<img class="slide-component-thumb" src="' + SLIDE_ILLUSTRATION_SRC + '" alt="">' : '') + '<strong>' + escapeHtml(item.text) + '</strong></button>';
+    }).join('');
+    var feedbackMarkup = slideFeedback ? '<p class="scratch-feedback ' + (slideSolved ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(slideFeedback) + '</p>' : '';
+    var actionMarkup = slideSolved ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>' : '<button class="button button--primary" data-action="slide-check" ' + (Object.keys(slidePositions).length < 5 ? 'disabled' : '') + '>Review my slide <span aria-hidden="true">→</span></button>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SLIDE STUDIO</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout slide-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">You are pitching Information Systems to incoming BYU students. Drag each piece onto the slide area where it will communicate best.</p><div class="scratch-howto"><span class="eyebrow">THE BRIEF</span><strong>Make the idea clear in five seconds.</strong><span>The biggest statement belongs at the top. Supporting text follows. Group the evidence, give the visual room, and make the next step easy to find.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="slide-reset">Reset slide</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace slide-workspace" role="region" aria-label="Slide design workspace"><div class="slide-canvas"><div class="slide-canvas-label"><span class="eyebrow">YOUR SLIDE</span><small>' + Object.keys(slidePositions).length + ' / 5 pieces placed</small></div><div class="slide-blank-canvas slide-zones-canvas">' + zoneMarkup + '</div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR CONTENT</span><small>' + (slideSelected ? 'Click a slide area' : 'Drag a piece to begin') + '</small></div><div class="slide-component-picker">' + palette + '</div>' + feedbackMarkup + '</div></div></div></section>';
+  }
+
+  function renderSlideQna(node, skill) {
+    var questions = [
+      { prompt: 'Who is this slide trying to help?', choices: [{ id: 'students', text: 'Incoming BYU students' }, { id: 'designers', text: 'Professional slide designers' }, { id: 'nobody', text: 'Anyone who happens to see it' }], answer: 'students' },
+      { prompt: 'Where should the three facts live?', choices: [{ id: 'grouped', text: 'Together in one easy-to-scan group' }, { id: 'scattered', text: 'Scattered across every open space' }, { id: 'hidden', text: 'Behind the illustration' }], answer: 'grouped' },
+      { prompt: 'What makes the illustration useful?', choices: [{ id: 'support', text: 'It reinforces the idea of people and technology' }, { id: 'decoration', text: 'It is as large and flashy as possible' }, { id: 'random', text: 'It adds something unrelated' }], answer: 'support' },
+      { prompt: 'What should a viewer understand next?', choices: [{ id: 'action', text: 'A clear next step: explore an IS path' }, { id: 'mystery', text: 'Nothing—the viewer should guess' }, { id: 'more', text: 'Every detail about the major' }], answer: 'action' }
+    ];
+    if (slideQnaIndex >= questions.length) return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">CREW REVIEW COMPLETE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="qna-card"><p class="screen-kicker">CREW REVIEW / 04 OF 04</p><h1 id="challenge-title" tabindex="-1">Briefing approved.</h1><p>Your crew review is complete. You made a clear visual story for the incoming students on board.</p><div class="qna-score"><strong>' + slideQnaScore + ' / 4</strong><span>clarity decisions understood</span></div><button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button></div></section>';
+    var question = questions[slideQnaIndex];
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">CREW REVIEW / 0' + (slideQnaIndex + 1) + ' OF 04</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="qna-card"><p class="screen-kicker">AMONG-US-INSPIRED CREW REVIEW</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p>The crew is checking whether your slide communicates clearly to its audience.</p><div class="qna-choice-grid">' + question.choices.map(function (choice) { return '<button class="qna-choice" type="button" data-action="slide-qna-answer" data-slide-answer="' + choice.id + '"><span class="qna-choice-marker" aria-hidden="true">?</span><strong>' + escapeHtml(choice.text) + '</strong></button>'; }).join('') + '</div>' + (slideQnaFeedback ? '<p class="scratch-feedback ' + (slideQnaFeedback === 'Good call.' ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(slideQnaFeedback) + '</p>' : '') + '</div></section>';
+  }
+
+  function resetSlideGame() {
+    slideNodeId = 'domain-projects-delivery'; slidePositions = {}; slideSelected = null; slideSolved = false; slideFeedback = ''; slideQnaIndex = -1; slideQnaScore = 0; slideQnaFeedback = '';
+  }
+
+  function wireSlideEvents() {
+    var canvas = root.querySelector('.slide-zones-canvas');
+    if (!canvas) return;
+    root.querySelectorAll('[data-slide-id][draggable="true"]').forEach(function (item) {
+      item.addEventListener('dragstart', function (event) { event.dataTransfer.setData('text/plain', item.getAttribute('data-slide-id')); item.classList.add('is-dragging'); });
+      item.addEventListener('dragend', function () { item.classList.remove('is-dragging'); });
+    });
+    root.querySelectorAll('.slide-zone').forEach(function (zone) {
+      zone.addEventListener('dragover', function (event) { event.preventDefault(); zone.classList.add('is-drag-target'); });
+      zone.addEventListener('dragleave', function () { zone.classList.remove('is-drag-target'); });
+      zone.addEventListener('drop', function (event) { event.preventDefault(); zone.classList.remove('is-drag-target'); placeSlideComponent(zone.getAttribute('data-slide-slot'), event.dataTransfer.getData('text/plain')); });
+      zone.addEventListener('click', function () { if (slideSelected) placeSlideComponent(zone.getAttribute('data-slide-slot')); });
+    });
+  }
+
+  function placeSlideComponent(slot, id) {
+    if (slideSolved) return;
+    var selectedId = id || slideSelected;
+    if (!selectedId) return;
+    var previous = slidePositions[selectedId];
+    var occupant = Object.keys(slidePositions).filter(function (componentId) { return slidePositions[componentId] === slot; })[0];
+    if (occupant && occupant !== selectedId) { if (previous) slidePositions[occupant] = previous; else delete slidePositions[occupant]; }
+    slidePositions[selectedId] = slot; slideSelected = null; slideFeedback = ''; render();
+  }
+
+  function checkSlideGame() {
+    if (Object.keys(slidePositions).length < 5) return;
+    var score = 0;
+    if (slidePositions.title === 'headline') score += 1;
+    if (slidePositions.subtitle === 'subline') score += 1;
+    if (slidePositions.illustration === 'visual') score += 1;
+    if (slidePositions.facts === 'facts') score += 3;
+    if (slidePositions.cta === 'cta') score += 1;
+    if (score >= 6) { slideSolved = true; slideQnaIndex = 0; slideQnaScore = 0; slideQnaFeedback = ''; slideFeedback = 'Clear composition! Now defend your design in four quick crew-review questions.'; announce('Slide clarity check passed.'); }
+    else { slideFeedback = 'The slide is complete, but it needs clearer hierarchy. Keep the title at the top, group the facts, and give the call to action a strong bottom position.'; announce('Try rearranging the slide for clearer communication.'); }
+    render();
+  }
+
+  function answerSlideQna(answer) {
+    var answers = ['students', 'grouped', 'support', 'action'];
+    if (slideQnaIndex < 0 || slideQnaIndex >= answers.length) return;
+    if (answer === answers[slideQnaIndex]) slideQnaScore += 1;
+    slideQnaFeedback = answer === answers[slideQnaIndex] ? 'Good call.' : 'That choice would make the message less clear.';
+    slideQnaIndex += 1; render();
   }
 
   /** Render the chart-matching task as a shipboard data-routing console. */
@@ -1353,6 +1458,7 @@
     wireJigsawDragEvents(root);
     wireDeployDragEvents(root);
     wireChartMatchEvents(root);
+    wireSlideEvents();
     wireDockEvents();
     var form = document.getElementById('start-form');
     if (form) form.addEventListener('submit', handleStart);
@@ -1894,6 +2000,11 @@
     if (action === 'scratch-remove') { removeScratchBlock(Number(element.getAttribute('data-scratch-index'))); return; }
     if (action === 'scratch-reset') { resetScratchGame(); render(); return; }
     if (action === 'scratch-check') { checkScratchGame(); return; }
+    if (action === 'slide-select') { slideSelected = element.getAttribute('data-slide-id'); render(); return; }
+    if (action === 'slide-place') { placeSlideComponent(element.getAttribute('data-slide-slot')); return; }
+    if (action === 'slide-reset') { resetSlideGame(); render(); return; }
+    if (action === 'slide-check') { checkSlideGame(); return; }
+    if (action === 'slide-qna-answer') { answerSlideQna(element.getAttribute('data-slide-answer')); return; }
     if (action === 'wordle-key') {
       var wordleNode = findNode(state.selectedNodeId);
       if (wordleNode) wordleTypeLetter(wordleNode, element.getAttribute('data-key'));
