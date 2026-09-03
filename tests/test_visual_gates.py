@@ -706,6 +706,27 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(all_errors)
 
+    def test_short_landscape_chapter_hud_never_covers_route_choices(self) -> None:
+        """Keep the compact chapter meter in the left clearing beside forks."""
+
+        page, errors = self.new_page(844, 390)
+        failures: list[str] = []
+        for stage in (1, 2):
+            state = self.base_state(page, "region-build-create", stage=stage)
+            self.load_state(page, state, ".screen--map")
+            hud = page.locator(".world-stage-label")
+            choices = page.locator(".world-stop--choice:not([disabled])")
+            self.assertEqual(choices.count(), 2)
+            for index in range(choices.count()):
+                overlap = self.overlap_area(hud, choices.nth(index))
+                if overlap > 0.5:
+                    failures.append(
+                        f"stage={stage} HUD/choice overlap={overlap:.1f}px²"
+                    )
+
+        self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(errors)
+
     def test_active_route_titles_never_hide_which_choice_they_represent(self) -> None:
         """Require every specialization label to render in full without ellipsis."""
 

@@ -66,3 +66,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - The skill HUD is a true two-row honeycomb, not a horizontal carousel: preserve the supplied tall hex proportions and stable cell positions as rewards are added.
 - Each career region is one traversable panorama: advancing a chapter pans the camera deeper into the same world while the cougar travels between route stops; do not revert to static stage backdrops.
 - Chapter changes must read as full scene transitions, not subtle pans: keep the default map camera tightly zoomed and use substantial lateral travel plus a brief push-in before revealing the new fork.
+- On short-landscape maps, the chapter HUD belongs in the upper-left clearing and yields to the travel banner; placing it near the right-side fork obscures route cards.

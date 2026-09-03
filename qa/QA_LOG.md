@@ -262,3 +262,10 @@ Result: **32/32 PASS**
 - assert: default camera scale is at least 1.2; first and last chapters are separated by more than 200px; route choices and skill HUD remain collision-free
 - result: 1.24x settled zoom, 1.43x transition push-in, and greater-than-200px chapter travel passed; full automated suite passed 43/43
 - duration: 249595 ms
+
+## 38. Short-landscape chapter HUD clearance — PASS
+- inspect: chapter HUD against both active route cards at stages 1 and 2 in the 844×390 viewport rejected by the scrutinizer
+- action: move the compact HUD to the upper-left clearing, hide it behind the travel banner during movement, and add a direct HUD-versus-choice geometry gate
+- assert: chapter HUD has zero overlap with both active choices at each fork while the skill dock remains in normal flow
+- result: new HUD collision gate plus existing avatar, dock, and camera geometry gates passed 3/3
+- duration: 51512 ms

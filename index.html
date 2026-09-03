@@ -1903,6 +1903,25 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
   .rpg-world.is-shifting .world-stop--choice,
   .rpg-world.is-shifting .world-stage-label { animation: none; }
 }
+
+/* In a short landscape viewport the fork occupies the right half of the map.
+   Dock the compact chapter HUD in the empty upper-left clearing instead. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .world-stage-label {
+    right: auto;
+    left: 12px;
+    width: 210px;
+    max-width: 210px;
+  }
+  .journey-meter {
+    width: 100%;
+    min-width: 0;
+  }
+  .rpg-world.is-traveling .world-stage-label {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
 </style>
   </head>
   <body>
