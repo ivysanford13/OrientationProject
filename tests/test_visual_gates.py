@@ -359,6 +359,16 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             challenge["screen"] = "mini"
             challenge["selectedNodeId"] = "region-build-create"
             self.load_state(page, challenge, ".screen--challenge")
+            reward_badge = page.locator(".reward-callout .badge-hex--original")
+            self.assertEqual(reward_badge.count(), 1)
+            reward_visual = reward_badge.evaluate(
+                """badge => ({
+                    background: getComputedStyle(badge).backgroundColor,
+                    mask: getComputedStyle(badge.querySelector('.skill-badge-art')).clipPath,
+                })"""
+            )
+            self.assertEqual(reward_visual["background"], "rgba(0, 0, 0, 0)")
+            self.assertIn("polygon", reward_visual["mask"])
             label_box = page.locator(".challenge-copy > .eyebrow").bounding_box()
             title_box = page.locator("#challenge-title").bounding_box()
             self.assertIsNotNone(label_box)
@@ -637,6 +647,17 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
                 artwork = badge.locator(".skill-badge-art, .hex-icon")
                 self.assertEqual(artwork.count(), 1)
 
+            original_badge = page.locator(".stop-icon--badge.badge-hex--original").first
+            if original_badge.count():
+                mask = original_badge.locator(".skill-badge-art").evaluate(
+                    "image => getComputedStyle(image).clipPath"
+                )
+                background = original_badge.evaluate(
+                    "badge => getComputedStyle(badge).backgroundColor"
+                )
+                self.assertIn("polygon", mask)
+                self.assertEqual(background, "rgba(0, 0, 0, 0)")
+
             quiet_motion = page.evaluate(
                 """() => ({
                     pulse: getComputedStyle(document.querySelector('.route-pulse')).display,
@@ -656,6 +677,38 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             )
 
         self.assert_clean(errors)
+
+    def test_final_map_cards_keep_separate_reading_zones(self) -> None:
+        """Prevent completed history, active choices, and the HUD from stacking."""
+
+        failures: list[str] = []
+        all_errors: list[str] = []
+        for width, height in ((844, 390), (1280, 720), (1440, 900)):
+            page, errors = self.new_page(width, height)
+            all_errors.extend(errors)
+            for region_id in REGION_PATHS:
+                state = self.base_state(page, region_id, stage=2)
+                self.load_state(page, state, ".screen--map")
+                cards = page.locator(".world-stop:visible")
+                for first_index in range(cards.count()):
+                    for second_index in range(first_index + 1, cards.count()):
+                        overlap = self.overlap_area(
+                            cards.nth(first_index), cards.nth(second_index)
+                        )
+                        if overlap > 0.5:
+                            failures.append(
+                                f"{width}x{height} {region_id} cards {first_index}/{second_index} overlap={overlap:.1f}px²"
+                            )
+                hud = page.locator(".world-stage-label")
+                for index in range(cards.count()):
+                    overlap = self.overlap_area(hud, cards.nth(index))
+                    if overlap > 0.5:
+                        failures.append(
+                            f"{width}x{height} {region_id} HUD/card {index} overlap={overlap:.1f}px²"
+                        )
+
+        self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(all_errors)
 
     def test_world_camera_advances_through_three_spatial_checkpoints(self) -> None:
         """Require one close panorama crop to pan without zoom pumping."""
@@ -1011,8 +1064,8 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             self.assertGreater(box["height"], box["width"])
             self.assertAlmostEqual(box["width"] / box["height"], 66 / 76, delta=0.03)
 
-        top_row = [badge_boxes[index] for index in (0, 1, 4, 6)]
-        bottom_row = [badge_boxes[index] for index in (2, 3, 5)]
+        top_row = [badge_boxes[index] for index in (0, 1, 4)]
+        bottom_row = [badge_boxes[index] for index in (2, 3, 5, 6)]
         top_centers = [box["y"] + box["height"] / 2 for box in top_row]
         bottom_centers = [box["y"] + box["height"] / 2 for box in bottom_row]
         self.assertLessEqual(max(top_centers) - min(top_centers), 0.5)
@@ -1042,7 +1095,7 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assert_clean(errors)
 
     def test_eighth_skill_extends_honeycomb_without_earned_sublabel(self) -> None:
-        """A second career possibility must occupy the remaining lower-row slot."""
+        """An eighth skill must occupy the remaining upper-row slot."""
 
         page, errors = self.new_page(1440, 900)
         state = self.base_state(page, "region-build-create", stage=3)
@@ -1066,14 +1119,18 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         seventh = badges.nth(6).bounding_box()
         eighth = badges.nth(7).bounding_box()
         sixth = badges.nth(5).bounding_box()
+        fifth = badges.nth(4).bounding_box()
         self.assertIsNotNone(seventh)
         self.assertIsNotNone(eighth)
         self.assertIsNotNone(sixth)
-        assert seventh is not None and eighth is not None and sixth is not None
-        self.assertAlmostEqual(eighth["y"], sixth["y"], delta=0.5)
-        self.assertAlmostEqual(eighth["x"] - sixth["x"], 66, delta=0.5)
-        self.assertAlmostEqual(seventh["x"] - eighth["x"], 33, delta=0.5)
-        self.assertAlmostEqual(eighth["y"] - seventh["y"], 57, delta=0.5)
+        self.assertIsNotNone(fifth)
+        assert seventh is not None and eighth is not None and sixth is not None and fifth is not None
+        self.assertAlmostEqual(seventh["y"], sixth["y"], delta=0.5)
+        self.assertAlmostEqual(seventh["x"] - sixth["x"], 66, delta=0.5)
+        self.assertAlmostEqual(eighth["y"], fifth["y"], delta=0.5)
+        self.assertAlmostEqual(eighth["x"] - fifth["x"], 66, delta=0.5)
+        self.assertAlmostEqual(eighth["x"] - seventh["x"], 33, delta=0.5)
+        self.assertAlmostEqual(seventh["y"] - eighth["y"], 57, delta=0.5)
         self.assertEqual(page.locator("#skill-dock .hex-item.is-earned small").count(), 0)
         self.assertEqual(page.locator("#skill-dock .hex-item.is-starter small").count(), 0)
         self.assert_clean(errors)

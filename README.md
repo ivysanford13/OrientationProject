@@ -29,9 +29,11 @@ python3 tests/e2e_smoke.py
 python3 qa/run_qa_matrix.py
 ```
 
-## Version-one mini-games
+## Mini-games
 
-The first version reserves an editable 60-second scene for region and domain map points. Selecting **Skip game for now** reaches the enjoyment checkpoint. Choosing **Yes, keep going** awards that node's skill and advances the map; choosing **No, try another trail** locks that branch and sends the player back to the sibling choice. The final specialization selection has no mini-game, awards its career skill immediately, and opens its career result directly.
+The Analyze and Solve region includes a playable six-panel scanner jigsaw designed for a sub-60-second session. It supports drag-and-drop plus click, touch, and keyboard placement; completing it reaches the same enjoyment checkpoint used by the journey. The People and Lead region also includes its playable crew draft. Remaining activities stay editable 60-second placeholders with **Skip game for now** controls.
+
+Choosing **Yes, keep going** after any activity awards that node's skill and advances the map; choosing **No, try another trail** locks that branch and sends the player back to the sibling choice. The final specialization selection has no mini-game, awards its career skill immediately, and opens its career result directly.
 
 Each career world uses its own cinematic atlas image as non-interactive scenery. The map holds one close zoom while its data-driven camera pans from the starting clearing to the crossroads and then the career platform. Route branches snap to their destination cards and respond individually to hover, keyboard focus, and travel selection. Route telemetry, destination cards, chapter labels, and the cougar are separate DOM layers, so the journey remains keyboard-accessible and any region's art can be replaced without rewriting progression logic.
 
@@ -44,6 +46,6 @@ Career results include a national BLS OEWS May 2023 10th–25th percentile entry
 1. Create an explorer.
 2. Select exactly four of ten starter skills.
 3. Receive a scored recommendation for Build and Create, Analyze and Solve, or People and Lead.
-4. Move the avatar to a map point and preview its mini-game placeholder.
+4. Move the avatar to a map point and complete its mini-game or preview its placeholder.
 5. Answer whether the activity felt enjoyable; advance or reroute accordingly.
 6. Choose a career style and reach its career match with four starter skills plus three earned skills in the bottom-right honeycomb.

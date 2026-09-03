@@ -39,6 +39,7 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn("__INLINE_DATA__", document)
         self.assertNotIn("__INLINE_APP__", document)
         self.assertNotIn("__EXPLORER_AVATAR_DATA_URI__", document)
+        self.assertNotIn("__JIGSAW_COMPUTER_CORE_DATA_URI__", document)
         self.assertNotIn("__WORLD_BUILD_ATLAS_DATA_URI__", document)
         self.assertNotIn("__WORLD_ANALYZE_ATLAS_DATA_URI__", document)
         self.assertNotIn("__WORLD_PEOPLE_ATLAS_DATA_URI__", document)
@@ -55,8 +56,8 @@ class BuildTests(unittest.TestCase):
 
         self.assertEqual(document.count("data:image/png;base64,"), 1)
         self.assertIn('width="1254" height="1254"', document)
-        # Three panoramas plus the supplied starter and journey badge crops.
-        self.assertEqual(document.count("data:image/jpeg;base64,"), 24)
+        # Three panoramas, the jigsaw image, and supplied skill badge crops.
+        self.assertEqual(document.count("data:image/jpeg;base64,"), 25)
         self.assertLess(output_size, 4_700_000)
 
     def test_build_has_no_external_runtime_dependencies(self) -> None:

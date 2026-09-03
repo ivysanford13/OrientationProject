@@ -10,6 +10,7 @@
 
   var STORAGE_KEY = 'is-career-launchpad:v2';
   var EXPLORER_AVATAR_SRC = '__EXPLORER_AVATAR_DATA_URI__';
+  var JIGSAW_COMPUTER_CORE_SRC = '__JIGSAW_COMPUTER_CORE_DATA_URI__';
   var STARTER_BADGE_SOURCES = {
     'creative-thinking': '__STARTER_BADGE_CREATIVE_THINKING_DATA_URI__',
     'coding-curiosity': '__STARTER_BADGE_CODING_CURIOSITY_DATA_URI__',
@@ -55,7 +56,7 @@
   var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var research = window.CAREER_RESEARCH_DATA || { salaryByCareerId: {}, interviews: [], sourceLedger: [] };
   var model = normalizeData(window.CAREER_LAUNCHPAD_DATA || {});
-  var state = loadState();
+  var state = applyLaunchShortcut(loadState());
   var modalReturnFocus = null;
   var travelTimer = null;
   var scratchNodeId = null;
@@ -64,6 +65,10 @@
   var scratchFeedback = '';
   var scratchPosition = { row: 4, col: 0, facing: 'right' };
   var wordleSessions = {};
+  var activeMiniGame = null;
+  var miniGameTimer = null;
+  var chartMatchResizeHandler = null;
+  var chartMatchPointerCleanup = null;
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -220,6 +225,42 @@
     };
   }
 
+  /** Allow demos to open a playable mini-game without guessing its map route. */
+  function applyLaunchShortcut(currentState) {
+    if (window.location.hash === '#chart-match') {
+      return Object.assign(defaultState(), {
+        screen: 'mini',
+        name: currentState.name || 'Explorer',
+        starterSkills: currentState.starterSkills.length === 4 ? currentState.starterSkills.slice() : [
+          'starter-numbers-patterns',
+          'starter-problem-solving',
+          'starter-security-mindset',
+          'starter-coding-curiosity'
+        ],
+        recommendedRegionId: 'region-analyze-solve',
+        activeRegionId: 'region-analyze-solve',
+        activeDomainId: 'domain-data-insights',
+        completed: ['region-analyze-solve'],
+        earned: [{ skillId: 'analyst', nodeId: 'region-analyze-solve', earnedAt: Date.now() }],
+        selectedNodeId: 'domain-data-insights'
+      });
+    }
+    if (window.location.hash !== '#team-builder') return currentState;
+    return Object.assign(defaultState(), {
+      screen: 'mini',
+      name: currentState.name || 'Explorer',
+      starterSkills: currentState.starterSkills.length === 4 ? currentState.starterSkills.slice() : [
+        'starter-communication',
+        'starter-leadership',
+        'starter-empathy',
+        'starter-problem-solving'
+      ],
+      recommendedRegionId: 'region-people-lead',
+      activeRegionId: 'region-people-lead',
+      selectedNodeId: 'region-people-lead'
+    });
+  }
+
   function defaultInterviewState() {
     return { careerId: null, questionIndex: 0, answers: {}, feedback: {}, status: 'idle', returnScreen: 'career' };
   }
@@ -313,6 +354,7 @@
 
   function resetState() {
     if (travelTimer) window.clearTimeout(travelTimer);
+    resetActiveMiniGame();
     state = defaultState(); saveState(); closeModal(); render();
     announce('Journey restarted. Choose your explorer.');
   }
@@ -387,6 +429,7 @@
 
   function render() {
     root.innerHTML = renderScreen(); renderDock(); updateHeader(); wireEvents();
+    syncMiniGameLifecycle();
     window.scrollTo(0, 0); focusAfterRender();
   }
 
@@ -440,18 +483,20 @@
     // lives in the sky band, leaving the lower terrain band available for the
     // route card and traveling explorer.
     var compactMap = window.innerWidth <= 767;
-    var lowerChoiceY = compactMap ? 43 : 53;
-    var choiceX = compactMap ? 72 : 75;
+    var shortLandscapeMap = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
+    var upperChoiceY = shortLandscapeMap ? 26 : 29;
+    var lowerChoiceY = compactMap ? 43 : shortLandscapeMap ? 58 : 53;
+    var choiceX = compactMap ? 72 : 77;
     var sceneNodes = [];
     if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: window.innerWidth <= 430 ? 39 : 43 }, kind: 'region', routeIndex: 0 });
     if (stage === 1) {
       sceneNodes.push({ node: region, position: { x: 20, y: 62 }, kind: 'past' });
-      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 72, y: index ? lowerChoiceY : 29 }, kind: 'choice', routeIndex: index }); });
+      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 72, y: index ? lowerChoiceY : upperChoiceY }, kind: 'choice', routeIndex: index }); });
     }
     if (stage === 2) {
-      sceneNodes.push({ node: region, position: { x: 24, y: 62 }, kind: 'past-region' });
-      sceneNodes.push({ node: domain, position: { x: 47, y: 62 }, kind: 'past-domain' });
-      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: choiceX, y: index ? lowerChoiceY : 29 }, kind: 'choice', routeIndex: index }); });
+      sceneNodes.push({ node: region, position: { x: 18, y: 78 }, kind: 'past-region' });
+      sceneNodes.push({ node: domain, position: { x: 42, y: 78 }, kind: 'past-domain' });
+      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: choiceX, y: index ? lowerChoiceY : upperChoiceY }, kind: 'choice', routeIndex: index }); });
     }
     var avatarPosition = avatarMapPosition(stage, current && current.id, sceneNodes);
     var travelTarget = state.travelTargetId && sceneNodes.filter(function (entry) { return entry.node.id === state.travelTargetId; })[0];
@@ -488,11 +533,16 @@
   function renderQuestPath(stage, entries, authoredPath) {
     var segments = String(authoredPath || '').match(/M[^M]*/g) || [];
     var destinations = entries.filter(function (entry) { return typeof entry.routeIndex === 'number'; });
+    var routeOrigins = entries.filter(function (entry) { return entry.kind.indexOf('past') === 0; });
+    var routeOrigin = routeOrigins.length ? routeOrigins[routeOrigins.length - 1] : null;
     var trunk = stage > 0 && segments[0] ? segments[0].trim() : '';
+    if (trunk && routeOrigin) trunk = alignRouteEndpoint(trunk, routeOrigin.position);
     var branches = destinations.map(function (entry, index) {
       var segmentIndex = stage === 0 ? index : index + 1;
       var authored = segments[segmentIndex] || segments[segments.length - 1] || authoredPath;
-      return { nodeId: entry.node.id, path: alignRouteEndpoint(authored, entry.position) };
+      var path = alignRouteEndpoint(authored, entry.position);
+      if (routeOrigin) path = alignRouteStart(path, routeOrigin.position);
+      return { nodeId: entry.node.id, path: path };
     });
     var trunkMarkup = trunk
       ? '<path class="route-shadow" d="' + escapeAttr(trunk) + '"></path><path class="route-complete" d="' + escapeAttr(trunk) + '"></path>'
@@ -507,6 +557,12 @@
     var endpointX = Math.round(position.x * 10);
     var endpointY = Math.round(position.y * 5.2);
     return String(path || '').trim().replace(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*$/, endpointX + ' ' + endpointY);
+  }
+
+  function alignRouteStart(path, position) {
+    var startX = Math.round(position.x * 10);
+    var startY = Math.round(position.y * 5.2);
+    return String(path || '').trim().replace(/^M\s*-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?/, 'M' + startX + ' ' + startY);
   }
 
   /** Translate authored chapter stops into CSS camera variables. */
@@ -736,6 +792,10 @@
 
   function renderMiniGame(node) {
     if (!node || !node.miniGame) return renderMap();
+    if (node.miniGame.visualType === 'jigsaw') return renderJigsawMiniGame(node);
+    if (node.miniGame.visualType === 'team-builder') return renderTeamBuilderMiniGame(node);
+    if (node.miniGame.visualType === 'deploy-drag-drop') return renderDeployMiniGame(node);
+    if (node.miniGame.visualType === 'data-chart-match') return renderChartMatchMiniGame(node);
     var skill = skillFor(node);
     var mini = node.miniGame || {};
     if (node.id === 'domain-software-apps') return renderScratchGame(node, skill, mini);
@@ -767,6 +827,264 @@
       cells.push('<div class="scratch-grid-cell' + (isBush ? ' is-bush' : '') + (isFlag ? ' is-flag' : '') + (isCat ? ' is-cat' : '') + '" aria-label="' + (isBush ? 'Bush obstacle' : isFlag ? 'Goal flag' : isCat ? 'Cat position' : 'Path square') + '">' + (isBush ? '🌿' : isFlag ? '⚑' : isCat ? '🐱' : '') + '</div>');
     }
     return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SCRATCH PUZZLE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout scratch-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">Guide the cat around the bush and onto the flag by building a Scratch-style command script.</p><div class="scratch-howto"><span class="eyebrow">HOW TO PLAY</span><strong>Click commands in the order the cat should use them.</strong><span>Start facing right. The cat moves one square at a time and turns in place.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="scratch-reset">Reset script</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace" role="region" aria-label="Scratch block path puzzle"><div class="scratch-puzzle-board"><div class="scratch-grid" aria-label="Cat path board">' + cells.join('') + '</div><div class="scratch-board-legend"><span>🐱 Start</span><span>🌿 Bush</span><span>⚑ Goal</span></div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR SCRIPT</span><small>' + scratchDraft.length + ' commands</small></div><ol class="scratch-stack">' + draftMarkup + '</ol><div class="scratch-divider"><span>CLICK TO ADD A COMMAND</span></div><div class="scratch-block-picker">' + availableMarkup + '</div>' + feedbackMarkup + '</div></div></div></section>';
+  }
+
+  /** Render the chart-matching task as a shipboard data-routing console. */
+  function renderChartMatchMiniGame(node) {
+    ensureChartMatchGame(node);
+    return '<section class="screen screen--challenge screen--chart-match" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">DATA REPAIR / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header>' + renderChartMatchBody(node) + '</section>';
+  }
+
+  function ensureChartMatchGame(node) {
+    if (activeMiniGame && activeMiniGame.nodeId === node.id && activeMiniGame.matches) return activeMiniGame;
+    activeMiniGame = {
+      nodeId: node.id,
+      matches: {},
+      selectedSheetId: null,
+      mistakes: 0,
+      complete: false,
+      feedback: 'Three data feeds were unplugged. Connect each sheet to its chart.'
+    };
+    return activeMiniGame;
+  }
+
+  function renderChartMatchBody(node) {
+    var mini = node.miniGame;
+    var game = ensureChartMatchGame(node);
+    var sheets = Array.isArray(mini.sheets) ? mini.sheets : [];
+    var charts = Array.isArray(mini.charts) ? mini.charts : [];
+    var matchedCount = Object.keys(game.matches).length;
+    var insightMarkup = sheets.filter(function (sheet) { return game.matches[sheet.id]; }).map(function (sheet) {
+      return '<li><span aria-hidden="true">✓</span><p><strong>' + escapeHtml(sheet.name) + '</strong>' + escapeHtml(sheet.insight) + '</p></li>';
+    }).join('');
+    return '<div class="chart-match-game" data-chart-game><div class="chart-match-intro"><div><p class="eyebrow">ANALYZE + SOLVE / DATA SABOTAGE</p><h1 id="challenge-title" tabindex="-1">Reconnect the<br><em>data feeds.</em></h1><p class="lede">The ship’s charts were scrambled. Inspect each spreadsheet, then draw a cable to the visualization that tells its story best.</p></div><div class="chart-match-mission"><span class="mission-alarm" aria-hidden="true"><i></i></span><div><small>EMERGENCY TASK</small><strong>' + matchedCount + ' / ' + sheets.length + ' feeds online</strong><p>Drag a plug, or select one sheet and one chart.</p></div><span class="mini-crewmate mini-crewmate--red" aria-hidden="true"><i></i><b></b></span></div></div><div class="chart-match-console"><div class="chart-console-rivets" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="chart-match-status" role="status" aria-live="polite"><span class="chart-status-lamp' + (game.complete ? ' is-complete' : '') + '" aria-hidden="true"></span><strong>' + escapeHtml(game.complete ? 'All feeds restored. Nice work, analyst.' : game.feedback) + '</strong><span>' + matchedCount + '/' + sheets.length + '</span></div><div class="chart-match-board"><svg class="chart-connector-layer" aria-hidden="true"><path class="chart-preview-line" data-chart-preview></path>' + sheets.map(function (sheet, index) { return '<path class="chart-match-line chart-match-line--' + index + '" data-chart-line-for="' + escapeAttr(sheet.id) + '"></path>'; }).join('') + '</svg><section class="chart-source-column" aria-labelledby="sheet-bank-title"><div class="chart-column-heading"><span>01</span><div><small>DATA BANK</small><strong id="sheet-bank-title">Excel sheets</strong></div></div>' + sheets.map(function (sheet, index) { return renderChartSheet(sheet, index, game); }).join('') + '</section><div class="chart-cable-gutter" aria-hidden="true"><span>ROUTE</span><i></i><i></i><i></i></div><section class="chart-target-column" aria-labelledby="chart-bank-title"><div class="chart-column-heading"><span>02</span><div><small>DISPLAY BANK</small><strong id="chart-bank-title">Charts</strong></div></div>' + charts.map(function (chart, index) { return renderChartTarget(chart, index, game); }).join('') + '</section></div><div class="chart-match-footer"><div class="chart-match-learnings">' + (insightMarkup ? '<ul>' + insightMarkup + '</ul>' : '<p><strong>Chart clue:</strong> Look for time, categories, or parts of a whole.</p>') + '</div>' + (game.complete ? '<button class="button chart-complete-button" data-action="finish-game">Task complete — continue <span aria-hidden="true">→</span></button>' : '<button class="button button-secondary" data-action="reset-chart-match" ' + (matchedCount ? '' : 'disabled') + '>Clear cables</button>') + '</div></div><aside class="chart-match-reward"><span class="mini-crewmate mini-crewmate--cyan" aria-hidden="true"><i></i><b></b></span><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skillFor(node)) + '" aria-hidden="true">' + renderBadgeArtwork(skillFor(node)) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skillFor(node).name) + '</strong><p>Restore all three feeds, then decide if data work energizes you.</p></div></div></aside></div>';
+  }
+
+  function renderChartSheet(sheet, index, game) {
+    var matchedChartId = game.matches[sheet.id];
+    var selected = game.selectedSheetId === sheet.id;
+    var rows = (sheet.rows || []).map(function (row, rowIndex) {
+      return '<tr><th scope="row">' + (rowIndex + 2) + '</th>' + row.map(function (cell) { return '<td>' + escapeHtml(cell) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    return '<article class="data-sheet-card cable-card cable-card--source chart-wire--' + index + (selected ? ' is-selected' : '') + (matchedChartId ? ' is-matched' : '') + '" data-sheet-card="' + escapeAttr(sheet.id) + '"><div class="sheet-titlebar"><span class="sheet-app-icon" aria-hidden="true">X</span><div><strong>' + escapeHtml(sheet.tab) + '</strong><small>' + escapeHtml(sheet.name) + '</small></div>' + (matchedChartId ? '<span class="match-check" aria-label="Connected">✓</span>' : '') + '</div><div class="sheet-grid" aria-label="' + escapeAttr(sheet.name) + ' spreadsheet"><table><thead><tr><th aria-hidden="true"></th>' + (sheet.columns || []).map(function (column) { return '<th scope="col">' + escapeHtml(column) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div><div class="sheet-tabs"><span>' + escapeHtml(sheet.name) + '</span><i aria-hidden="true">＋</i></div><button class="chart-cable-port chart-cable-port--source" type="button" data-action="select-chart-sheet" data-chart-sheet-id="' + escapeAttr(sheet.id) + '" aria-pressed="' + selected + '" aria-label="' + escapeAttr((matchedChartId ? 'Connected: ' : 'Connect ') + sheet.name) + '" ' + (matchedChartId ? 'disabled' : '') + '><i aria-hidden="true"></i><span>' + (matchedChartId ? 'LINKED' : selected ? 'ARMED' : 'DRAG') + '</span></button></article>';
+  }
+
+  function renderChartTarget(chart, index, game) {
+    var matchedSheetId = Object.keys(game.matches).filter(function (sheetId) { return game.matches[sheetId] === chart.id; })[0] || '';
+    return '<article class="chart-target-card cable-card cable-card--target chart-target--' + index + (matchedSheetId ? ' is-matched' : '') + '" data-chart-target-id="' + escapeAttr(chart.id) + '"><button class="chart-cable-port chart-cable-port--target" type="button" data-action="match-chart-target" data-chart-id="' + escapeAttr(chart.id) + '" aria-label="Connect selected sheet to ' + escapeAttr(chart.label) + '" ' + (matchedSheetId ? 'disabled' : '') + '><i aria-hidden="true"></i><span>' + (matchedSheetId ? 'LINKED' : 'MATCH') + '</span></button><div class="chart-card-heading"><span>' + escapeHtml(chart.label) + '</span>' + (matchedSheetId ? '<b aria-label="Correct match">✓ CORRECT</b>' : '<b>UNKNOWN FEED</b>') + '</div>' + renderChartGraphic(chart) + '</article>';
+  }
+
+  function renderChartGraphic(chart) {
+    if (chart.type === 'line') return '<svg class="mini-data-chart mini-data-chart--line" viewBox="0 0 260 112" role="img" aria-label="' + escapeAttr(chart.ariaLabel) + '"><path class="chart-gridline" d="M30 20H245M30 48H245M30 76H245M30 102H245"></path><path class="chart-axis" d="M30 12V102H250"></path><path class="chart-line-shadow" d="M35 84L84 73L133 65L182 44L232 23"></path><path class="chart-line-data" d="M35 84L84 73L133 65L182 44L232 23"></path><g class="chart-points"><circle cx="35" cy="84" r="4"></circle><circle cx="84" cy="73" r="4"></circle><circle cx="133" cy="65" r="4"></circle><circle cx="182" cy="44" r="4"></circle><circle cx="232" cy="23" r="4"></circle></g><g class="chart-ticks"><text x="35" y="111">M</text><text x="84" y="111">T</text><text x="133" y="111">W</text><text x="182" y="111">T</text><text x="232" y="111">F</text></g></svg>';
+    if (chart.type === 'bars') return '<svg class="mini-data-chart mini-data-chart--bars" viewBox="0 0 260 112" role="img" aria-label="' + escapeAttr(chart.ariaLabel) + '"><path class="chart-gridline" d="M30 20H245M30 48H245M30 76H245M30 102H245"></path><path class="chart-axis" d="M30 12V102H250"></path><g class="chart-bars"><rect x="48" y="23" width="31" height="79" rx="3"></rect><rect x="96" y="52" width="31" height="50" rx="3"></rect><rect x="144" y="72" width="31" height="30" rx="3"></rect><rect x="192" y="42" width="31" height="60" rx="3"></rect></g><g class="chart-ticks"><text x="64" y="111">EL</text><text x="112" y="111">RE</text><text x="160" y="111">ME</text><text x="208" y="111">NA</text></g></svg>';
+    return '<svg class="mini-data-chart mini-data-chart--donut" viewBox="0 0 260 112" role="img" aria-label="' + escapeAttr(chart.ariaLabel) + '"><g transform="translate(68 56) rotate(-90)"><circle class="donut-track" r="39"></circle><circle class="donut-segment donut-segment--one" r="39"></circle><circle class="donut-segment donut-segment--two" r="39"></circle><circle class="donut-segment donut-segment--three" r="39"></circle></g><text class="donut-total" x="68" y="52">100</text><text class="donut-label" x="68" y="66">CREW</text><g class="donut-legend"><rect x="132" y="26" width="9" height="9" rx="2"></rect><text x="148" y="34">70%</text><rect x="132" y="50" width="9" height="9" rx="2"></rect><text x="148" y="58">20%</text><rect x="132" y="74" width="9" height="9" rx="2"></rect><text x="148" y="82">10%</text></g></svg>';
+  }
+
+  /** Render the playable six-piece scanner repair without changing route state. */
+  function renderJigsawMiniGame(node) {
+    var skill = skillFor(node);
+    var mini = node.miniGame;
+    ensureJigsawGame(node);
+    return '<section class="screen screen--challenge screen--jigsaw" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">60 SEC / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout challenge-layout--jigsaw"><div class="challenge-copy"><p class="eyebrow">ANALYZE + SOLVE / SHIPBOARD TASK</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>Finish the repair, then decide whether this kind of work energized you.</p></div></div><div class="jigsaw-brief"><strong>How to repair</strong><p>' + escapeHtml(mini.instructions) + '</p><span>Mouse, touch, and keyboard ready</span></div></div>' + renderJigsawStage(node) + '</div></section>';
+  }
+
+  function ensureJigsawGame(node) {
+    if (activeMiniGame && activeMiniGame.nodeId === node.id) return activeMiniGame;
+    var count = Math.max(4, Number(node.miniGame.pieceCount) || 6);
+    activeMiniGame = {
+      nodeId: node.id,
+      order: shuffledIndexes(count),
+      solved: [],
+      selectedPiece: null,
+      startedAt: Date.now(),
+      elapsedSeconds: 0,
+      mistakes: 0,
+      hints: 0,
+      complete: false
+    };
+    return activeMiniGame;
+  }
+
+  function shuffledIndexes(count) {
+    var result = Array.from({ length: count }, function (_, index) { return index; });
+    for (var index = result.length - 1; index > 0; index -= 1) {
+      var swapIndex = Math.floor(Math.random() * (index + 1));
+      var held = result[index]; result[index] = result[swapIndex]; result[swapIndex] = held;
+    }
+    if (result.every(function (value, index) { return value === index; })) result.push(result.shift());
+    return result;
+  }
+
+  function renderJigsawStage(node) {
+    var game = ensureJigsawGame(node);
+    var remaining = game.order.filter(function (pieceIndex) { return game.solved.indexOf(pieceIndex) === -1; });
+    var elapsed = game.complete ? game.elapsedSeconds : Math.max(game.elapsedSeconds, Math.floor((Date.now() - game.startedAt) / 1000));
+    var secondsLeft = Math.max(0, (Number(node.miniGame.durationSeconds) || 60) - elapsed);
+    var hintWait = Math.max(0, (Number(node.miniGame.hintAfterSeconds) || 20) - elapsed);
+    var status = game.complete
+      ? 'Scanner feed restored in ' + formatGameTime(elapsed) + '.'
+      : game.selectedPiece == null
+        ? 'Select a panel, then choose its position in the scanner grid.'
+        : 'Panel ' + (game.selectedPiece + 1) + ' selected. Choose its matching position.';
+    return '<div class="jigsaw-console' + (game.complete ? ' is-complete' : '') + '" data-jigsaw-game data-node-id="' + escapeAttr(node.id) + '"><div class="jigsaw-console-top"><div class="jigsaw-task-light" aria-hidden="true"><i></i><span>TASK ACTIVE</span></div><div class="jigsaw-timer" aria-label="Time remaining"><span>SCAN WINDOW</span><strong data-jigsaw-timer>' + formatGameTime(secondsLeft) + '</strong></div></div><div class="jigsaw-status" role="status" aria-live="polite" data-jigsaw-status>' + escapeHtml(status) + '</div><div class="jigsaw-workspace"><div><span class="jigsaw-label">SCANNER GRID</span><div class="jigsaw-board" role="group" aria-label="Six-position scanner puzzle">' + [0, 1, 2, 3, 4, 5].map(function (slotIndex) {
+      var solved = game.solved.indexOf(slotIndex) !== -1;
+      return '<button class="jigsaw-slot jigsaw-shape--' + slotIndex + (solved ? ' is-locked' : '') + '" type="button" data-action="jigsaw-slot" data-slot-index="' + slotIndex + '" aria-label="Position ' + (slotIndex + 1) + (solved ? ', panel locked' : ', empty') + '" ' + (solved ? 'disabled' : '') + '>' + (solved ? renderJigsawArtwork(slotIndex) : '<span aria-hidden="true">' + (slotIndex + 1) + '</span>') + '</button>';
+    }).join('') + '</div></div><div><span class="jigsaw-label">LOOSE PANELS · ' + remaining.length + '</span><div class="jigsaw-tray" role="group" aria-label="Unplaced scanner panels">' + remaining.map(function (pieceIndex) {
+      var selected = game.selectedPiece === pieceIndex;
+      return '<button class="jigsaw-piece jigsaw-shape--' + pieceIndex + (selected ? ' is-selected' : '') + '" type="button" draggable="true" data-action="jigsaw-piece" data-piece-index="' + pieceIndex + '" aria-label="Scanner panel ' + (pieceIndex + 1) + '" aria-pressed="' + selected + '">' + renderJigsawArtwork(pieceIndex) + '<span class="sr-only">Panel ' + (pieceIndex + 1) + '</span></button>';
+    }).join('') + '</div></div></div><div class="jigsaw-controls">' + (game.complete
+      ? '<div class="jigsaw-success"><span aria-hidden="true">✓</span><div><strong>Feed restored</strong><small>' + escapeHtml(formatGameTime(elapsed) + ' · ' + (game.mistakes ? game.mistakes + ' retries' : 'clean repair')) + '</small></div></div><button class="button button--primary" data-action="finish-game">Continue to trail check <span aria-hidden="true">→</span></button>'
+      : '<button class="button button-secondary button--compact" data-action="jigsaw-hint" ' + (hintWait ? 'disabled aria-describedby="jigsaw-hint-wait"' : '') + '>Place one panel</button><small id="jigsaw-hint-wait">' + (hintWait ? 'Hint unlocks in ' + hintWait + ' sec' : 'Hint ready') + '</small>') + '</div></div>';
+  }
+
+  /** Show one sixth of the shared computer-core artwork. */
+  function renderJigsawArtwork(pieceIndex) {
+    var column = pieceIndex % 3;
+    var row = Math.floor(pieceIndex / 3);
+    return '<span class="jigsaw-art" style="--piece-column:' + column + ';--piece-row:' + row + '" aria-hidden="true"><img src="' + JIGSAW_COMPUTER_CORE_SRC + '" width="720" height="480" alt=""></span>';
+  }
+
+  /** Render a personality-led crew draft with guidance, never a wrong answer. */
+  function renderTeamBuilderMiniGame(node) {
+    ensureTeamBuilderGame(node);
+    return '<section class="screen screen--challenge screen--team-builder" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">CREW DRAFT / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header>' + renderTeamBuilderBody(node) + '</section>';
+  }
+
+  function ensureTeamBuilderGame(node) {
+    if (activeMiniGame && activeMiniGame.nodeId === node.id && Array.isArray(activeMiniGame.selectedCandidates)) return activeMiniGame;
+    activeMiniGame = {
+      nodeId: node.id,
+      selectedCandidates: [],
+      complete: false
+    };
+    return activeMiniGame;
+  }
+
+  function renderTeamBuilderBody(node) {
+    var mini = node.miniGame;
+    var game = ensureTeamBuilderGame(node);
+    var candidates = Array.isArray(mini.candidates) ? mini.candidates : [];
+    var strengths = Array.isArray(mini.strengths) ? mini.strengths : [];
+    var teamSize = Number(mini.teamSize) || 3;
+    var selected = game.selectedCandidates;
+    var advice = teamBuilderAdvice(mini, selected);
+    var selectedSkills = state.starterSkills.map(function (skillId) { return model.skills[skillId]; }).filter(Boolean);
+    var selectedMembers = selected.map(function (candidateId) {
+      return candidates.filter(function (candidate) { return candidate.id === candidateId; })[0];
+    }).filter(Boolean);
+    var roster = candidates.map(function (candidate) {
+      var isSelected = selected.indexOf(candidate.id) !== -1;
+      var isSuggested = advice.suggestedStrengthIds.indexOf(candidate.strengthId) !== -1;
+      var strength = strengths.filter(function (item) { return item.id === candidate.strengthId; })[0] || { label: candidate.strengthId };
+      var disabled = !isSelected && selected.length >= teamSize;
+      return '<button class="crew-candidate' + (isSelected ? ' is-selected' : '') + (isSuggested ? ' is-suggested' : '') + '" type="button" data-action="toggle-teammate" data-candidate-id="' + escapeAttr(candidate.id) + '" aria-pressed="' + isSelected + '" ' + (disabled ? 'disabled' : '') + '><span class="crew-card-status">' + (isSelected ? 'On crew' : isSuggested ? 'Suggested fit' : 'Available') + '</span>' + renderCrewFigure(candidate) + '<span class="crew-candidate-copy"><strong>' + escapeHtml(candidate.name) + '</strong><small>' + escapeHtml(candidate.role) + '</small><em>' + escapeHtml(strength.label) + '</em><q>' + escapeHtml(candidate.motto) + '</q></span><span class="crew-pick-mark" aria-hidden="true">' + (isSelected ? '✓' : '+') + '</span></button>';
+    }).join('');
+    var slots = Array.from({ length: teamSize }, function (_, index) {
+      var member = selectedMembers[index];
+      return member
+        ? '<li class="crew-slot is-filled"><span class="crew-slot-figure">' + renderCrewFigure(member) + '</span><span><strong>' + escapeHtml(member.name) + '</strong><small>' + escapeHtml(member.role) + '</small></span></li>'
+        : '<li class="crew-slot"><span class="crew-slot-number" aria-hidden="true">0' + (index + 1) + '</span><span><strong>Open seat</strong><small>Choose a teammate</small></span></li>';
+    }).join('');
+    return '<div class="team-builder-game" data-team-game><div class="team-builder-intro"><div><p class="eyebrow">PEOPLE + LEAD / ORBITAL CREW DRAFT</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept) + '</p></div><div class="player-loadout"><span>Your starting strengths</span><div>' + selectedSkills.map(function (skill) { return '<b>' + escapeHtml(skill.shortName || skill.name) + '</b>'; }).join('') + '</div><small>You are part of this team too.</small></div></div><div class="team-console"><div class="crew-draft-bar"><div><span>MISSION 01 / CAMPUS LAUNCH</span><strong>Draft ' + teamSize + ' teammates</strong></div><div class="crew-count" aria-label="' + selected.length + ' of ' + teamSize + ' teammates selected"><strong>' + selected.length + '</strong><span>/ ' + teamSize + '</span></div></div><div class="crew-advice" role="status" aria-live="polite"><span class="crew-advice-icon" aria-hidden="true">⌁</span><div><small>CREW COMPUTER</small><strong>' + escapeHtml(advice.title) + '</strong><p>' + escapeHtml(advice.copy) + '</p></div></div><div class="crew-draft-layout"><div class="crew-roster-wrap"><span class="crew-section-label">AVAILABLE EXPLORERS</span><div class="crew-roster" role="group" aria-label="Choose three teammates">' + roster + '</div></div><aside class="crew-summary" aria-label="Current team balance"><span class="crew-section-label">YOUR DREAM CREW</span><ol class="crew-slots">' + slots + '</ol>' + renderTeamBalance(mini, selected) + '</aside></div><div class="crew-draft-actions"><p>' + (selected.length >= teamSize ? (advice.isBalanced ? 'Every mission need has someone ready to help.' : 'A focused crew can still be a great crew. You can swap a teammate or keep this lineup.') : 'Pick the personalities that feel right. Suggestions are optional.') + '</p><button class="button button--primary" data-action="finish-game" ' + (selected.length < teamSize ? 'disabled' : '') + '>Lock in this crew <span aria-hidden="true">→</span></button></div></div></div>';
+  }
+
+  function renderCrewFigure(candidate) {
+    return '<span class="crew-figure crew-accessory--' + escapeAttr(candidate.accessory || 'none') + '" style="--crew-color:' + escapeAttr(candidate.color || '#2770e8') + '" aria-hidden="true"><i class="crew-pack"></i><i class="crew-body"><i class="crew-visor"></i><i class="crew-emblem"></i></i><i class="crew-feet"></i><i class="crew-accessory"></i></span>';
+  }
+
+  function teamBuilderCounts(mini, selected) {
+    var candidates = Array.isArray(mini.candidates) ? mini.candidates : [];
+    return (mini.strengths || []).map(function (strength) {
+      var playerCount = (strength.starterSkillIds || []).filter(function (skillId) { return state.starterSkills.indexOf(skillId) !== -1; }).length;
+      var crewCount = selected.filter(function (candidateId) {
+        return candidates.some(function (candidate) { return candidate.id === candidateId && candidate.strengthId === strength.id; });
+      }).length;
+      return { strength: strength, playerCount: playerCount, crewCount: crewCount, total: playerCount + crewCount };
+    });
+  }
+
+  function teamBuilderAdvice(mini, selected) {
+    var counts = teamBuilderCounts(mini, selected);
+    var playerStrengths = counts.filter(function (item) { return item.playerCount > 0; }).sort(function (a, b) { return b.playerCount - a.playerCount; });
+    var missing = counts.filter(function (item) { return item.total === 0; });
+    var lowestTotal = counts.length ? Math.min.apply(null, counts.map(function (item) { return item.total; })) : 0;
+    var suggestions = (missing.length ? missing : counts.filter(function (item) { return item.total === lowestTotal; })).map(function (item) { return item.strength.id; });
+    var teamSize = Number(mini.teamSize) || 3;
+    var playerLabel = playerStrengths.slice(0, 2).map(function (item) { return item.strength.shortLabel; }).join(' + ') || 'a flexible mix';
+    var suggestionLabel = (missing.length ? missing : counts.filter(function (item) { return item.total === lowestTotal; })).slice(0, 2).map(function (item) { return item.strength.shortLabel.toLowerCase(); }).join(' or ');
+    if (!selected.length) return {
+      title: 'You already bring ' + playerLabel + '.',
+      copy: 'For more range, look for a teammate strong in ' + suggestionLabel + '. Suggested fits are marked, but every explorer is available.',
+      suggestedStrengthIds: suggestions,
+      isBalanced: missing.length === 0
+    };
+    if (selected.length < teamSize) return {
+      title: selected.length + (selected.length === 1 ? ' seat filled. Keep shaping the mix.' : ' seats filled. One more perspective.'),
+      copy: missing.length ? 'Your team could still use ' + suggestionLabel + '. Or double down on what matters most to you.' : 'You have every mission need covered. Choose the final personality that feels right.',
+      suggestedStrengthIds: suggestions,
+      isBalanced: missing.length === 0
+    };
+    return {
+      title: missing.length ? 'Focused crew assembled.' : 'Complementary crew assembled.',
+      copy: missing.length ? 'This lineup leans into shared strengths. For wider coverage, you could swap in ' + suggestionLabel + '—but there is no wrong crew.' : 'Your choices add range to your own strengths. Everyone brings a different way to help the mission.',
+      suggestedStrengthIds: suggestions,
+      isBalanced: missing.length === 0
+    };
+  }
+
+  function renderTeamBalance(mini, selected) {
+    var counts = teamBuilderCounts(mini, selected);
+    return '<div class="crew-balance"><div class="crew-balance-heading"><strong>Team signal</strong><small>you + crew</small></div>' + counts.map(function (item) {
+      var level = Math.min(3, item.total);
+      return '<div class="crew-balance-row"><span>' + escapeHtml(item.strength.shortLabel) + '</span><i role="meter" aria-label="' + escapeAttr(item.strength.label) + ' team strength" aria-valuemin="0" aria-valuemax="3" aria-valuenow="' + level + '"><b style="--signal:' + level + '"></b></i><em>' + (item.crewCount ? '+' + item.crewCount : '—') + '</em></div>';
+    }).join('') + '</div>';
+  }
+
+  /** Render a spaceship task panel inspired by a macOS drag-to-install flow. */
+  function renderDeployMiniGame(node) {
+    ensureDeployGame(node);
+    return '<section class="screen screen--challenge screen--deploy" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">SITE UPLINK / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header>' + renderDeployBody(node) + '</section>';
+  }
+
+  function ensureDeployGame(node) {
+    if (activeMiniGame && activeMiniGame.nodeId === node.id && typeof activeMiniGame.fileStaged === 'boolean') return activeMiniGame;
+    activeMiniGame = {
+      nodeId: node.id,
+      fileSelected: false,
+      fileStaged: false,
+      complete: false
+    };
+    return activeMiniGame;
+  }
+
+  function renderDeployBody(node) {
+    var mini = node.miniGame;
+    var game = ensureDeployGame(node);
+    var fileName = mini.fileName || 'portfolio.html';
+    var repositoryName = mini.repositoryName || 'website';
+    var publishedUrl = mini.publishedUrl || 'website.github.local';
+    var status = game.complete
+      ? 'Website online. The local repository is now serving your page.'
+      : game.fileStaged
+        ? fileName + ' is ready. Select Host to publish it.'
+        : game.fileSelected
+          ? fileName + ' selected. Now choose the GitHub Local folder.'
+          : 'Drag the HTML file into the GitHub Local folder.';
+    var fileMarkup = '<span class="deploy-file-icon" aria-hidden="true"><i>&lt;/&gt;</i></span><span class="deploy-file-copy"><strong>' + escapeHtml(fileName) + '</strong><small>HTML document · 14 KB</small></span>';
+    var folderContents = game.fileStaged || game.complete
+      ? '<span class="deploy-folder-file" aria-hidden="true"><i>&lt;/&gt;</i><b>' + escapeHtml(fileName) + '</b></span>'
+      : '<span class="deploy-folder-empty" aria-hidden="true">DROP FILE HERE</span>';
+    var actionMarkup = game.complete
+      ? '<div class="deploy-live-card" role="status"><span class="deploy-live-pip" aria-hidden="true"></span><div><small>DEPLOYMENT COMPLETE</small><strong>Site is live</strong><span>' + escapeHtml(publishedUrl) + '</span></div></div><button class="button button--primary" data-action="finish-game">Continue to trail check <span aria-hidden="true">→</span></button>'
+      : game.fileStaged
+        ? '<button class="button deploy-host-button" data-action="host-site"><span aria-hidden="true">⌁</span> Host</button><small>Your file is ready for the uplink.</small>'
+        : '<div class="deploy-locked-action" aria-disabled="true"><span aria-hidden="true">⌁</span><div><strong>Host</strong><small>Add a file to unlock</small></div></div>';
+    return '<div class="deploy-game" data-deploy-game><div class="deploy-intro"><p class="eyebrow">USERS + PRODUCT / SHIPBOARD TASK</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">A website only becomes useful when people can reach it. Stage the finished file, then host it.</p></div><div class="deploy-task-shell"><div class="deploy-task-rivets" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="deploy-task-heading"><span class="deploy-task-light" aria-hidden="true"></span><div><small>TASK 06 / WEB UPLINK</small><strong>Publish one-page site</strong></div><span class="deploy-task-state">' + (game.complete ? 'COMPLETE' : game.fileStaged ? 'READY' : '1 FILE') + '</span></div><div class="deploy-installer-window"><div class="deploy-window-bar"><span aria-hidden="true"><i></i><i></i><i></i></span><strong>Website Hosting Utility</strong><em>LOCAL</em></div><div class="deploy-status" role="status" aria-live="polite" data-deploy-status>' + escapeHtml(status) + '</div><div class="deploy-workspace' + (game.fileStaged ? ' is-staged' : '') + (game.complete ? ' is-complete' : '') + '"><div class="deploy-source"><span class="deploy-zone-label">YOUR DESKTOP</span><button class="deploy-file' + (game.fileSelected ? ' is-selected' : '') + '" type="button" draggable="' + (!game.fileStaged && !game.complete) + '" data-action="select-deploy-file" aria-pressed="' + game.fileSelected + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '>' + fileMarkup + '</button><small>' + (game.fileStaged || game.complete ? 'Moved to repository ✓' : game.fileSelected ? 'Selected — choose the folder' : 'Drag me →') + '</small></div><div class="deploy-transfer-arrow" aria-hidden="true"><span></span><i>→</i></div><div class="deploy-destination"><span class="deploy-zone-label">LOCAL REPOSITORY</span><button class="deploy-folder" type="button" data-action="stage-deploy-file" aria-label="GitHub Local folder, ' + escapeAttr(repositoryName) + (game.fileStaged ? ', contains ' + fileName : ', empty') + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '><span class="deploy-folder-tab" aria-hidden="true"></span><span class="deploy-folder-brand"><i aria-hidden="true">GH</i><span><strong>GitHub Local</strong><small>' + escapeHtml(repositoryName) + '</small></span></span>' + folderContents + '</button><small>' + (game.fileStaged || game.complete ? '1 file staged' : 'Repository folder') + '</small></div></div><div class="deploy-action-row">' + actionMarkup + '</div></div></div><div class="deploy-brief"><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skillFor(node)) + '" aria-hidden="true">' + renderBadgeArtwork(skillFor(node)) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skillFor(node).name) + '</strong><p>Host the page, then decide whether this kind of work energized you.</p></div></div><p><strong>How to play:</strong> ' + escapeHtml(mini.instructions) + '</p></div></div>';
+  }
+
+  function formatGameTime(seconds) {
+    var safeSeconds = Math.max(0, Number(seconds) || 0);
+    return String(Math.floor(safeSeconds / 60)).padStart(2, '0') + ':' + String(safeSeconds % 60).padStart(2, '0');
   }
 
   function renderReflection(node) {
@@ -963,7 +1281,7 @@
     dock.classList.toggle('has-skills', items.length > 0);
     var shortLandscape = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
     var interviewScreen = /^interview-/.test(state.screen || '');
-    var inlineDock = state.screen === 'career' || interviewScreen || window.innerWidth <= 560 || shortLandscape;
+    var inlineDock = state.screen === 'career' || state.screen === 'mini' || interviewScreen || window.innerWidth <= 560 || shortLandscape;
     var screenClass = 'dock--screen-' + slug(state.screen || 'landing');
     ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].forEach(function (screen) {
       dock.classList.remove('dock--screen-' + slug(screen));
@@ -995,6 +1313,9 @@
   function wireEvents() {
     root.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
     wireMapRouteReactions();
+    wireJigsawDragEvents(root);
+    wireDeployDragEvents(root);
+    wireChartMatchEvents(root);
     wireDockEvents();
     var form = document.getElementById('start-form');
     if (form) form.addEventListener('submit', handleStart);
@@ -1040,6 +1361,440 @@
     });
   }
 
+  /** Add pointer dragging as an enhancement to the click/keyboard controls. */
+  function wireJigsawDragEvents(container) {
+    if (!container || !container.querySelectorAll) return;
+    container.querySelectorAll('.jigsaw-piece[draggable="true"]').forEach(function (piece) {
+      piece.addEventListener('dragstart', function (event) {
+        var pieceIndex = Number(piece.getAttribute('data-piece-index'));
+        selectJigsawPiece(pieceIndex);
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', String(pieceIndex));
+        }
+        piece.classList.add('is-dragging');
+      });
+      piece.addEventListener('dragend', function () { piece.classList.remove('is-dragging'); });
+    });
+    container.querySelectorAll('.jigsaw-slot:not(:disabled)').forEach(function (slot) {
+      slot.addEventListener('dragover', function (event) {
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+      });
+      slot.addEventListener('dragenter', function (event) { event.preventDefault(); slot.classList.add('is-drop-target'); });
+      slot.addEventListener('dragleave', function () { slot.classList.remove('is-drop-target'); });
+      slot.addEventListener('drop', function (event) {
+        event.preventDefault(); slot.classList.remove('is-drop-target');
+        var transferred = event.dataTransfer ? Number(event.dataTransfer.getData('text/plain')) : NaN;
+        var pieceIndex = Number.isFinite(transferred) ? transferred : activeMiniGame && activeMiniGame.selectedPiece;
+        placeJigsawPiece(pieceIndex, Number(slot.getAttribute('data-slot-index')));
+      });
+    });
+  }
+
+  /** Enhance the keyboard-first deploy task with native pointer dragging. */
+  function wireDeployDragEvents(container) {
+    if (!container || !container.querySelector) return;
+    var file = container.querySelector('.deploy-file[draggable="true"]');
+    var folder = container.querySelector('.deploy-folder:not(:disabled)');
+    if (!file || !folder) return;
+    file.addEventListener('dragstart', function (event) {
+      selectDeployFile();
+      file.classList.add('is-dragging');
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'copy';
+        event.dataTransfer.setData('text/plain', 'website-file');
+      }
+    });
+    file.addEventListener('dragend', function () { file.classList.remove('is-dragging'); });
+    folder.addEventListener('dragover', function (event) {
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+    });
+    folder.addEventListener('dragenter', function (event) { event.preventDefault(); folder.classList.add('is-drop-target'); });
+    folder.addEventListener('dragleave', function () { folder.classList.remove('is-drop-target'); });
+    folder.addEventListener('drop', function (event) {
+      event.preventDefault();
+      folder.classList.remove('is-drop-target');
+      stageDeployFile();
+    });
+  }
+
+  /** Draw live relationship cables while preserving click and keyboard play. */
+  function wireChartMatchEvents(container) {
+    if (chartMatchResizeHandler) window.removeEventListener('resize', chartMatchResizeHandler);
+    chartMatchResizeHandler = null;
+    if (!container || !container.querySelector('[data-chart-game]')) return;
+    chartMatchResizeHandler = function () { window.requestAnimationFrame(redrawChartMatchLines); };
+    window.addEventListener('resize', chartMatchResizeHandler);
+    container.querySelectorAll('.chart-cable-port--source:not(:disabled)').forEach(function (port) {
+      port.addEventListener('pointerdown', function (event) {
+        if (event.button != null && event.button !== 0) return;
+        beginChartMatchDrag(event, port);
+      });
+    });
+    window.requestAnimationFrame(redrawChartMatchLines);
+  }
+
+  function beginChartMatchDrag(event, port) {
+    var sheetId = port.getAttribute('data-chart-sheet-id');
+    if (!sheetId || !activeMiniGame) return;
+    selectChartSheet(sheetId);
+    var board = root.querySelector('.chart-match-board');
+    if (!board) return;
+    if (chartMatchPointerCleanup) chartMatchPointerCleanup();
+    var moved = false;
+    function move(pointerEvent) {
+      moved = true;
+      pointerEvent.preventDefault();
+      drawChartPreview(port, pointerEvent.clientX, pointerEvent.clientY);
+      var hovered = document.elementFromPoint(pointerEvent.clientX, pointerEvent.clientY);
+      root.querySelectorAll('.chart-target-card').forEach(function (card) { card.classList.remove('is-drop-target'); });
+      var target = hovered && hovered.closest ? hovered.closest('[data-chart-target-id]') : null;
+      if (target && !target.classList.contains('is-matched')) target.classList.add('is-drop-target');
+    }
+    function end(pointerEvent) {
+      var hovered = document.elementFromPoint(pointerEvent.clientX, pointerEvent.clientY);
+      var target = hovered && hovered.closest ? hovered.closest('[data-chart-target-id]') : null;
+      cleanup();
+      if (moved && target && !target.classList.contains('is-matched')) attemptChartMatch(target.getAttribute('data-chart-target-id'));
+    }
+    function cleanup() {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', end);
+      document.removeEventListener('pointercancel', cleanup);
+      root.querySelectorAll('.chart-target-card').forEach(function (card) { card.classList.remove('is-drop-target'); });
+      var preview = root.querySelector('[data-chart-preview]');
+      if (preview) preview.removeAttribute('d');
+      if (chartMatchPointerCleanup === cleanup) chartMatchPointerCleanup = null;
+    }
+    chartMatchPointerCleanup = cleanup;
+    document.addEventListener('pointermove', move, { passive: false });
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', cleanup);
+  }
+
+  function drawChartPreview(sourcePort, clientX, clientY) {
+    var board = root.querySelector('.chart-match-board');
+    var preview = root.querySelector('[data-chart-preview]');
+    if (!board || !preview || !sourcePort) return;
+    var boardBox = board.getBoundingClientRect();
+    var start = chartPortPoint(sourcePort, boardBox);
+    var end = { x: clientX - boardBox.left, y: clientY - boardBox.top };
+    preview.setAttribute('d', chartConnectorPath(start, end));
+  }
+
+  function redrawChartMatchLines() {
+    var board = root.querySelector('.chart-match-board');
+    if (!board || !activeMiniGame || !activeMiniGame.matches) return;
+    var boardBox = board.getBoundingClientRect();
+    Object.keys(activeMiniGame.matches).forEach(function (sheetId) {
+      var chartId = activeMiniGame.matches[sheetId];
+      var source = board.querySelector('[data-chart-sheet-id="' + sheetId + '"]');
+      var target = board.querySelector('[data-chart-id="' + chartId + '"]');
+      var line = board.querySelector('[data-chart-line-for="' + sheetId + '"]');
+      if (!source || !target || !line) return;
+      line.setAttribute('d', chartConnectorPath(chartPortPoint(source, boardBox), chartPortPoint(target, boardBox)));
+    });
+  }
+
+  function chartPortPoint(port, boardBox) {
+    var box = port.getBoundingClientRect();
+    return { x: box.left + box.width / 2 - boardBox.left, y: box.top + box.height / 2 - boardBox.top };
+  }
+
+  function chartConnectorPath(start, end) {
+    var bend = start.x + (end.x - start.x) * 0.5;
+    return 'M ' + start.x.toFixed(1) + ' ' + start.y.toFixed(1) + ' H ' + bend.toFixed(1) + ' V ' + end.y.toFixed(1) + ' H ' + end.x.toFixed(1);
+  }
+
+  function selectChartSheet(sheetId) {
+    if (!activeMiniGame || activeMiniGame.complete || activeMiniGame.matches[sheetId]) return;
+    var node = findNode(activeMiniGame.nodeId);
+    var sheet = node && (node.miniGame.sheets || []).filter(function (item) { return item.id === sheetId; })[0];
+    if (!sheet) return;
+    activeMiniGame.selectedSheetId = sheetId;
+    activeMiniGame.feedback = sheet.name + ' selected. Connect it to the best chart.';
+    root.querySelectorAll('[data-sheet-card]').forEach(function (card) { card.classList.toggle('is-selected', card.getAttribute('data-sheet-card') === sheetId); });
+    root.querySelectorAll('[data-chart-sheet-id]').forEach(function (button) {
+      var selected = button.getAttribute('data-chart-sheet-id') === sheetId;
+      button.setAttribute('aria-pressed', String(selected));
+      var label = button.querySelector('span');
+      if (label && !button.disabled) label.textContent = selected ? 'ARMED' : 'DRAG';
+    });
+    setChartMatchFeedback(activeMiniGame.feedback);
+  }
+
+  function attemptChartMatch(chartId) {
+    if (!activeMiniGame || activeMiniGame.complete) return;
+    var node = findNode(activeMiniGame.nodeId);
+    var mini = node && node.miniGame;
+    var sheet = mini && (mini.sheets || []).filter(function (item) { return item.id === activeMiniGame.selectedSheetId; })[0];
+    var chart = mini && (mini.charts || []).filter(function (item) { return item.id === chartId; })[0];
+    if (!sheet) {
+      activeMiniGame.feedback = 'Choose a spreadsheet first, then select a chart.';
+      setChartMatchFeedback(activeMiniGame.feedback);
+      announce(activeMiniGame.feedback);
+      return;
+    }
+    if (!chart || Object.keys(activeMiniGame.matches).some(function (sheetId) { return activeMiniGame.matches[sheetId] === chartId; })) return;
+    if (sheet.chartId !== chartId) {
+      activeMiniGame.mistakes += 1;
+      activeMiniGame.feedback = 'That chart tells a different story. Compare the data shape and try again.';
+      setChartMatchFeedback(activeMiniGame.feedback);
+      var sourceCard = root.querySelector('[data-sheet-card="' + sheet.id + '"]');
+      var targetCard = root.querySelector('[data-chart-target-id="' + chartId + '"]');
+      [sourceCard, targetCard].forEach(function (card) {
+        if (!card) return;
+        card.classList.remove('is-wrong'); void card.offsetWidth; card.classList.add('is-wrong');
+        window.setTimeout(function () { if (card && card.isConnected) card.classList.remove('is-wrong'); }, 520);
+      });
+      announce('Not a match. ' + activeMiniGame.feedback);
+      return;
+    }
+    activeMiniGame.matches[sheet.id] = chartId;
+    activeMiniGame.selectedSheetId = null;
+    var total = (mini.sheets || []).length;
+    var count = Object.keys(activeMiniGame.matches).length;
+    activeMiniGame.complete = count === total;
+    activeMiniGame.feedback = activeMiniGame.complete ? 'All feeds restored. Nice work, analyst.' : sheet.insight;
+    refreshChartMatch(activeMiniGame.complete ? '[data-action="finish-game"]' : '.chart-cable-port--source:not(:disabled)');
+    announce(activeMiniGame.complete ? 'All three chart matches are correct. Continue to the trail check.' : sheet.name + ' connected correctly. ' + (total - count) + ' feeds remain.');
+  }
+
+  function resetChartMatch() {
+    var node = activeMiniGame && findNode(activeMiniGame.nodeId);
+    if (!node) return;
+    activeMiniGame = null;
+    ensureChartMatchGame(node);
+    refreshChartMatch('.chart-cable-port--source');
+    announce('Chart cables cleared.');
+  }
+
+  function setChartMatchFeedback(message) {
+    var status = root.querySelector('.chart-match-status strong');
+    if (status) status.textContent = message;
+  }
+
+  function refreshChartMatch(focusSelector) {
+    var currentGame = root.querySelector('[data-chart-game]');
+    var node = activeMiniGame && findNode(activeMiniGame.nodeId);
+    if (!currentGame || !node) return;
+    currentGame.outerHTML = renderChartMatchBody(node);
+    var nextGame = root.querySelector('[data-chart-game]');
+    if (!nextGame) return;
+    nextGame.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    wireChartMatchEvents(nextGame);
+    window.setTimeout(function () {
+      redrawChartMatchLines();
+      var target = nextGame.querySelector(focusSelector);
+      if (target && target.focus) {
+        try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
+      }
+    }, 0);
+  }
+
+  function selectDeployFile() {
+    if (!activeMiniGame || activeMiniGame.fileStaged || activeMiniGame.complete) return;
+    activeMiniGame.fileSelected = true;
+    var file = root.querySelector('.deploy-file');
+    var folder = root.querySelector('.deploy-folder');
+    var status = root.querySelector('[data-deploy-status]');
+    if (file) { file.classList.add('is-selected'); file.setAttribute('aria-pressed', 'true'); }
+    if (folder) folder.classList.add('is-armed');
+    if (status) status.textContent = 'portfolio.html selected. Now choose the GitHub Local folder.';
+    announce('Website file selected. Choose the GitHub Local folder.');
+  }
+
+  function stageDeployFile() {
+    if (!activeMiniGame || activeMiniGame.fileStaged || activeMiniGame.complete) return;
+    if (!activeMiniGame.fileSelected) {
+      selectDeployFile();
+      return;
+    }
+    activeMiniGame.fileSelected = false;
+    activeMiniGame.fileStaged = true;
+    refreshDeployGame('[data-action="host-site"]');
+    announce('File added to the repository. Host is now available.');
+  }
+
+  function hostDeploySite() {
+    if (!activeMiniGame || !activeMiniGame.fileStaged || activeMiniGame.complete) return;
+    activeMiniGame.complete = true;
+    refreshDeployGame('[data-action="finish-game"]');
+    announce('Website hosted successfully. Continue to the trail check.');
+  }
+
+  function refreshDeployGame(focusSelector) {
+    var currentGame = root.querySelector('[data-deploy-game]');
+    var node = activeMiniGame && findNode(activeMiniGame.nodeId);
+    if (!currentGame || !node) return;
+    currentGame.outerHTML = renderDeployBody(node);
+    var nextGame = root.querySelector('[data-deploy-game]');
+    if (!nextGame) return;
+    nextGame.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    wireDeployDragEvents(nextGame);
+    window.setTimeout(function () {
+      var target = nextGame.querySelector(focusSelector);
+      if (target && target.focus) {
+        try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
+      }
+    }, 0);
+  }
+
+  function selectJigsawPiece(pieceIndex) {
+    if (!activeMiniGame || activeMiniGame.complete || activeMiniGame.solved.indexOf(pieceIndex) !== -1) return;
+    activeMiniGame.selectedPiece = activeMiniGame.selectedPiece === pieceIndex ? null : pieceIndex;
+    root.querySelectorAll('.jigsaw-piece').forEach(function (piece) {
+      var selected = Number(piece.getAttribute('data-piece-index')) === activeMiniGame.selectedPiece;
+      piece.classList.toggle('is-selected', selected);
+      piece.setAttribute('aria-pressed', String(selected));
+    });
+    setJigsawStatus(activeMiniGame.selectedPiece == null
+      ? 'Panel released. Select any loose panel to continue.'
+      : 'Panel ' + (pieceIndex + 1) + ' selected. Choose its matching numbered position.');
+  }
+
+  function placeJigsawPiece(pieceIndex, slotIndex) {
+    if (!activeMiniGame || activeMiniGame.complete) return;
+    if (!Number.isFinite(pieceIndex)) {
+      setJigsawStatus('Select a loose panel first, then choose a position.');
+      return;
+    }
+    if (pieceIndex !== slotIndex) {
+      activeMiniGame.mistakes += 1;
+      setJigsawStatus('That panel does not match position ' + (slotIndex + 1) + '. Compare the image edges and try again.');
+      var wrongSlot = root.querySelector('.jigsaw-slot[data-slot-index="' + slotIndex + '"]');
+      if (wrongSlot) {
+        wrongSlot.classList.remove('is-wrong');
+        void wrongSlot.offsetWidth;
+        wrongSlot.classList.add('is-wrong');
+      }
+      return;
+    }
+    activeMiniGame.solved.push(pieceIndex);
+    activeMiniGame.selectedPiece = null;
+    if (activeMiniGame.solved.length === activeMiniGame.order.length) {
+      activeMiniGame.complete = true;
+      activeMiniGame.elapsedSeconds = Math.max(1, Math.floor((Date.now() - activeMiniGame.startedAt) / 1000));
+      stopMiniGameTimer();
+    }
+    refreshJigsawStage(activeMiniGame.complete ? '[data-action="finish-game"]' : '.jigsaw-piece');
+    if (activeMiniGame.complete) announce('Scanner feed restored. Continue to the trail check.');
+    else announce('Panel ' + (pieceIndex + 1) + ' locked. ' + (activeMiniGame.order.length - activeMiniGame.solved.length) + ' remain.');
+  }
+
+  function placeJigsawHint() {
+    if (!activeMiniGame || activeMiniGame.complete) return;
+    var node = findNode(activeMiniGame.nodeId);
+    var elapsed = Math.floor((Date.now() - activeMiniGame.startedAt) / 1000);
+    if (node && elapsed < (Number(node.miniGame.hintAfterSeconds) || 20)) return;
+    var nextPiece = activeMiniGame.order.filter(function (pieceIndex) { return activeMiniGame.solved.indexOf(pieceIndex) === -1; })[0];
+    activeMiniGame.hints += 1;
+    activeMiniGame.selectedPiece = nextPiece;
+    placeJigsawPiece(nextPiece, nextPiece);
+  }
+
+  function setJigsawStatus(message) {
+    var status = root.querySelector('[data-jigsaw-status]');
+    if (status) status.textContent = message;
+  }
+
+  function refreshJigsawStage(focusSelector) {
+    var currentStage = root.querySelector('[data-jigsaw-game]');
+    var node = activeMiniGame && findNode(activeMiniGame.nodeId);
+    if (!currentStage || !node) return;
+    currentStage.outerHTML = renderJigsawStage(node);
+    var nextStage = root.querySelector('[data-jigsaw-game]');
+    if (!nextStage) return;
+    nextStage.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    wireJigsawDragEvents(nextStage);
+    window.setTimeout(function () {
+      var target = nextStage.querySelector(focusSelector);
+      if (target && target.focus) {
+        try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
+      }
+    }, 0);
+  }
+
+  function toggleTeammate(candidateId) {
+    if (!activeMiniGame || !Array.isArray(activeMiniGame.selectedCandidates)) return;
+    var node = findNode(activeMiniGame.nodeId);
+    if (!node || !node.miniGame) return;
+    var validCandidate = (node.miniGame.candidates || []).some(function (candidate) { return candidate.id === candidateId; });
+    if (!validCandidate) return;
+    var selectedIndex = activeMiniGame.selectedCandidates.indexOf(candidateId);
+    if (selectedIndex !== -1) activeMiniGame.selectedCandidates.splice(selectedIndex, 1);
+    else if (activeMiniGame.selectedCandidates.length < (Number(node.miniGame.teamSize) || 3)) activeMiniGame.selectedCandidates.push(candidateId);
+    activeMiniGame.complete = activeMiniGame.selectedCandidates.length === (Number(node.miniGame.teamSize) || 3);
+    refreshTeamBuilder(candidateId);
+    announce(activeMiniGame.complete ? 'Dream crew assembled. You can lock in this crew or swap a teammate.' : activeMiniGame.selectedCandidates.length + ' teammates selected.');
+  }
+
+  function refreshTeamBuilder(candidateId) {
+    var currentGame = root.querySelector('[data-team-game]');
+    var node = activeMiniGame && findNode(activeMiniGame.nodeId);
+    if (!currentGame || !node) return;
+    currentGame.outerHTML = renderTeamBuilderBody(node);
+    var nextGame = root.querySelector('[data-team-game]');
+    if (!nextGame) return;
+    nextGame.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    window.setTimeout(function () {
+      var target = nextGame.querySelector('[data-candidate-id="' + candidateId + '"]') || nextGame.querySelector('[data-action="finish-game"]');
+      if (target && target.focus) {
+        try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
+      }
+    }, 0);
+  }
+
+  function syncMiniGameLifecycle() {
+    var node = state.screen === 'mini' ? findNode(state.selectedNodeId) : null;
+    if (!node || !node.miniGame || node.miniGame.visualType !== 'jigsaw' || !activeMiniGame || activeMiniGame.complete) {
+      stopMiniGameTimer();
+      return;
+    }
+    stopMiniGameTimer();
+    updateJigsawTimer();
+    miniGameTimer = window.setInterval(updateJigsawTimer, 1000);
+  }
+
+  function updateJigsawTimer() {
+    if (!activeMiniGame || activeMiniGame.complete) { stopMiniGameTimer(); return; }
+    var node = findNode(activeMiniGame.nodeId);
+    if (!node) { stopMiniGameTimer(); return; }
+    var elapsed = Math.floor((Date.now() - activeMiniGame.startedAt) / 1000);
+    activeMiniGame.elapsedSeconds = elapsed;
+    var duration = Number(node.miniGame.durationSeconds) || 60;
+    var timer = root.querySelector('[data-jigsaw-timer]');
+    if (timer) {
+      timer.textContent = formatGameTime(Math.max(0, duration - elapsed));
+      timer.parentNode.classList.toggle('is-overtime', elapsed >= duration);
+    }
+    var hint = root.querySelector('[data-action="jigsaw-hint"]');
+    var hintCopy = root.querySelector('#jigsaw-hint-wait');
+    var hintWait = Math.max(0, (Number(node.miniGame.hintAfterSeconds) || 20) - elapsed);
+    if (hint) {
+      hint.disabled = hintWait > 0;
+      if (hintWait > 0) hint.setAttribute('aria-describedby', 'jigsaw-hint-wait');
+      else hint.removeAttribute('aria-describedby');
+    }
+    if (hintCopy) hintCopy.textContent = hintWait ? 'Hint unlocks in ' + hintWait + ' sec' : 'Hint ready';
+  }
+
+  function stopMiniGameTimer() {
+    if (miniGameTimer) window.clearInterval(miniGameTimer);
+    miniGameTimer = null;
+  }
+
+  function resetActiveMiniGame() {
+    stopMiniGameTimer();
+    if (chartMatchPointerCleanup) chartMatchPointerCleanup();
+    if (chartMatchResizeHandler) window.removeEventListener('resize', chartMatchResizeHandler);
+    chartMatchPointerCleanup = null;
+    chartMatchResizeHandler = null;
+    activeMiniGame = null;
+  }
+
   function setMapRouteFocus(source, nodeId) {
     var world = source && source.closest ? source.closest('.rpg-world') : source;
     if (!world) return;
@@ -1065,6 +1820,16 @@
   function handleAction(event) {
     var element = event.currentTarget;
     var action = element.getAttribute('data-action');
+    if (action === 'select-chart-sheet') { selectChartSheet(element.getAttribute('data-chart-sheet-id')); return; }
+    if (action === 'match-chart-target') { attemptChartMatch(element.getAttribute('data-chart-id')); return; }
+    if (action === 'reset-chart-match') { resetChartMatch(); return; }
+    if (action === 'select-deploy-file') { selectDeployFile(); return; }
+    if (action === 'stage-deploy-file') { stageDeployFile(); return; }
+    if (action === 'host-site') { hostDeploySite(); return; }
+    if (action === 'toggle-teammate') { toggleTeammate(element.getAttribute('data-candidate-id')); return; }
+    if (action === 'jigsaw-piece') { selectJigsawPiece(Number(element.getAttribute('data-piece-index'))); return; }
+    if (action === 'jigsaw-slot') { placeJigsawPiece(activeMiniGame && activeMiniGame.selectedPiece, Number(element.getAttribute('data-slot-index'))); return; }
+    if (action === 'jigsaw-hint') { placeJigsawHint(); return; }
     if (action === 'toggle-starter') { toggleStarterSkill(element.getAttribute('data-skill-id')); return; }
     if (action === 'confirm-skills') { confirmStarterSkills(); return; }
     if (action === 'back-landing') { state.screen = 'landing'; saveState(); render(); return; }
@@ -1075,6 +1840,12 @@
     if (action === 'edit-skills') { requestEditStarterSkills(); return; }
     if (action === 'open-node') { openNode(element.getAttribute('data-node-id')); return; }
     if (action === 'finish-game') {
+      var selectedNode = findNode(state.selectedNodeId);
+      if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'jigsaw' && activeMiniGame && !activeMiniGame.complete) return;
+      if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'team-builder' && activeMiniGame && !activeMiniGame.complete) return;
+      if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'deploy-drag-drop' && activeMiniGame && !activeMiniGame.complete) return;
+      if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'data-chart-match' && activeMiniGame && !activeMiniGame.complete) return;
+      resetActiveMiniGame();
       if (state.reviewingNodeId) {
         var replayed = findNode(state.reviewingNodeId);
         state.reviewingNodeId = null; state.screen = 'map'; saveState(); render();
@@ -1104,7 +1875,7 @@
     if (action === 'enjoy-yes') { completeNode(state.selectedNodeId); return; }
     if (action === 'enjoy-maybe') { pauseReflection(); return; }
     if (action === 'enjoy-no') { requestRejectNode(element); return; }
-    if (action === 'back-map') { state.screen = 'map'; state.travelTargetId = null; saveState(); render(); return; }
+    if (action === 'back-map') { resetActiveMiniGame(); state.screen = 'map'; state.travelTargetId = null; saveState(); render(); return; }
     if (action === 'new-path') { startAnotherPath(); return; }
     if (action === 'open-interview') { openInterview(element.getAttribute('data-career-id')); return; }
     if (action === 'interview-start') { startInterview(); return; }
@@ -1173,6 +1944,7 @@
     var node = findNode(id);
     if (!canOpen(node)) return;
     resetWordleSession(id);
+    resetActiveMiniGame();
     var replaying = isCompleted(node.id);
     var current = currentJourneyNode();
     if (id === 'domain-software-apps') resetScratchGame();
@@ -1419,6 +2191,7 @@
     var node = findNode(id);
     if (!node || !isCompleted(id)) return;
     resetWordleSession(id);
+    resetActiveMiniGame();
     closeModal();
     if (!node.miniGame && node.career) { openCareerResult(node); return; }
     if (id === 'domain-software-apps') resetScratchGame();

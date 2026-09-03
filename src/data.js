@@ -2,8 +2,8 @@
  * Information Systems Career Launchpad data
  *
  * This file is intentionally the single source of truth for the map. Region and
- * domain mini-games are currently placeholders; each has a stable id and metadata
- * so a future game can replace it without changing the progression state machine.
+ * domain mini-games use stable ids and renderer metadata so playable games can
+ * replace placeholders without changing the progression state machine.
  */
 
 /**
@@ -16,12 +16,22 @@
 /**
  * @typedef {Object} MiniGamePlan
  * @property {string} id Stable mini-game id.
- * @property {string} title Planned game title.
- * @property {string} concept One-sentence description of the future interaction.
- * @property {number} durationSeconds Target play time for the future game.
- * @property {string} instructions Placeholder instructions shown before implementation.
- * @property {"planned"|"ready"} status Implementation status.
- * @property {string} visualType Renderer hint for the future game workspace.
+ * @property {string} title Game title.
+ * @property {string} concept One-sentence description of the interaction.
+ * @property {number} durationSeconds Target play time.
+ * @property {string} instructions Player instructions.
+ * @property {"planned"|"playable"|"ready"} status Implementation status.
+ * @property {string} visualType Renderer hint for the game workspace.
+ * @property {number} [pieceCount] Optional puzzle-piece count.
+ * @property {number} [hintAfterSeconds] Optional delay before assisted play.
+ * @property {number} [teamSize] Optional number of teammates to draft.
+ * @property {Object[]} [strengths] Optional team-balance dimensions.
+ * @property {Object[]} [candidates] Optional teammate roster.
+ * @property {Object[]} [sheets] Optional spreadsheet datasets for chart matching.
+ * @property {Object[]} [charts] Optional visualization targets for chart matching.
+ * @property {string} [fileName] Optional file used by a deploy task.
+ * @property {string} [repositoryName] Optional local repository name.
+ * @property {string} [publishedUrl] Optional simulated hosted address.
  */
 
 /**
@@ -398,13 +408,18 @@ const REGIONS = [
     theme: "analyze-solve",
     scene: WORLD_SCENES["analyze-solve"],
     earnedSkill: SKILLS.analyst,
-    miniGame: makeMiniGame(
+    miniGame: Object.assign(makeMiniGame(
       "minigame-analyze-solve-jigsaw",
-      "Solve the Evidence Puzzle",
-      "Assemble a simple jigsaw puzzle to reveal the next clue.",
+      "Repair the Scanner Feed",
+      "Reassemble six scrambled scanner panels to recover the evidence image.",
       "jigsaw",
-      "Planned placeholder: arrange the evidence pieces into one clear picture."
-    ),
+      "Select or drag each scanner panel into its matching position. Correct panels lock in place."
+    ), {
+      status: "playable",
+      pieceCount: 6,
+      hintAfterSeconds: 20,
+      theme: "starship-repair",
+    }),
   }),
   makeNode({
     id: "region-people-lead",
@@ -417,13 +432,50 @@ const REGIONS = [
     theme: "people-lead",
     scene: WORLD_SCENES["people-lead"],
     earnedSkill: SKILLS.peopleSkills,
-    miniGame: makeMiniGame(
+    miniGame: Object.assign(makeMiniGame(
       "minigame-people-lead-team",
-      "Build a Team",
-      "Choose two or three characters whose strengths fit the mission.",
+      "Assemble Your Dream Crew",
+      "Choose three space explorers whose strengths complement the skills you already bring.",
       "team-builder",
-      "Planned placeholder: pick a balanced team for the project brief."
-    ),
+      "Draft any three teammates. The crew computer will suggest strengths that can balance your starter loadout."
+    ), {
+      status: "playable",
+      teamSize: 3,
+      strengths: [
+        {
+          id: "ideas",
+          label: "Fresh ideas",
+          shortLabel: "Ideas",
+          starterSkillIds: ["starter-creative-thinking", "starter-visual-design"],
+        },
+        {
+          id: "systems",
+          label: "Making it work",
+          shortLabel: "Build",
+          starterSkillIds: ["starter-coding-curiosity", "starter-hands-on-tech"],
+        },
+        {
+          id: "insight",
+          label: "Evidence and risk",
+          shortLabel: "Insight",
+          starterSkillIds: ["starter-numbers-patterns", "starter-problem-solving", "starter-security-mindset"],
+        },
+        {
+          id: "people",
+          label: "People and momentum",
+          shortLabel: "People",
+          starterSkillIds: ["starter-communication", "starter-leadership", "starter-empathy"],
+        },
+      ],
+      candidates: [
+        { id: "nova", name: "Nova", role: "Idea Spark", strengthId: "ideas", color: "#f7b23b", accessory: "spark", motto: "What if we tried it another way?" },
+        { id: "pixel", name: "Pixel", role: "Prototype Pilot", strengthId: "ideas", color: "#ef6f9d", accessory: "antenna", motto: "Let me sketch the first version." },
+        { id: "patch", name: "Patch", role: "Systems Builder", strengthId: "systems", color: "#3f84e8", accessory: "wrench", motto: "I can make the moving parts connect." },
+        { id: "orbit", name: "Orbit", role: "Pattern Scout", strengthId: "insight", color: "#8a63d2", accessory: "scanner", motto: "The clues are already in the data." },
+        { id: "shield", name: "Shield", role: "Risk Spotter", strengthId: "insight", color: "#ef6d68", accessory: "shield", motto: "Let’s find the weak point early." },
+        { id: "echo", name: "Echo", role: "Crew Connector", strengthId: "people", color: "#20aa80", accessory: "comms", motto: "I’ll make sure every voice gets heard." },
+      ],
+    }),
   }),
 ];
 
@@ -474,13 +526,49 @@ const DOMAINS = [
     color: COLORS.analyzeLight,
     theme: "analyze-solve",
     earnedSkill: SKILLS.numbers,
-    miniGame: makeMiniGame(
+    miniGame: Object.assign(makeMiniGame(
       "minigame-data-chart-match",
       "Match Data to Charts",
       "Match three datasets to the three charts that communicate them best.",
       "data-chart-match",
-      "Planned placeholder: connect each dataset to its most useful chart."
-    ),
+      "Drag a cable from each spreadsheet port to the chart that best communicates its pattern. Select a sheet, then a chart, for keyboard play."
+    ), {
+      status: "playable",
+      sheets: [
+        {
+          id: "oxygen-trend",
+          tab: "O2_TREND.xlsx",
+          name: "Oxygen checks",
+          columns: ["Day", "O₂ level"],
+          rows: [["Mon", "91%"], ["Tue", "93%"], ["Wed", "94%"], ["Thu", "96%"], ["Fri", "98%"]],
+          chartId: "chart-line",
+          insight: "A line chart keeps the days in order and makes the upward trend easy to see."
+        },
+        {
+          id: "room-tasks",
+          tab: "TASKS_BY_ROOM.xlsx",
+          name: "Tasks by room",
+          columns: ["Room", "Tasks"],
+          rows: [["Electrical", "8"], ["Reactor", "5"], ["Medbay", "3"], ["Navigation", "6"]],
+          chartId: "chart-bars",
+          insight: "A bar chart makes it easy to compare task counts across separate rooms."
+        },
+        {
+          id: "crew-mix",
+          tab: "CREW_MIX.xlsx",
+          name: "Crew role mix",
+          columns: ["Role", "Share"],
+          rows: [["Crewmates", "70%"], ["Engineers", "20%"], ["Medics", "10%"]],
+          chartId: "chart-donut",
+          insight: "A donut chart shows how three roles divide one complete 100% crew."
+        }
+      ],
+      charts: [
+        { id: "chart-donut", label: "Chart A", type: "donut", sheetId: "crew-mix", ariaLabel: "Donut chart with slices of 70, 20, and 10 percent" },
+        { id: "chart-line", label: "Chart B", type: "line", sheetId: "oxygen-trend", ariaLabel: "Line chart rising across five ordered points" },
+        { id: "chart-bars", label: "Chart C", type: "bars", sheetId: "room-tasks", ariaLabel: "Bar chart comparing four category values" }
+      ]
+    }),
   }),
   makeNode({
     id: "domain-security-risk",
@@ -533,13 +621,18 @@ const DOMAINS = [
     color: COLORS.peopleLight,
     theme: "people-lead",
     earnedSkill: SKILLS.marketReach,
-    miniGame: makeMiniGame(
+    miniGame: Object.assign(makeMiniGame(
       "minigame-users-github-deploy",
-      "Publish the Project",
-      "Drag a file into GitHub, find its host, and publish it.",
+      "Hosting a Website",
+      "Move one finished web page into a GitHub Local-style folder, then send it live.",
       "deploy-drag-drop",
-      "Planned placeholder: move the project file to GitHub and select its hosting destination."
-    ),
+      "Drag portfolio.html into the local repository folder. Keyboard players can select the file, then select the folder. When Host appears, press it."
+    ), {
+      status: "playable",
+      fileName: "portfolio.html",
+      repositoryName: "dan-portfolio",
+      publishedUrl: "dan-portfolio.github.local",
+    }),
   }),
 ];
 

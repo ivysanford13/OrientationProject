@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import base64
+import re
 from pathlib import Path
 
 
@@ -35,16 +36,25 @@ def image_data_uri(filename: str) -> str:
     return f"data:{mime_type};base64,{encoded}"
 
 
+def minify_css(source: str) -> str:
+    """Compact bundled CSS while keeping the editable source readable."""
+
+    without_comments = re.sub(r"/\*.*?\*/", "", source, flags=re.DOTALL)
+    compact = re.sub(r"\s+", " ", without_comments)
+    return re.sub(r"\s*([{}:;,>])\s*", r"\1", compact).strip()
+
+
 def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
     """Inline the stylesheet and scripts into the standalone deliverable."""
 
     template = read_source("template.html")
     replacements = {
-        "__INLINE_CSS__": read_source("styles.css"),
+        "__INLINE_CSS__": minify_css(read_source("styles.css")),
         "__INLINE_DATA__": read_source("data.js"),
         "__INLINE_RESEARCH__": read_source("research-data.js"),
         "__INLINE_APP__": read_source("app.js"),
         "__EXPLORER_AVATAR_DATA_URI__": image_data_uri("byu-cougar-explorer.png"),
+        "__JIGSAW_COMPUTER_CORE_DATA_URI__": image_data_uri("jigsaw-computer-core.jpg"),
         "__STARTER_BADGE_CREATIVE_THINKING_DATA_URI__": image_data_uri("starter-badges/creative-thinking.jpg"),
         "__STARTER_BADGE_CODING_CURIOSITY_DATA_URI__": image_data_uri("starter-badges/coding-curiosity.jpg"),
         "__STARTER_BADGE_HANDS_ON_TECH_DATA_URI__": image_data_uri("starter-badges/hands-on-tech.jpg"),

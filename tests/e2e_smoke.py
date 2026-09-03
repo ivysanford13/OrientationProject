@@ -85,6 +85,132 @@ class CareerLaunchpadSmokeTests(unittest.TestCase):
         finally:
             page.close()
 
+    def test_analyze_region_jigsaw_completes_with_keyboard_controls(self) -> None:
+        """Solve the playable six-panel task and preserve the reward contract."""
+
+        page, errors = self.open_fresh_page()
+        try:
+            page.evaluate(
+                """state => localStorage.setItem('is-career-launchpad:v2', JSON.stringify(state))""",
+                {
+                    "version": 2,
+                    "screen": "mini",
+                    "name": "Dan",
+                    "avatar": "cougar",
+                    "starterSkills": [
+                        "starter-numbers-patterns",
+                        "starter-problem-solving",
+                        "starter-security-mindset",
+                        "starter-coding-curiosity",
+                    ],
+                    "recommendedRegionId": "region-analyze-solve",
+                    "activeRegionId": "region-analyze-solve",
+                    "activeDomainId": None,
+                    "completed": [],
+                    "earned": [],
+                    "rejected": [],
+                    "selectedNodeId": "region-analyze-solve",
+                    "travelTargetId": None,
+                    "travelFromId": None,
+                    "lastCareerId": None,
+                    "lastAward": False,
+                    "reviewingNodeId": None,
+                },
+            )
+            page.reload()
+            page.locator(".jigsaw-console").wait_for()
+
+            self.assertEqual(page.locator(".jigsaw-piece").count(), 6)
+            self.assertEqual(page.locator(".jigsaw-slot").count(), 6)
+            self.assertEqual(page.get_by_role("button", name="Continue to trail check").count(), 0)
+            self.assertIn(
+                "dock--inline", page.locator("#skill-dock").get_attribute("class") or ""
+            )
+            self.assertEqual(
+                page.evaluate("document.documentElement.scrollWidth"),
+                page.evaluate("window.innerWidth"),
+            )
+
+            for piece_index in range(6):
+                piece = page.locator(f'[data-piece-index="{piece_index}"]')
+                piece.focus()
+                piece.press("Enter")
+                slot = page.locator(f'[data-slot-index="{piece_index}"]')
+                slot.focus()
+                slot.press("Enter")
+
+            page.get_by_role("button", name="Continue to trail check").click()
+            page.locator(".screen--reflection").wait_for()
+            page.get_by_role("button", name="Yes, keep going").click()
+
+            self.assertEqual(page.locator(".hex-item").count(), 5)
+            self.assertEqual(
+                page.evaluate("CareerLaunchpadApp.getState().earned[0].skillId"),
+                "analyst",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_people_region_team_builder_guides_and_accepts_any_three(self) -> None:
+        """Draft a complementary crew and preserve the normal reward contract."""
+
+        page, errors = self.open_fresh_page()
+        try:
+            page.evaluate(
+                """state => localStorage.setItem('is-career-launchpad:v2', JSON.stringify(state))""",
+                {
+                    "version": 2,
+                    "screen": "mini",
+                    "name": "Dan",
+                    "avatar": "cougar",
+                    "starterSkills": [
+                        "starter-communication",
+                        "starter-leadership",
+                        "starter-empathy",
+                        "starter-problem-solving",
+                    ],
+                    "recommendedRegionId": "region-people-lead",
+                    "activeRegionId": "region-people-lead",
+                    "activeDomainId": None,
+                    "completed": [],
+                    "earned": [],
+                    "rejected": [],
+                    "selectedNodeId": "region-people-lead",
+                    "travelTargetId": None,
+                    "travelFromId": None,
+                    "lastCareerId": None,
+                    "lastAward": False,
+                    "reviewingNodeId": None,
+                },
+            )
+            page.reload()
+            page.locator(".team-console").wait_for()
+
+            self.assertEqual(page.locator(".crew-candidate").count(), 6)
+            self.assertEqual(page.locator(".crew-candidate.is-suggested").count(), 3)
+            self.assertTrue(page.get_by_role("button", name="Lock in this crew").is_disabled())
+
+            for candidate_id in ("nova", "patch", "orbit"):
+                page.locator(f'[data-candidate-id="{candidate_id}"]').click()
+
+            self.assertEqual(page.locator(".crew-slot.is-filled").count(), 3)
+            self.assertIn("Complementary crew assembled", page.locator(".crew-advice").inner_text())
+            self.assertFalse(page.get_by_role("button", name="Lock in this crew").is_disabled())
+
+            page.get_by_role("button", name="Lock in this crew").click()
+            page.locator(".screen--reflection").wait_for()
+            page.get_by_role("button", name="Yes, keep going").click()
+
+            self.assertEqual(page.locator(".hex-item").count(), 5)
+            self.assertEqual(
+                page.evaluate("CareerLaunchpadApp.getState().earned[0].skillId"),
+                "people-skills",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_saved_third_mini_game_opens_career_without_third_reward(self) -> None:
         """Migrate a browser saved during the removed specialization challenge."""
 

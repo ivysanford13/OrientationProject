@@ -70,11 +70,14 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - On compact phones, hide the chapter HUD for the brief travel state so the full-width destination banner has one clear reading band; restore the HUD on arrival.
 - Keep map navigation quiet: remove decorative landmark chips, embed the earned-skill badge in each destination card, avoid glowing route effects, and park the cougar in open terrain beside the active stop.
 - When original skill-hex artwork is supplied, normalize every crop to one shared canvas and visible boundary before resizing; do not recreate the badges with CSS or substitute line icons.
+- Original badge images need an inner artwork-shaped mask in map icons and reward callouts; clipping the full white image canvas creates a second, incorrect hexagon.
+- On the final map chapter, completed route cards should collapse into compact history chips and remain spatially separate from the active career choices and chapter HUD.
 - Keep the world camera at one close zoom across all chapters; progression pans between authored panorama crops without a push-in/pull-back pulse.
 - Route branches must terminate at their actual destination cards and react independently to pointer focus, keyboard focus, and travel selection.
 - Only the region and domain selections launch mini-games and enjoyment checks; the third specialization selection travels directly to its career result and awards its skill without a mini-game.
 - Removing a mini-game must not remove its route reward: the specialization skill is still the seventh tile and completes the two-row honeycomb on the career result.
 - The skill honeycomb must position an eighth tile when both career possibilities in a domain are explored; all badges omit redundant "starter" and "earned" sublabels.
+- The seventh skill completes the lower-right edge of the honeycomb; only an eighth skill fills the remaining upper-right slot.
 - Starter-skill toggles update their cards, counter, action state, and honeycomb in place; never rerender the full screen or reset scroll for a loadout click.
 - A map destination click begins travel inside the existing world DOM so the panorama, viewport, and controls do not flash or jump.
 - The starter-skill picker uses scaled crops of the supplied badge artwork; do not substitute reconstructed CSS or SVG badges there.

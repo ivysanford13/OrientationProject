@@ -262,6 +262,37 @@ class QARunner:
         )
 
     @staticmethod
+    def solve_jigsaw(page: Page) -> None:
+        """Complete the six-panel scanner task through its public controls."""
+
+        for piece_index in range(6):
+            page.locator(f'[data-piece-index="{piece_index}"]').click()
+            page.locator(f'[data-slot-index="{piece_index}"]').click()
+        continue_button = page.get_by_role(
+            "button", name=re.compile("Continue to trail check")
+        )
+        if continue_button.count() != 1:
+            raise AssertionError("jigsaw completion did not reveal its continue action")
+        continue_button.click()
+
+    @staticmethod
+    def publish_deploy_game(page: Page) -> None:
+        """Stage and host the sample page through the keyboard-equivalent controls."""
+
+        page.locator('[data-action="select-deploy-file"]').click()
+        page.locator('[data-action="stage-deploy-file"]').click()
+        host_button = page.get_by_role("button", name="Host", exact=True)
+        if host_button.count() != 1:
+            raise AssertionError("deploy task did not reveal its Host action")
+        host_button.click()
+        continue_button = page.get_by_role(
+            "button", name=re.compile("Continue to trail check")
+        )
+        if continue_button.count() != 1:
+            raise AssertionError("deploy task did not reveal its continue action")
+        continue_button.click()
+
+    @staticmethod
     def finish_node(page: Page, node_id: str, enjoyed: bool = True) -> None:
         """Complete a mini-game stop or open a terminal career selection."""
 
@@ -276,12 +307,25 @@ class QARunner:
             if not enjoyed:
                 raise AssertionError("terminal career selections do not support rejection")
             return
-        if page.locator('[aria-label="Planned mini-game workspace"]').count() != 1:
-            raise AssertionError(f"placeholder workspace missing for {node_id}")
-        button = page.get_by_role("button", name=re.compile("Skip game for now"))
-        if button.count() != 1:
-            raise AssertionError(f"expected one skip control for {node_id}, found {button.count()}")
-        button.click()
+        if page.locator(".jigsaw-console").count():
+            QARunner.solve_jigsaw(page)
+        elif page.locator(".team-builder-game").count():
+            candidates = page.locator('[data-action="toggle-teammate"]:not([disabled])')
+            for candidate_index in range(3):
+                candidates.nth(candidate_index).click()
+            lock_crew = page.get_by_role("button", name=re.compile("Lock in this crew"))
+            if lock_crew.count() != 1 or not lock_crew.is_enabled():
+                raise AssertionError("team-builder completion did not enable its continue action")
+            lock_crew.click()
+        elif page.locator(".deploy-game").count():
+            QARunner.publish_deploy_game(page)
+        else:
+            if page.locator('[aria-label="Planned mini-game workspace"]').count() != 1:
+                raise AssertionError(f"mini-game workspace missing for {node_id}")
+            button = page.get_by_role("button", name=re.compile("Skip game for now"))
+            if button.count() != 1:
+                raise AssertionError(f"expected one skip control for {node_id}, found {button.count()}")
+            button.click()
         page.locator(".screen--reflection").wait_for()
         choice = page.get_by_role(
             "button", name=re.compile("Yes, keep going" if enjoyed else "No, try another trail")
