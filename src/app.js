@@ -13,7 +13,7 @@
   var STORAGE_KEY = 'is-career-launchpad:v1';
   var root = document.getElementById('app');
   var dock = document.getElementById('skill-dock');
-  var toastRegion = document.getElementById('toast-region');
+  var toastRegion = document.getElementById('toast-region') || document.getElementById('toast');
   var modalRoot = document.getElementById('modal-root');
 
   if (!root) return;
@@ -102,9 +102,27 @@
     (Array.isArray(sourceSkills) ? sourceSkills : fallback.skills).forEach(function (skill) {
       if (!skill) return;
       var id = String(skill.id || skill.key || slug(skill.name || skill.title));
-      skillMap[id] = Object.assign({ id: id, name: skill.name || skill.title || id, shortName: skill.shortName || skill.name || id }, skill);
+      skillMap[id] = Object.assign({ id: id, name: skill.name || skill.label || skill.title || id, shortName: skill.shortName || skill.name || skill.label || id }, skill);
     });
     var regions = data.regions || (data.map && data.map.regions) || data.map || data.tree;
+    // The source-of-truth file is intentionally flat. Stitch its parent IDs
+    // into a nested tree for rendering while retaining the original IDs.
+    if (Array.isArray(data.regions) && (Array.isArray(data.domains) || Array.isArray(data.specializations))) {
+      var domains = Array.isArray(data.domains) ? data.domains : [];
+      var specs = Array.isArray(data.specializations) ? data.specializations : [];
+      var careers = data.careerById || indexById(data.careers || []);
+      regions = data.regions.map(function (region) {
+        var regionCopy = Object.assign({}, region);
+        regionCopy.children = domains.filter(function (domain) { return domain.parentId === region.id; }).map(function (domain) {
+          var domainCopy = Object.assign({}, domain);
+          domainCopy.children = specs.filter(function (spec) { return spec.parentId === domain.id; }).map(function (spec) {
+            return Object.assign({}, spec, { career: spec.career || careers[spec.careerId] || null });
+          });
+          return domainCopy;
+        });
+        return regionCopy;
+      });
+    }
     if (!Array.isArray(regions)) regions = fallback.regions;
     regions = regions.map(function (region, index) { return normalizeNode(region, index, null, skillMap, fallback.regions[index]); });
     if (!regions.length) regions = fallback.regions;
@@ -117,6 +135,12 @@
     return map;
   }
 
+  function indexById(list) {
+    var map = {};
+    (Array.isArray(list) ? list : []).forEach(function (item) { if (item && item.id) map[item.id] = item; });
+    return map;
+  }
+
   function normalizeNode(item, index, parentId, skillMap, fallback) {
     item = item || {};
     fallback = fallback || {};
@@ -126,7 +150,7 @@
     if (!children.length && fallback.children) children = fallback.children;
     var skillValue = item.skill || item.earnedSkill || item.rewardSkill || (item.miniGame && (item.miniGame.rewardSkill || item.miniGame.skill)) || fallback.skill || id;
     var skillId = typeof skillValue === 'object' ? String(skillValue.id || skillValue.key || slug(skillValue.name || skillValue.title)) : String(skillValue);
-    if (!skillMap[skillId]) skillMap[skillId] = typeof skillValue === 'object' ? Object.assign({ id: skillId, name: skillValue.name || skillValue.title || skillId }, skillValue) : { id: skillId, name: titleCase(skillId), shortName: titleCase(skillId) };
+    if (!skillMap[skillId]) skillMap[skillId] = typeof skillValue === 'object' ? Object.assign({ id: skillId, name: skillValue.name || skillValue.label || skillValue.title || skillId, shortName: skillValue.shortName || skillValue.name || skillValue.label || skillId }, skillValue) : { id: skillId, name: titleCase(skillId), shortName: titleCase(skillId) };
     var career = item.career || item.careerMatch || item.outcome || fallback.career || null;
     if (typeof career === 'string') career = { title: career };
     var mini = item.miniGame || item.minigame || item.challenge || fallback.miniGame || {};
@@ -211,56 +235,77 @@
       { id: 'comet', label: 'Comet', glyph: '✦' }, { id: 'pixel', label: 'Pixel', glyph: '▦' },
       { id: 'sprout', label: 'Sprout', glyph: '✿' }, { id: 'orbit', label: 'Orbit', glyph: '◉' }
     ];
-    return '<section class="screen screen--landing" aria-labelledby="welcome-title">' +
+    return '<section class="screen hero-screen screen--landing" aria-labelledby="welcome-title">' +
       '<div class="landing-sky" aria-hidden="true"><span class="star star--one"></span><span class="star star--two"></span><span class="star star--three"></span><span class="planet"></span></div>' +
-      '<div class="landing-copy"><p class="eyebrow">INFORMATION SYSTEMS / FIELD GUIDE 01</p><h1 id="welcome-title">Find the work<br><em>that feels like you.</em></h1><p class="lede">Build a little world of skills, follow your curiosity, and meet the IS career paths waiting on the other side.</p>' +
-      '<form id="start-form" class="start-card"><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><fieldset><legend>Choose your explorer</legend><div class="avatar-grid">' + avatars.map(function (avatar) { return '<button class="avatar-choice' + (state.avatar === avatar.id ? ' is-selected' : '') + '" type="button" data-action="choose-avatar" data-avatar="' + avatar.id + '" aria-pressed="' + (state.avatar === avatar.id) + '"><span class="avatar-glyph" aria-hidden="true">' + avatar.glyph + '</span><span>' + avatar.label + '</span></button>'; }).join('') + '</div></fieldset><button class="button button--primary button--wide" type="submit">Enter the field guide <span aria-hidden="true">↗</span></button></form>' +
+      '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS / FIELD GUIDE 01</p><h1 id="welcome-title" class="screen-title">Find the work<br><em>that feels like you.</em></h1><p class="screen-subtitle">Build a little world of skills, follow your curiosity, and meet the IS career paths waiting on the other side.</p>' +
+      '<form id="start-form" class="launch-card"><p class="card-label">Start your field guide</p><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><fieldset><legend>Choose your explorer</legend><div class="avatar-grid">' + avatars.map(function (avatar) { return '<button class="avatar-choice' + (state.avatar === avatar.id ? ' is-selected' : '') + '" type="button" data-action="choose-avatar" data-avatar="' + avatar.id + '" aria-pressed="' + (state.avatar === avatar.id) + '"><span class="avatar-portrait" aria-hidden="true">' + avatar.glyph + '</span><span class="avatar-name">' + avatar.label + '</span><small class="avatar-tag">ready to explore</small></button>'; }).join('') + '</div></fieldset><button class="button button--primary button--wide" type="submit">Enter the field guide <span aria-hidden="true">↗</span></button></form>' +
       (state.name ? '<button class="text-button" data-action="resume">Resume ' + escapeHtml(state.name) + '’s journey</button>' : '') + '</div>' +
       '<p class="landing-note">A short, self-guided exploration · no wrong turns</p></section>';
   }
 
   function renderMap() {
     var allComplete = state.completed.length;
-    return '<section class="screen screen--map" aria-labelledby="map-title"><header class="topbar"><div><p class="eyebrow">FIELD GUIDE / MAP ' + (allComplete ? '· ' + allComplete + ' SKILL' + (allComplete === 1 ? '' : 'S') + ' FOUND' : '') + '</p><h1 id="map-title">Which kind of work<br><em>gives you energy?</em></h1></div><button class="button button--quiet" data-action="restart">Start over</button></header><p class="map-instruction">Choose the next point that feels natural. Every stop is a tiny planned challenge—and every skip still teaches your stack something.</p><div class="world-map" role="tree" aria-label="Career path map">' + model.regions.map(renderRegion).join('') + '</div><div class="map-legend"><span class="legend-dot legend-dot--open"></span> Open route <span class="legend-dot legend-dot--done"></span> Explored <span class="legend-dot legend-dot--future"></span> Ahead</div></section>';
+    return '<section class="screen map-screen screen--map" aria-labelledby="map-title"><div class="map-intro"><div><p class="screen-kicker">FIELD GUIDE / MAP</p><h1 id="map-title" class="screen-title">Which kind of work<br><em>gives you energy?</em></h1><p class="screen-subtitle">Choose a point that feels natural. Every stop is a planned sixty-second challenge.</p></div><div class="map-progress"><strong>' + allComplete + ' discoveries</strong><span>Every skip grows your stack.</span></div></div><div class="map-legend"><span class="legend-open"><i></i> Open route</span><span class="legend-done"><i></i> Explored</span><span class="legend-lock"><i></i> Ahead</span></div><div class="map-board" role="tree" aria-label="Career path map"><div class="map-start"><small>START / ' + escapeHtml(state.name || 'EXPLORER') + '</small><strong>What gives you energy?</strong></div><div class="map-regions">' + model.regions.map(renderRegion).join('') + '</div><div class="map-footer">SKIP A CHALLENGE · ADD A SKILL · FIND YOUR NEXT PATH</div></div></section>';
   }
 
   function renderRegion(region) {
     var open = isVisible(region);
-    return '<div class="map-region map-region--' + escapeAttr(slug(region.id)) + (open ? '' : ' is-future') + '" role="treeitem" aria-expanded="' + (open && region.children.length > 0) + '"><button class="region-ribbon" type="button" data-action="open-node" data-node-id="' + escapeAttr(region.id) + '" ' + (open ? '' : 'disabled') + ' style="--region-color:' + escapeAttr(region.color || '#5b8def') + '" aria-label="' + escapeAttr(region.title + ', earns ' + skillFor(region).name) + '"><span class="region-index">' + escapeHtml(region.number || region.id.split('-')[0] || '') + '</span><span><strong>' + escapeHtml(region.title) + '</strong><small>' + escapeHtml(region.subtitle || region.description || '') + '</small></span><span class="region-skill">+' + escapeHtml(skillFor(region).name) + '</span><span class="node-status" aria-hidden="true">' + (isCompleted(region.id) ? '✓' : '↗') + '</span></button><div class="map-children">' + region.children.map(function (child) { return renderDomain(child, region); }).join('') + '</div></div>';
+    return '<div class="map-region map-region--' + escapeAttr(slug(region.id)) + (open ? '' : ' is-future') + '" role="treeitem" aria-expanded="' + (open && region.children.length > 0) + '"><button class="region-card region-ribbon" type="button" data-action="open-node" data-node-id="' + escapeAttr(region.id) + '" ' + (open ? '' : 'disabled') + ' style="--region-color:' + escapeAttr(region.color || '#5b8def') + '" aria-label="' + escapeAttr(region.title + ', earns ' + skillFor(region).name) + '"><span class="region-index">' + escapeHtml(region.number || region.id.split('-')[0] || '') + '</span><span><h2>' + escapeHtml(region.title) + '</h2><p>' + escapeHtml(region.subtitle || region.description || '') + '</p></span><span class="region-skill">+' + escapeHtml(skillFor(region).name) + '</span><span class="node-status" aria-hidden="true">' + (isCompleted(region.id) ? '✓' : '↗') + '</span></button><div class="map-domain-group">' + region.children.map(function (child) { return renderDomain(child, region); }).join('') + '</div></div>';
   }
 
   function renderDomain(node, region) {
     var open = isVisible(node);
     var done = isCompleted(node.id);
-    return '<div class="map-domain ' + (open ? 'is-open' : 'is-future') + ' ' + (done ? 'is-complete' : '') + '" role="treeitem" aria-expanded="' + (open && node.children.length > 0) + '"><button class="map-node map-node--domain" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + (done ? ', explored' : '')) + '"><span class="node-number">' + escapeHtml(node.id) + '</span><span class="node-title">' + escapeHtml(node.title) + '</span><span class="node-subtitle">' + escapeHtml(node.subtitle || '') + '</span><span class="node-reward">+' + escapeHtml(skillFor(node).name) + '</span><span class="node-status" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button><div class="map-specializations">' + node.children.map(renderSpecialization).join('') + '</div></div>';
+    return '<div class="map-domain ' + (open ? 'is-open' : 'is-locked') + ' ' + (done ? 'is-complete' : '') + '" role="treeitem" aria-expanded="' + (open && node.children.length > 0) + '"><button class="map-node map-node--domain" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + (done ? ', explored' : '')) + '"><strong>' + escapeHtml(node.title) + '</strong><small>' + escapeHtml(node.subtitle || '') + '</small><span class="node-state" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button><div class="specialization-row">' + node.children.map(renderSpecialization).join('') + '</div></div>';
   }
 
   function renderSpecialization(node) {
     var open = isVisible(node), done = isCompleted(node.id);
-    return '<button class="map-node map-node--specialization ' + (open ? 'is-open' : 'is-future') + ' ' + (done ? 'is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + ', ' + (node.career && (node.career.title || node.career.name) || 'career match')) + '"><span class="node-number">' + escapeHtml(node.id) + '</span><span class="node-title">' + escapeHtml(node.title) + '</span><span class="node-career">' + escapeHtml(node.career && (node.career.title || node.career.name) || 'Career match') + '</span><span class="node-reward">+' + escapeHtml(skillFor(node).name) + '</span><span class="node-status" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button>';
+    return '<button class="map-node map-node--specialization ' + (open ? 'is-open' : 'is-locked') + ' ' + (done ? 'is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + ', ' + (node.career && (node.career.title || node.career.name) || 'career match')) + '"><strong>' + escapeHtml(node.title) + '</strong><small>' + escapeHtml(node.career && (node.career.title || node.career.name) || 'Career match') + '</small><span class="node-state" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button>';
   }
 
   function renderMiniGame(node) {
     if (!node) return renderMap();
     var skill = skillFor(node), mini = node.miniGame || {};
     var done = isCompleted(node.id);
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + (done ? 'EXPLORED' : 'NEXT STOP') + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / PLANNED MINI-GAME</p><h1 id="challenge-title">' + escapeHtml(mini.title || node.title) + '</h1><p class="lede">' + escapeHtml(mini.description || 'A focused, sixty-second activity is planned for this point on the map.') + '</p><div class="reward-callout"><span class="hex hex--small" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><div><span class="eyebrow">YOU WILL ADD</span><strong>' + escapeHtml(skill.name) + '</strong><p>One more tile in your growing skill stack.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="skip-node">' + (done ? 'Keep this skill' : 'Skip for now') + ' <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE</span><h2>' + escapeHtml(mini.title || 'Mini-game') + '</h2><p>Placeholder ready for a future interactive build.</p><div class="placeholder-meta"><span>~ 60 sec</span><span>skill reward</span></div></div></div></div></section>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + (done ? 'EXPLORED' : 'NEXT STOP') + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / PLANNED MINI-GAME</p><h1 id="challenge-title">' + escapeHtml(mini.title || node.title) + '</h1><p class="lede">' + escapeHtml(mini.description || mini.concept || 'A focused, sixty-second activity is planned for this point on the map.') + '</p><div class="reward-callout"><span class="hex hex--small" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><div><span class="eyebrow">YOU WILL ADD</span><strong>' + escapeHtml(skill.name) + '</strong><p>One more tile in your growing skill stack.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="skip-node">' + (done ? 'Keep this skill' : 'Skip for now') + ' <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE</span><h2>' + escapeHtml(mini.title || 'Mini-game') + '</h2><p>Placeholder ready for a future interactive build.</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>skill reward</span></div></div></div></div></section>';
   }
 
   function renderCareer(node) {
     var career = node && node.career || { title: 'Career match', whatTheyDo: 'A career path is ready to explore.' };
     var title = career.title || career.name || 'Career match';
+    var candidate = career.candidate || career.strongCandidate;
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) candidate = (candidate.skills || []).concat(candidate.experience || [], candidate.projects || [], candidate.certifications || []);
     var lists = [
       ['Day to day', career.responsibilities || career.dayToDay], ['Typical projects', career.projects || career.typicalProjects],
-      ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.tools || career.technologies],
-      ['Strong candidate', career.candidate || career.strongCandidate]
+      ['Where they work', career.workplace || career.workSettings], ['Industries', career.industries], ['Company types', career.companies || career.companyTypes],
+      ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.tools || career.toolsAndTechnologies || career.technologies],
+      ['Entry-level needs', career.entryLevel || career.entryLevelNeeds], ['Strong candidate', candidate]
     ];
-    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><div class="career-actions"><button class="button button--quiet" data-action="restart">Restart</button></div></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node && node.id || '') + ' / CAREER MATCH</p><h1 id="career-title">' + escapeHtml(title) + '</h1><p class="lede">' + escapeHtml(career.whatTheyDo || career.summary || 'Explore the kind of work this path opens up.') + '</p><div class="career-hero-meta"><span>Skill unlocked: <strong>' + escapeHtml(skillFor(node).name) + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return renderFact(pair[0], pair[1]); }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(career.salary || 'See sources for current ranges') + '</strong><small>Use as a starting point, not a promise.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(career.growth || career.careerGrowth || 'Build experience, then choose your next direction.') + '</p></div><button class="button button--primary button--wide" data-action="explore-another">Explore another path ↗</button><button class="text-button" data-action="back-map">View the full map</button></aside></div></section>';
+    return '<section class="screen career-layout screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><div class="career-actions"><button class="button button--quiet" data-action="restart">Restart</button></div></header><div class="career-identity"><span class="mini-glyph" aria-hidden="true">✦</span><p class="eyebrow">' + escapeHtml(node && node.id || '') + ' / CAREER MATCH</p><h1 id="career-title">' + escapeHtml(title) + '</h1><p>' + escapeHtml(career.whatTheyDo || career.summary || 'Explore the kind of work this path opens up.') + '</p><div class="career-pill-row"><span class="career-pill">Skill: ' + escapeHtml(skillFor(node).name) + '</span><span class="career-pill">Path complete ✓</span></div></div><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact-card"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><div class="career-actions"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(formatSalary(career.salary)) + '</strong><small>Use as a starting point, not a promise.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.growth || career.careerGrowth || 'Build experience, then choose your next direction.')) + '</p></div><button class="button button-coral" data-action="explore-another">Explore another path ↗</button><button class="button button-secondary" data-action="back-map">View the full map</button></div></section>';
   }
 
   function renderFact(label, value) {
     var values = Array.isArray(value) ? value : (value ? [value] : ['Add this detail in the content file.']);
     return '<section class="fact"><h2>' + escapeHtml(label) + '</h2><ul>' + values.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul></section>';
+  }
+
+  function renderFactList(value) {
+    var values = Array.isArray(value) ? value : (value ? [value] : ['Add this detail in the content file.']);
+    return '<ul>' + values.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul>';
+  }
+
+  function formatList(value) { return Array.isArray(value) ? value.join(' · ') : String(value || ''); }
+
+  function formatSalary(salary) {
+    if (!salary) return 'Research pending';
+    if (typeof salary === 'string') return salary;
+    if (typeof salary === 'object') {
+      var range = salary.range || salary.entryRange || salary.amount;
+      if (range) return String(range) + (salary.note ? ' · ' + String(salary.note) : '');
+      if (salary.status === 'research-pending') return 'Research pending';
+    }
+    return 'Research pending';
   }
 
   function renderDock() {
@@ -269,10 +314,10 @@
     var items = earned.map(function (entry, index) {
       var skill = model.skills[entry.skillId] || { id: entry.skillId, name: titleCase(entry.skillId), color: '#f6c453' };
       var node = findNode(entry.nodeId);
-      return '<button class="skill-hex' + (index === earned.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-skill-id="' + escapeAttr(skill.id) + '" aria-label="' + escapeAttr(skill.name + ' skill, earned from ' + (node ? node.title : 'your journey')) + '" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '"><span aria-hidden="true">✦</span><strong>' + escapeHtml(skill.shortName || skill.name) + '</strong></button>';
+      return '<button class="hex-item' + (index === earned.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-skill-id="' + escapeAttr(skill.id) + '" aria-label="' + escapeAttr(skill.name + ' skill, earned from ' + (node ? node.title : 'your journey')) + '" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '"><span aria-hidden="true">✦</span><strong>' + escapeHtml(skill.shortName || skill.name) + '</strong><small>' + escapeHtml(skill.category || 'discovery') + '</small></button>';
     });
     dock.className = 'skill-dock' + (items.length ? ' has-skills' : '');
-    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="eyebrow">SKILL STACK</span><span>' + (items.length ? items.length + ' discovered' : 'Your stack starts here') + '</span></div><div class="skill-honeycomb" aria-label="Skills earned during this journey">' + (items.length ? items.join('') : '<div class="empty-stack"><span class="hex hex--ghost" aria-hidden="true">+</span><span>Skip a planned challenge to add your first skill</span></div>') + '</div></div>';
+    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2>SKILL STACK</h2><p>' + (items.length ? items.length + ' discovered' : 'Your launch kit is empty') + '</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Skills earned during this journey">' + (items.length ? items.join('') : '<div class="hex-empty" role="listitem"><span aria-hidden="true">+</span><span>Earn skills<br>as you explore</span></div>') + '</div><div class="dock-tip"><span aria-hidden="true">⌁</span> Each mission adds a new edge</div></div>';
   }
 
   // ---------- Events and transitions --------------------------------------------
