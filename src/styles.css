@@ -819,6 +819,15 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 .skill-dock.dock--inline .hex-item strong { font-size: 10px; }
 .skill-dock.dock--inline .hex-item small { font-size: 8px; }
 
+/* Condensed display caps rise above their line box. Reserve an intentional
+   label band so route IDs stay legible instead of visually merging into them. */
+.challenge-copy > .eyebrow,
+.career-hero > .eyebrow {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 12px;
+}
+
 @media (max-width: 767px) {
   .world-milestones { display: flex; }
   .world-landmark:not(.start-camp) small { font-size: 10px; }

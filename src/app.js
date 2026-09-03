@@ -610,7 +610,7 @@
     dock.classList.toggle('has-skills', items.length > 0);
     var shortLandscape = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
     var interviewScreen = /^interview-/.test(state.screen || '');
-    var inlineDock = interviewScreen || window.innerWidth <= 560 || shortLandscape;
+    var inlineDock = state.screen === 'career' || interviewScreen || window.innerWidth <= 560 || shortLandscape;
     var screenClass = 'dock--screen-' + slug(state.screen || 'landing');
     ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].forEach(function (screen) {
       dock.classList.remove('dock--screen-' + slug(screen));

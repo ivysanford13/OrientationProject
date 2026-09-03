@@ -325,6 +325,53 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(errors)
 
+    def test_result_dock_and_pretitle_labels_keep_clear_reading_bands(self) -> None:
+        """Protect the desktop result card and the small labels above display caps."""
+
+        failures: list[str] = []
+        all_errors: list[str] = []
+        for width, height in ((320, 568), (390, 844), (844, 390), (1440, 900)):
+            page, errors = self.new_page(width, height)
+            all_errors.extend(errors)
+
+            career = self.state_for_screen(page, "career")
+            self.load_state(page, career, ".screen--career")
+            self.assert_zero_overlap(
+                page.locator("#skill-dock"),
+                page.locator(".practice-card"),
+                f"{width}x{height} result dock/practice card",
+            )
+
+            for label_selector, title_selector, screen_label in (
+                (".career-hero > .eyebrow", "#career-title", "career"),
+            ):
+                label_box = page.locator(label_selector).bounding_box()
+                title_box = page.locator(title_selector).bounding_box()
+                self.assertIsNotNone(label_box)
+                self.assertIsNotNone(title_box)
+                gap = title_box["y"] - (label_box["y"] + label_box["height"])
+                if gap < 8:
+                    failures.append(
+                        f"{width}x{height} {screen_label} pretitle gap={gap:.1f}px"
+                    )
+
+            challenge = self.base_state(page, "region-build-create", stage=0)
+            challenge["screen"] = "mini"
+            challenge["selectedNodeId"] = "region-build-create"
+            self.load_state(page, challenge, ".screen--challenge")
+            label_box = page.locator(".challenge-copy > .eyebrow").bounding_box()
+            title_box = page.locator("#challenge-title").bounding_box()
+            self.assertIsNotNone(label_box)
+            self.assertIsNotNone(title_box)
+            gap = title_box["y"] - (label_box["y"] + label_box["height"])
+            if gap < 8:
+                failures.append(
+                    f"{width}x{height} challenge pretitle gap={gap:.1f}px"
+                )
+
+        self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(all_errors)
+
     def test_each_primary_screen_starts_at_scroll_zero_on_phone(self) -> None:
         page, errors = self.new_page(390, 844)
         selectors = {

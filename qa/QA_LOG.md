@@ -227,3 +227,10 @@ Result: **32/32 PASS**
 - assert: targets >=44px; HUD labels >=10/8px; normal CTA text contrast >=4.5:1
 - result: touch targets >=44px, HUD text >=10/8px, career CTA contrast=6.54:1
 - duration: 6332 ms
+
+## 33. Career-result hierarchy and pre-title clearance — PASS
+- inspect: career practice card, skill tray, and compact route labels at 320×568, 390×844, 844×390, and 1440×900
+- action: move the result tray into document flow and reserve a reading band above large display headlines
+- assert: tray has zero overlap with the practice card; career and challenge pre-title labels retain at least 8px of geometric clearance
+- result: all four viewports passed with no browser or console errors; full automated suite passed 41/41
+- duration: 12589 ms targeted; 244529 ms full suite

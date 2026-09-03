@@ -51,6 +51,8 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Programmatic focus after screen changes should use `preventScroll` and reset the new screen to the top.
 - Skill rewards use the supplied deep-blue enamel hexagon language: pale keyline, dark outline, line-art pictogram, condensed uppercase label, and honeycomb stacking.
 - The supplied pixel-art BYU cougar is the only explorer avatar; it appears consistently on the landing page, map, and reflection checkpoints.
+- Career results keep the skill tray in normal document flow; a fixed bottom-right tray can obscure the interview-practice card on desktop.
+- Small route labels above condensed display headlines need a reserved vertical band because the cap glyphs visually rise beyond their line box.
 - Embed shared binary art once per standalone build and reuse its data-URI constant across renderers; repeated inline copies unnecessarily inflate the HTML.
 - After replacing a screen's DOM, treat focus left on a detached trigger as stale; move focus to the new heading so keyboard and screen-reader users receive the new context.
 - Map decision titles must wrap in full at every supported viewport; ellipses hide the meaning of a route and make the choice depend on guessing.

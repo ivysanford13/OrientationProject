@@ -827,6 +827,15 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 .skill-dock.dock--inline .hex-item strong { font-size: 10px; }
 .skill-dock.dock--inline .hex-item small { font-size: 8px; }
 
+/* Condensed display caps rise above their line box. Reserve an intentional
+   label band so route IDs stay legible instead of visually merging into them. */
+.challenge-copy > .eyebrow,
+.career-hero > .eyebrow {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 12px;
+}
+
 @media (max-width: 767px) {
   .world-milestones { display: flex; }
   .world-landmark:not(.start-camp) small { font-size: 10px; }
@@ -3345,7 +3354,7 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
     dock.classList.toggle('has-skills', items.length > 0);
     var shortLandscape = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
     var interviewScreen = /^interview-/.test(state.screen || '');
-    var inlineDock = interviewScreen || window.innerWidth <= 560 || shortLandscape;
+    var inlineDock = state.screen === 'career' || interviewScreen || window.innerWidth <= 560 || shortLandscape;
     var screenClass = 'dock--screen-' + slug(state.screen || 'landing');
     ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].forEach(function (screen) {
       dock.classList.remove('dock--screen-' + slug(screen));
