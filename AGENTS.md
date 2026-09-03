@@ -81,5 +81,6 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Starter-skill toggles update their cards, counter, action state, and honeycomb in place; never rerender the full screen or reset scroll for a loadout click.
 - A map destination click begins travel inside the existing world DOM so the panorama, viewport, and controls do not flash or jump.
 - The starter-skill picker uses scaled crops of the supplied badge artwork; do not substitute reconstructed CSS or SVG badges there.
+- Minecraft-inspired mini-games should use a strict pixel-grid language: square terrain tiles, layered oak foliage and bark, nine hotbar slots, beveled crafting slots, and recognizable item silhouettes rather than soft generic block art.
 - Every earned skill, including Cloud Builder, must use normalized badge artwork from the shared deep-blue hexagon set; never mix a CSS fallback into the honeycomb.
 - Interview prep must visibly balance behavioral evidence, role-specific technical judgment, and technical growth; feedback should name the evidence gap, explain why it weakens the answer, and prescribe a concrete revision.

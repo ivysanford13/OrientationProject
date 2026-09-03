@@ -349,6 +349,19 @@ class QARunner:
         page.locator('[data-action="finish-game"]').click()
 
     @staticmethod
+    def solve_cpu_game(page: Page) -> None:
+        """Select the two grid tiles authored to contain the processor."""
+
+        for grid_index in (1, 4):
+            page.locator(f'[data-cpu-grid-cell="{grid_index}"]').click()
+        continue_button = page.get_by_role(
+            "button", name=re.compile("Continue to enjoyment check")
+        )
+        if continue_button.count() != 1:
+            raise AssertionError("CPU task did not reveal its continue action")
+        continue_button.click()
+
+    @staticmethod
     def solve_slide_game(page: Page) -> None:
         """Build the briefing slide and complete its four-question review."""
 
@@ -384,6 +397,8 @@ class QARunner:
             return
         if page.locator(".minecraft-game").count():
             QARunner.solve_minecraft_door_game(page)
+        elif page.locator(".cpu-workspace").count():
+            QARunner.solve_cpu_game(page)
         elif page.locator(".jigsaw-console").count():
             QARunner.solve_jigsaw(page)
         elif page.locator(".team-builder-game").count():
