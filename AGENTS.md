@@ -65,3 +65,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Programmatically focused screen headings should announce context without rendering a control-style focus rectangle; reserve visible rings for interactive elements.
 - The skill HUD is a true two-row honeycomb, not a horizontal carousel: preserve the supplied tall hex proportions and stable cell positions as rewards are added.
 - Each career region is one traversable panorama: advancing a chapter pans the camera deeper into the same world while the cougar travels between route stops; do not revert to static stage backdrops.
+- Chapter changes must read as full scene transitions, not subtle pans: keep the default map camera tightly zoomed and use substantial lateral travel plus a brief push-in before revealing the new fork.

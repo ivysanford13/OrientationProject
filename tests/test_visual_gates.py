@@ -631,14 +631,19 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         """Require one persistent panorama to pan as the route goes deeper."""
 
         page, errors = self.new_page(1440, 900)
-        transforms: list[str] = []
+        camera_frames: list[dict[str, float]] = []
         for stage in (0, 1, 2):
             state = self.base_state(page, "region-build-create", stage=stage)
             self.load_state(page, state, ".screen--map")
             panorama = page.locator(".world-panorama")
             self.assertEqual(panorama.count(), 1)
-            transforms.append(
-                panorama.evaluate("element => getComputedStyle(element).transform")
+            camera_frames.append(
+                panorama.evaluate(
+                    """element => {
+                        const matrix = new DOMMatrix(getComputedStyle(element).transform);
+                        return { scale: matrix.a, x: matrix.e };
+                    }"""
+                )
             )
 
             meter = page.locator(".journey-meter li")
@@ -647,7 +652,10 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             self.assertIn("is-current", meter.nth(stage).get_attribute("class") or "")
             self.assertEqual(page.locator(".journey-meter li.is-complete").count(), stage)
 
-        self.assertEqual(len(set(transforms)), 3, transforms)
+        rounded_x = {round(frame["x"], 1) for frame in camera_frames}
+        self.assertEqual(len(rounded_x), 3, camera_frames)
+        self.assertTrue(all(frame["scale"] >= 1.2 for frame in camera_frames), camera_frames)
+        self.assertGreater(abs(camera_frames[0]["x"] - camera_frames[2]["x"]), 200, camera_frames)
 
         travel_state = self.base_state(page, "region-build-create", stage=1)
         self.load_state(page, travel_state, ".screen--map")

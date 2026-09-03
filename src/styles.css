@@ -1672,9 +1672,19 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 /* One landscape persists across all three chapters. The camera pans deeper  */
 /* into it while the semantic route cards and cougar remain crisp controls.  */
 /* -------------------------------------------------------------------------- */
-.rpg-world { --camera-x: 4%; }
-.rpg-world.stage-1 { --camera-x: 0%; }
-.rpg-world.stage-2 { --camera-x: -4%; }
+.rpg-world {
+  --camera-x: 11%;
+  --camera-scale: 1.24;
+  --depth-counter-x: -3%;
+}
+.rpg-world.stage-1 {
+  --camera-x: 0%;
+  --depth-counter-x: 0%;
+}
+.rpg-world.stage-2 {
+  --camera-x: -11%;
+  --depth-counter-x: 3%;
+}
 
 .world-panorama {
   position: absolute;
@@ -1682,7 +1692,7 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
   inset: -4%;
   overflow: visible;
   pointer-events: none;
-  transform: translate3d(var(--camera-x), 0, 0) scale(1.08);
+  transform: translate3d(var(--camera-x), 0, 0) scale(var(--camera-scale));
   transform-origin: 50% 58%;
   will-change: transform;
 }
@@ -1706,22 +1716,35 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 .world-panorama > .world-atlas,
 .world-panorama > .world-sky { inset: 0; }
 
+.world-panorama .atlas-color-grade,
+.world-panorama .atlas-contours {
+  transform: translate3d(var(--depth-counter-x), 0, 0) scale(1.045);
+  transform-origin: center;
+}
+
 .rpg-world.stage-1.is-shifting .world-panorama {
-  animation: camera-advance-one 1.35s cubic-bezier(.2,.76,.18,1) both;
+  animation: camera-advance-one 1.7s cubic-bezier(.18,.78,.16,1) both;
 }
 
 .rpg-world.stage-2.is-shifting .world-panorama {
-  animation: camera-advance-two 1.35s cubic-bezier(.2,.76,.18,1) both;
+  animation: camera-advance-two 1.7s cubic-bezier(.18,.78,.16,1) both;
 }
 
 .rpg-world.is-traveling .world-panorama {
-  animation: camera-follow 1.55s cubic-bezier(.22,.68,.2,1) both;
+  animation: camera-follow 1.75s cubic-bezier(.18,.74,.16,1) both;
 }
 
-.map-avatar.is-traveling { animation-duration: 1.55s; }
-.map-avatar.is-traveling::before { animation-duration: 1.55s; }
-.map-avatar.is-traveling .avatar-shell { animation: explorer-lean 1.55s cubic-bezier(.22,.68,.2,1) both; }
-.travel-banner i { animation-duration: 1.55s; }
+.map-avatar.is-traveling { animation-duration: 1.75s; }
+.map-avatar.is-traveling::before { animation-duration: 1.75s; }
+.map-avatar.is-traveling .avatar-shell { animation: explorer-lean 1.75s cubic-bezier(.18,.74,.16,1) both; }
+.travel-banner i { animation-duration: 1.75s; }
+
+.rpg-world.is-shifting .quest-path { animation: shifted-route-arrival 1.35s cubic-bezier(.2,.75,.2,1) both; }
+.rpg-world.is-shifting .world-stop--choice {
+  animation: destination-card-arrival .72s cubic-bezier(.2,.9,.28,1.16) .72s both;
+}
+.rpg-world.is-shifting .world-stop--choice:nth-of-type(even) { animation-delay: .86s; }
+.rpg-world.is-shifting .world-stage-label { animation: chapter-hud-arrival .6s ease-out .68s both; }
 
 .journey-meter {
   display: flex;
@@ -1808,21 +1831,21 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 .journey-meter .is-current small { color: #eefaff; }
 
 @keyframes camera-advance-one {
-  from { transform: translate3d(4%, 0, 0) scale(1.08); }
-  42% { transform: translate3d(1.5%, -.8%, 0) scale(1.14); filter: saturate(1.12) brightness(.9); }
-  to { transform: translate3d(0, 0, 0) scale(1.08); }
+  from { transform: translate3d(11%, 0, 0) scale(1.24); }
+  48% { transform: translate3d(5%, -1.4%, 0) scale(1.43); filter: saturate(1.18) contrast(1.05) brightness(.82); }
+  to { transform: translate3d(0, 0, 0) scale(1.24); }
 }
 
 @keyframes camera-advance-two {
-  from { transform: translate3d(0, 0, 0) scale(1.08); }
-  42% { transform: translate3d(-2%, -.8%, 0) scale(1.14); filter: saturate(1.12) brightness(.9); }
-  to { transform: translate3d(-4%, 0, 0) scale(1.08); }
+  from { transform: translate3d(0, 0, 0) scale(1.24); }
+  48% { transform: translate3d(-5.5%, -1.4%, 0) scale(1.43); filter: saturate(1.18) contrast(1.05) brightness(.82); }
+  to { transform: translate3d(-11%, 0, 0) scale(1.24); }
 }
 
 @keyframes camera-follow {
-  from { transform: translate3d(var(--camera-x), 0, 0) scale(1.08); }
-  48% { transform: translate3d(calc(var(--camera-x) - 1.8%), -.7%, 0) scale(1.145); filter: saturate(1.15) brightness(.86); }
-  to { transform: translate3d(var(--camera-x), 0, 0) scale(1.08); }
+  from { transform: translate3d(var(--camera-x), 0, 0) scale(1.24); }
+  52% { transform: translate3d(calc(var(--camera-x) - 4.5%), -1.2%, 0) scale(1.4); filter: saturate(1.2) contrast(1.04) brightness(.8); }
+  to { transform: translate3d(var(--camera-x), 0, 0) scale(1.24); }
 }
 
 @keyframes explorer-lean {
@@ -1834,6 +1857,22 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 @keyframes world-motes {
   from { transform: translate3d(0, 8px, 0); }
   to { transform: translate3d(-28px, -16px, 0); }
+}
+
+@keyframes shifted-route-arrival {
+  from { opacity: .08; transform: translateX(7%) scale(.97); }
+  58% { opacity: .28; }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes destination-card-arrival {
+  from { opacity: 0; transform: translate(calc(-50% + 70px), calc(-50% + 8px)) scale(.88); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes chapter-hud-arrival {
+  from { opacity: 0; transform: translateY(-12px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @media (max-width: 430px) {
@@ -1848,8 +1887,11 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
   .rpg-world.stage-2.is-shifting .world-panorama,
   .rpg-world.is-traveling .world-panorama {
     animation: none;
-    transform: translate3d(var(--camera-x), 0, 0) scale(1.08);
+    transform: translate3d(var(--camera-x), 0, 0) scale(var(--camera-scale));
   }
   .world-panorama::after,
-  .map-avatar.is-traveling .avatar-shell { animation: none; }
+  .map-avatar.is-traveling .avatar-shell,
+  .rpg-world.is-shifting .quest-path,
+  .rpg-world.is-shifting .world-stop--choice,
+  .rpg-world.is-shifting .world-stage-label { animation: none; }
 }

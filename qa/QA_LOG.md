@@ -255,3 +255,10 @@ Result: **32/32 PASS**
 - assert: every chapter has a distinct spatial camera position; travel moves the cougar toward one highlighted destination without disturbing route or HUD geometry
 - result: three distinct camera positions and the complete travel state passed; full automated suite passed 43/43
 - duration: 262442 ms
+
+## 37. Cinematic full-scene chapter shift — PASS
+- inspect: tightly framed default camera, first-to-last chapter displacement, push-in transition, parallax overlays, and delayed destination reveal
+- action: measure all three settled camera matrices and capture the opening, travel, and mid-transition states before rerunning the full release suite
+- assert: default camera scale is at least 1.2; first and last chapters are separated by more than 200px; route choices and skill HUD remain collision-free
+- result: 1.24x settled zoom, 1.43x transition push-in, and greater-than-200px chapter travel passed; full automated suite passed 43/43
+- duration: 249595 ms

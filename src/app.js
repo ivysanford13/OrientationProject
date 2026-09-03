@@ -785,7 +785,7 @@
     travelTimer = window.setTimeout(function () {
       state.screen = 'mini'; state.travelTargetId = null; state.travelFromId = null; saveState(); render();
       announce(node.title + ' challenge opened.');
-    }, prefersReducedMotion ? 70 : 1580);
+    }, prefersReducedMotion ? 70 : 1780);
   }
 
   function completeNode(id) {
