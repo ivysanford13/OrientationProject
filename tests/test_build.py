@@ -38,6 +38,21 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn("__INLINE_CSS__", document)
         self.assertNotIn("__INLINE_DATA__", document)
         self.assertNotIn("__INLINE_APP__", document)
+        self.assertNotIn("__EXPLORER_AVATAR_DATA_URI__", document)
+
+    def test_build_embeds_one_sized_cougar_asset(self) -> None:
+        """Keep the single-file avatar efficient and layout-stable."""
+
+        build_module = load_build_module()
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "index.html"
+            build_module.build(output)
+            document = output.read_text(encoding="utf-8")
+            output_size = output.stat().st_size
+
+        self.assertEqual(document.count("data:image/png;base64,"), 1)
+        self.assertIn('width="1254" height="1254"', document)
+        self.assertLess(output_size, 1_600_000)
 
     def test_build_has_no_external_runtime_dependencies(self) -> None:
         build_module = load_build_module()

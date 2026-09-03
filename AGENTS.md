@@ -51,3 +51,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Programmatic focus after screen changes should use `preventScroll` and reset the new screen to the top.
 - Skill rewards use the supplied deep-blue enamel hexagon language: pale keyline, dark outline, line-art pictogram, condensed uppercase label, and honeycomb stacking.
 - The supplied pixel-art BYU cougar is the only explorer avatar; it appears consistently on the landing page, map, and reflection checkpoints.
+- Embed shared binary art once per standalone build and reuse its data-URI constant across renderers; repeated inline copies unnecessarily inflate the HTML.
