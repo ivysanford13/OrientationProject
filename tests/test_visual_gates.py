@@ -134,7 +134,7 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             "version": 2,
             "screen": "map",
             "name": "Visual QA",
-            "avatar": "comet",
+            "avatar": "cougar",
             "starterSkills": STARTER_LOADOUTS[region_id],
             "recommendedRegionId": region_id,
             "activeRegionId": region_id,
@@ -166,7 +166,7 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
                 "version": 2,
                 "screen": "landing",
                 "name": "",
-                "avatar": "comet",
+                "avatar": "cougar",
                 "starterSkills": [],
                 "recommendedRegionId": None,
                 "activeRegionId": None,
@@ -627,6 +627,38 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(reflection_avatar.count(), 1)
         self.assertEqual(reflection_avatar.get_attribute("src"), source)
         self.assert_clean(errors)
+
+    def test_reflection_cougar_frames_copy_without_covering_choices(self) -> None:
+        """Keep the checkpoint guide prominent and clear of decision content."""
+
+        failures: list[str] = []
+        all_errors: list[str] = []
+        for width, height in ((320, 568), (390, 844), (1440, 1000)):
+            page, errors = self.new_page(width, height)
+            all_errors.extend(errors)
+            reflection = self.state_for_screen(page, "reflection")
+            self.load_state(page, reflection, ".screen--reflection")
+
+            avatar = page.locator(".reflection-avatar .explorer-avatar")
+            avatar_box = avatar.bounding_box()
+            if not avatar_box or avatar_box["width"] < 70 or avatar_box["height"] < 70:
+                failures.append(f"{width}x{height} reflection cougar is not visually prominent")
+                continue
+
+            targets = {
+                "checkpoint label": page.locator(".reflection-card .screen-kicker"),
+                "reflection title": page.locator("#reflection-title"),
+                "first choice": page.locator(".reflection-choice").first,
+            }
+            for label, target in targets.items():
+                overlap = self.overlap_area(avatar, target)
+                if overlap > 0.5:
+                    failures.append(
+                        f"{width}x{height} cougar/{label} overlap={overlap:.1f}px²"
+                    )
+
+        self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(all_errors)
 
 
 if __name__ == "__main__":
