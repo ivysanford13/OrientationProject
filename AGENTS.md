@@ -68,6 +68,8 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Chapter changes must read as full scene transitions, not subtle pans: keep the default map camera tightly zoomed and use substantial lateral travel before revealing the new fork.
 - On short-landscape maps, the chapter HUD belongs in the upper-left clearing and yields to the travel banner; placing it near the right-side fork obscures route cards.
 - On compact phones, hide the chapter HUD for the brief travel state so the full-width destination banner has one clear reading band; restore the HUD on arrival.
+- Keep map navigation quiet: remove decorative landmark chips, embed the earned-skill badge in each destination card, avoid glowing route effects, and park the cougar in open terrain beside the active stop.
+- When original skill-hex artwork is supplied, normalize every crop to one shared canvas and visible boundary before resizing; do not recreate the badges with CSS or substitute line icons.
 - Keep the world camera at one close zoom across all chapters; progression pans between authored panorama crops without a push-in/pull-back pulse.
 - Route branches must terminate at their actual destination cards and react independently to pointer focus, keyboard focus, and travel selection.
 - Only the region and domain selections launch mini-games and enjoyment checks; the third specialization selection travels directly to its career result and awards its skill without a mini-game.

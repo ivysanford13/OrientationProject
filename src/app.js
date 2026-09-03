@@ -22,6 +22,27 @@
     'leadership': '__STARTER_BADGE_LEADERSHIP_DATA_URI__',
     'empathy': '__STARTER_BADGE_EMPATHY_DATA_URI__'
   };
+  var JOURNEY_BADGE_SOURCES = {
+    'creativity': STARTER_BADGE_SOURCES['creative-thinking'],
+    'software': '__SKILL_BADGE_SOFTWARE_DATA_URI__',
+    'coder': '__SKILL_BADGE_DEVELOPER_DATA_URI__',
+    'designer': STARTER_BADGE_SOURCES['visual-design'],
+    'hardware': STARTER_BADGE_SOURCES['hands-on-tech'],
+    'analyst': STARTER_BADGE_SOURCES['problem-solving'],
+    'numbers': STARTER_BADGE_SOURCES['numbers-patterns'],
+    'hacker': '__SKILL_BADGE_HACKER_DATA_URI__',
+    'trendy': '__SKILL_BADGE_TRENDY_DATA_URI__',
+    'fortune-teller': '__SKILL_BADGE_FORTUNE_TELLER_DATA_URI__',
+    'detective': '__SKILL_BADGE_DETECTIVE_DATA_URI__',
+    'bodyguard': '__SKILL_BADGE_BODYGUARD_DATA_URI__',
+    'people-skills': STARTER_BADGE_SOURCES['empathy'],
+    'speech': STARTER_BADGE_SOURCES['communication'],
+    'market-reach': '__SKILL_BADGE_MARKET_REACH_DATA_URI__',
+    'logistical': '__SKILL_BADGE_LOGISTICAL_DATA_URI__',
+    'renovator': '__SKILL_BADGE_RENOVATOR_DATA_URI__',
+    'creative': '__SKILL_BADGE_CREATIVE_DATA_URI__',
+    'strategist': STARTER_BADGE_SOURCES['leadership']
+  };
   if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
   var root = document.getElementById('app');
   var dock = document.getElementById('skill-dock');
@@ -439,7 +460,7 @@
     var travelBanner = state.screen === 'travel' && travelTarget
       ? '<div class="travel-banner" aria-live="polite"><span>EXPLORER MOVING</span><strong>' + escapeHtml(travelTarget.node.title) + '</strong><i aria-hidden="true"></i></div>'
       : '';
-    var panorama = '<div class="world-panorama" aria-hidden="true"><div class="world-atlas"><span class="atlas-art"></span><span class="atlas-color-grade"></span><span class="atlas-contours"></span><span class="atlas-vignette"></span></div><div class="world-sky"><span class="world-haze"></span>' + renderWorldLandmarks(scene.landmarks) + '</div></div>';
+    var panorama = '<div class="world-panorama" aria-hidden="true"><div class="world-atlas"><span class="atlas-art"></span><span class="atlas-color-grade"></span><span class="atlas-contours"></span><span class="atlas-vignette"></span></div><div class="world-sky"><span class="world-haze"></span></div></div>';
     var avatar = '<div class="map-avatar avatar-cougar' + travelClass + (state.lastAward ? ' is-arrived' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span class="avatar-shell" aria-hidden="true"><img class="explorer-avatar explorer-avatar--map" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></span><small>' + escapeHtml(state.name || 'YOU') + '</small></div>';
     var mapTitle = stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.';
     var chapterTitle = stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style';
@@ -448,7 +469,7 @@
       '<header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + mapTitle + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header>' +
       '<section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + travelClass + shiftClass + '" data-camera-stage="' + stage + '" style="' + sceneStyle + '" aria-label="Interactive journey map">' + panorama +
       renderQuestPath(stage, sceneNodes, routePath) +
-      (stage === 0 ? '<div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' : '') + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + avatar + travelBanner +
+      sceneNodes.map(renderWorldStop).join('') + avatar + travelBanner +
       '<div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(chapterTitle) + '</strong>' + renderJourneyMeter(stage) + '</div></section>' +
       '<div class="map-action-row"><p>' + (stage === 2 ? '<strong>' + openRouteCount + '</strong> career possibilit' + (openRouteCount === 1 ? 'y' : 'ies') + ' ready to explore.' : '<strong>' + openRouteCount + '</strong> forward route' + (openRouteCount === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.') + '</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
   }
@@ -514,49 +535,41 @@
     }).join('') + '</ol>';
   }
 
-  function renderWorldLandmarks(landmarks) {
-    return (Array.isArray(landmarks) ? landmarks : []).map(function (landmark, index) {
-      var type = slug(landmark.type || 'landmark');
-      return '<div class="world-landmark landmark-' + escapeAttr(type) + ' landmark-chapter-' + Math.min(index, 2) + '" style="--x:' + Number(landmark.x || 50) + '%;--y:' + Number(landmark.y || 40) + '%" aria-hidden="true"><span class="landmark-art landmark-art--' + escapeAttr(type) + '"><i></i><b></b></span><small>' + escapeHtml(landmark.label || 'Landmark') + '</small></div>';
-    }).join('');
-  }
-
-  // Past cards are intentionally hidden on narrow maps to keep the active fork
-  // readable. These compact, non-interactive pins retain route context without
-  // competing with the avatar or the skill dock.
-  function renderWorldMilestones(stage, entries) {
-    if (stage === 0) return '';
-    var past = entries.filter(function (entry) { return entry.kind.indexOf('past') === 0; });
-    return '<div class="world-milestones" aria-label="Completed route milestones">' + past.map(function (entry, index) {
-      return '<span class="world-milestone" title="' + escapeAttr(entry.node.title) + '"><b aria-hidden="true">✓</b><small>' + String(index + 1).padStart(2, '0') + '</small></span>';
-    }).join('') + '</div>';
-  }
-
   function renderWorldStop(entry) {
     var node = entry.node;
+    var skill = node.earnedSkill ? skillFor(node) : null;
     var rejected = isRejected(node.id);
     var complete = isCompleted(node.id);
     var open = canOpen(node);
     var destination = state.screen === 'travel' && state.travelTargetId === node.id;
     var status = destination ? 'TRAVELING' : rejected ? 'TRAIL CLOSED' : complete ? 'EXPLORED' : node.career && !node.miniGame ? 'CAREER POSSIBILITY' : 'NEXT STOP';
     var routeAttribute = typeof entry.routeIndex === 'number' ? ' data-route-node-id="' + escapeAttr(node.id) + '"' : '';
-    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + (destination ? ' is-destination' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '"' + routeAttribute + ' style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon" aria-hidden="true">' + (rejected ? '×' : complete ? '✓' : entry.kind.indexOf('past') === 0 ? '✓' : entry.kind === 'region' ? '◆' : '●') + '</span><span class="stop-copy"><small>' + escapeHtml(status) + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
+    var marker = rejected ? '×' : complete || entry.kind.indexOf('past') === 0 ? '✓' : '';
+    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + (destination ? ' is-destination' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '"' + routeAttribute + ' style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon stop-icon--badge' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + (marker ? '<i class="stop-status-mark">' + marker + '</i>' : '') + '</span><span class="stop-copy"><small>' + escapeHtml(status) + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
   }
 
   function avatarMapPosition(stage, currentId, entries) {
-    if (!currentId) return { x: 9, y: 64 };
+    var compact = window.innerWidth <= 767;
+    var shortLandscape = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
+    if (!currentId) return { x: compact ? 18 : 14, y: 67 };
     var current = entries.filter(function (entry) { return entry.node.id === currentId; })[0];
-    // On phones, completed route cards collapse into milestone pins. Park the
-    // explorer in the lower-left clearing so it remains visible beside the
-    // active fork instead of inheriting the hidden past-domain card's center.
-    if (current && window.innerWidth <= 767 && stage === 2 && current.kind === 'past-domain') return { x: 16, y: 76 };
-    // On wider maps the completed domain card remains visible. Park the cougar
-    // a full card-height above it instead of letting the sprite bridge the card.
-    if (current && current.kind.indexOf('past') === 0) return { x: current.position.x, y: Math.max(17, current.position.y - 21) };
-    if (current) return { x: current.position.x, y: Math.max(17, current.position.y - 14) };
-    if (stage === 2) return { x: 31, y: 49 };
-    if (stage === 1) return { x: 17, y: 49 };
-    return { x: 9, y: 64 };
+    // Keep the cougar in a quiet clearing beside the route card. This makes the
+    // explorer feel connected to the stop without covering its badge or copy.
+    if (current && current.kind.indexOf('past') === 0) {
+      if (compact) return { x: 20, y: 75 };
+      if (current.kind === 'past-domain') return { x: 60, y: 86 };
+      if (shortLandscape) return { x: 45, y: 77 };
+      return { x: 36, y: 72 };
+    }
+    if (current) {
+      return {
+        x: Math.max(compact ? 18 : 12, current.position.x - (compact ? 27 : 19)),
+        y: Math.min(78, current.position.y + 11)
+      };
+    }
+    if (stage === 2) return { x: compact ? 20 : 60, y: 86 };
+    if (stage === 1) return { x: compact ? 20 : 36, y: 72 };
+    return { x: compact ? 18 : 14, y: 67 };
   }
 
   function mapPrompt(stage, region, domain) {
@@ -569,7 +582,7 @@
     if (!node || !node.miniGame) return renderMap();
     var skill = skillFor(node);
     var mini = node.miniGame || {};
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
   }
 
   function renderReflection(node) {
@@ -705,7 +718,24 @@
     return value || 'Details coming soon';
   }
 
-  /** Render the supplied blue-badge art direction as crisp, offline SVG line art. */
+  /** Return the supplied original artwork for a starter or journey skill. */
+  function badgeSourceFor(skill) {
+    if (!skill) return '';
+    if (skill.category === 'starter') return STARTER_BADGE_SOURCES[skill.badgeAsset] || '';
+    return JOURNEY_BADGE_SOURCES[skill.id] || '';
+  }
+
+  function originalBadgeClass(skill) {
+    return badgeSourceFor(skill) ? ' badge-hex--original' : '';
+  }
+
+  function renderBadgeArtwork(skill) {
+    var source = badgeSourceFor(skill);
+    if (!source) return renderBadgeIcon(skill);
+    return '<img class="skill-badge-art" src="' + escapeAttr(source) + '" alt="">';
+  }
+
+  /** Fallback line art for skills that do not have an authored badge yet. */
   function renderBadgeIcon(skill) {
     var icons = {
       lightbulb: '<path d="M17 29c-3-2.4-5-6-5-10a12 12 0 0 1 24 0c0 4-2 7.6-5 10l-2 3H19l-2-3Z"/><path d="M19 36h10M20 40h8M24 7V3M8 19H4M44 19h-4M11 8l3 3M37 8l-3 3"/>',
@@ -762,7 +792,8 @@
     document.body.classList.toggle('dock-floating', !inlineDock);
     if (!items.length) { dock.innerHTML = ''; return; }
     dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2 id="skill-dock-title">SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
-      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span class="hex-face" aria-hidden="true">' + renderBadgeIcon(item.skill) + '<strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong></span></button>';
+      var originalArtwork = Boolean(badgeSourceFor(item.skill));
+      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + originalBadgeClass(item.skill) + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span class="hex-face" aria-hidden="true">' + renderBadgeArtwork(item.skill) + '<strong' + (originalArtwork ? ' class="badge-label-text"' : '') + '>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong></span></button>';
     }).join('') + '</div></div>';
   }
 
@@ -952,7 +983,7 @@
         state.screen = 'mini'; saveState(); render();
         announce(node.title + ' challenge opened.');
       }
-    }, prefersReducedMotion ? 70 : 1780);
+    }, prefersReducedMotion ? 70 : 900);
   }
 
   /** Final specialization choices are destinations, not mini-game stops. */
@@ -1193,7 +1224,7 @@
 
   function showToast(message, skill) {
     if (!toastRegion) return;
-    toastRegion.innerHTML = '<div class="toast toast--reward" role="status"><span class="toast-mark badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><span>' + escapeHtml(message) + '</span></div>';
+    toastRegion.innerHTML = '<div class="toast toast--reward" role="status"><span class="toast-mark badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><span>' + escapeHtml(message) + '</span></div>';
     window.setTimeout(function () { if (toastRegion) toastRegion.innerHTML = ''; }, 3000);
   }
 
@@ -1229,7 +1260,7 @@
     var earned = state.earned.filter(function (entry) { return entry.skillId === skillId; })[0];
     var node = earned ? findNode(earned.nodeId) : null;
     setModalSurfaces(true);
-    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="skill-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><span class="hex hex--modal badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><p class="eyebrow">' + (skill.category === 'starter' ? 'STARTER SKILL' : 'SKILL EARNED') + '</p><h2 id="skill-title">' + escapeHtml(skill.name) + '</h2><p>' + escapeHtml(node ? 'You earned this by enjoying “' + node.title + '.”' : 'One of the four strengths that set your initial direction.') + '</p><button class="button button--primary button--wide" data-action="close-modal">Back to journey</button></section></div>';
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="skill-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><span class="hex hex--modal badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><p class="eyebrow">' + (skill.category === 'starter' ? 'STARTER SKILL' : 'SKILL EARNED') + '</p><h2 id="skill-title">' + escapeHtml(skill.name) + '</h2><p>' + escapeHtml(node ? 'You earned this by enjoying “' + node.title + '.”' : 'One of the four strengths that set your initial direction.') + '</p><button class="button button--primary button--wide" data-action="close-modal">Back to journey</button></section></div>';
     wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
