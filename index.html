@@ -2809,13 +2809,13 @@ var componentAt = function (slot) { return components.filter(function (item) { r
 var placedMarkup = function (slot) {
 var item = componentAt(slot);
 if (!item) return '<span class="slide-zone-prompt">Drop a piece here</span>';
-var content = item.image ? '<img src="' + SLIDE_ILLUSTRATION_SRC + '" alt="BYU cougar explorer representing an Information Systems pathway">' : item.facts ? '<ul><li>IS connects people and technology.</li><li>Every industry needs IS thinkers.</li><li>You can start building skills today.</li></ul>' : '<strong>' + escapeHtml(item.text) + '</strong>';
+var content = item.image ? '<img src="' + EXPLORER_AVATAR_SRC + '" alt="BYU cougar explorer representing an Information Systems pathway">' : item.facts ? '<ul><li>IS connects people and technology.</li><li>Every industry needs IS thinkers.</li><li>You can start building skills today.</li></ul>' : '<strong>' + escapeHtml(item.text) + '</strong>';
 return '<div class="slide-placed slide-placed--' + item.kind + (item.image ? ' is-image' : '') + (slideSelected === item.id ? ' is-selected' : '') + '" draggable="true" data-slide-id="' + item.id + '" tabindex="0" aria-label="' + escapeAttr(item.text) + '">' + content + '</div>';
 };
 var zoneMarkup = zones.map(function (zone) { return '<div class="slide-zone ' + zone.className + '" data-slide-slot="' + zone.id + '" aria-label="' + zone.aria + '">' + placedMarkup(zone.id) + '</div>'; }).join('');
 var palette = components.map(function (item) {
 var placed = Boolean(slidePositions[item.id]);
-return '<button type="button" class="slide-component scratch-block--' + item.kind + (slideSelected === item.id ? ' is-selected' : '') + (placed ? ' is-placed' : '') + '" draggable="true" data-action="slide-select" data-slide-id="' + item.id + '" aria-pressed="' + (slideSelected === item.id) + '"><span class="scratch-block-shape" aria-hidden="true"></span>' + (item.image ? '<img class="slide-component-thumb" src="' + SLIDE_ILLUSTRATION_SRC + '" alt="">' : '') + '<strong>' + escapeHtml(item.text) + '</strong></button>';
+return '<button type="button" class="slide-component scratch-block--' + item.kind + (slideSelected === item.id ? ' is-selected' : '') + (placed ? ' is-placed' : '') + '" draggable="true" data-action="slide-select" data-slide-id="' + item.id + '" aria-pressed="' + (slideSelected === item.id) + '"><span class="scratch-block-shape" aria-hidden="true"></span>' + (item.image ? '<img class="slide-component-thumb" src="' + EXPLORER_AVATAR_SRC + '" alt="">' : '') + '<strong>' + escapeHtml(item.text) + '</strong></button>';
 }).join('');
 var feedbackMarkup = slideFeedback ? '<p class="scratch-feedback ' + (slideSolved ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(slideFeedback) + '</p>' : '';
 var actionMarkup = slideSolved ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>' : '<button class="button button--primary" data-action="slide-check" ' + (Object.keys(slidePositions).length < 5 ? 'disabled' : '') + '>Review my slide <span aria-hidden="true">→</span></button>';

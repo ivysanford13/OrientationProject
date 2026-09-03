@@ -349,6 +349,25 @@ class QARunner:
         page.locator('[data-action="finish-game"]').click()
 
     @staticmethod
+    def solve_slide_game(page: Page) -> None:
+        """Build the briefing slide and complete its four-question review."""
+
+        placements = (
+            ("title", "headline"),
+            ("subtitle", "subline"),
+            ("illustration", "visual"),
+            ("facts", "facts"),
+            ("cta", "cta"),
+        )
+        for component_id, slot_id in placements:
+            page.locator(f'[data-action="slide-select"][data-slide-id="{component_id}"]').click()
+            page.locator(f'[data-slide-slot="{slot_id}"]').click()
+        page.locator('[data-action="slide-check"]').click()
+        for answer in ("students", "grouped", "support", "action"):
+            page.locator(f'[data-slide-answer="{answer}"]').click()
+        page.locator('[data-action="finish-game"]').click()
+
+    @staticmethod
     def finish_node(page: Page, node_id: str, enjoyed: bool = True) -> None:
         """Complete a mini-game stop or open a terminal career selection."""
 
@@ -377,6 +396,8 @@ class QARunner:
             lock_crew.click()
         elif page.locator(".deploy-game").count():
             QARunner.publish_deploy_game(page)
+        elif page.locator(".slide-workspace").count():
+            QARunner.solve_slide_game(page)
         elif page.locator(".scratch-workspace").count():
             QARunner.solve_scratch_game(page)
         elif page.locator(".chart-match-game").count():
