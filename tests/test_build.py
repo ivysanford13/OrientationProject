@@ -55,7 +55,8 @@ class BuildTests(unittest.TestCase):
 
         self.assertEqual(document.count("data:image/png;base64,"), 1)
         self.assertIn('width="1254" height="1254"', document)
-        self.assertEqual(document.count("data:image/jpeg;base64,"), 3)
+        # Three panoramas plus the ten supplied starter-skill badge crops.
+        self.assertEqual(document.count("data:image/jpeg;base64,"), 13)
         self.assertLess(output_size, 4_700_000)
 
     def test_build_has_no_external_runtime_dependencies(self) -> None:

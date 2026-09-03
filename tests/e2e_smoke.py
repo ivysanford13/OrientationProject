@@ -72,14 +72,61 @@ class CareerLaunchpadSmokeTests(unittest.TestCase):
             self.assertEqual(page.locator(".hex-item").count(), 6)
 
             page.locator('[data-node-id="spec-code-build-uis"]').click()
-            page.locator(".screen--challenge").wait_for()
-            page.get_by_role("button", name="Skip game for now").click()
-            page.get_by_role("button", name="Yes, keep going").click()
+            page.locator(".screen--career").wait_for()
 
             self.assertEqual(page.locator(".hex-item").count(), 7)
             self.assertEqual(
+                len(page.evaluate("CareerLaunchpadApp.getState().earned")), 3
+            )
+            self.assertEqual(
                 page.locator("#career-title").text_content(), "Application Developer"
             )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_saved_third_mini_game_opens_career_without_third_reward(self) -> None:
+        """Migrate a browser saved during the removed specialization challenge."""
+
+        page, errors = self.open_fresh_page()
+        try:
+            page.evaluate(
+                """state => localStorage.setItem('is-career-launchpad:v2', JSON.stringify(state))""",
+                {
+                    "version": 2,
+                    "screen": "mini",
+                    "name": "Dan",
+                    "avatar": "cougar",
+                    "starterSkills": [
+                        "starter-creative-thinking",
+                        "starter-coding-curiosity",
+                        "starter-hands-on-tech",
+                        "starter-visual-design",
+                    ],
+                    "recommendedRegionId": "region-build-create",
+                    "activeRegionId": "region-build-create",
+                    "activeDomainId": "domain-software-apps",
+                    "completed": ["region-build-create", "domain-software-apps"],
+                    "earned": [
+                        {"skillId": "creativity", "nodeId": "region-build-create", "earnedAt": 1},
+                        {"skillId": "software", "nodeId": "domain-software-apps", "earnedAt": 2},
+                        {"skillId": "coder", "nodeId": "spec-code-build-uis", "earnedAt": 3},
+                    ],
+                    "rejected": [],
+                    "selectedNodeId": "spec-code-build-uis",
+                    "travelTargetId": None,
+                    "travelFromId": None,
+                    "lastCareerId": None,
+                    "lastAward": False,
+                    "reviewingNodeId": None,
+                },
+            )
+            page.reload()
+
+            page.locator(".screen--career").wait_for()
+            self.assertEqual(page.locator("#career-title").text_content(), "Application Developer")
+            self.assertEqual(page.locator(".hex-item").count(), 7)
+            self.assertEqual(len(page.evaluate("CareerLaunchpadApp.getState().earned")), 3)
             self.assertEqual(errors, [])
         finally:
             page.close()

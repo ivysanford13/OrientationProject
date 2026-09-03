@@ -125,7 +125,7 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
                 return nodeIds.map((id, index) => {
                     const node = all.find(item => item.id === id);
                     return { skillId: node.earnedSkill, nodeId: id, earnedAt: index + 1 };
-                });
+                }).filter(entry => entry.skillId);
             }""",
             node_ids,
         )
@@ -200,7 +200,7 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             state["activeDomainId"] = None
             state["selectedNodeId"] = None
         elif screen == "reflection":
-            state["selectedNodeId"] = REGION_PATHS["region-build-create"][1]
+            state["selectedNodeId"] = REGION_PATHS["region-build-create"][0]
         elif screen == "interview-question":
             state["interview"] = {
                 "careerId": "application-developer",
@@ -628,7 +628,7 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assert_clean(errors)
 
     def test_world_camera_advances_through_three_spatial_checkpoints(self) -> None:
-        """Require one persistent panorama to pan as the route goes deeper."""
+        """Require one close panorama crop to pan without zoom pumping."""
 
         page, errors = self.new_page(1440, 900)
         camera_frames: list[dict[str, float]] = []
@@ -638,10 +638,14 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             panorama = page.locator(".world-panorama")
             self.assertEqual(panorama.count(), 1)
             camera_frames.append(
-                panorama.evaluate(
+                page.locator(".atlas-art").evaluate(
                     """element => {
-                        const matrix = new DOMMatrix(getComputedStyle(element).transform);
-                        return { scale: matrix.a, x: matrix.e };
+                        const style = getComputedStyle(element);
+                        return {
+                            x: parseFloat(style.backgroundPositionX),
+                            y: parseFloat(style.backgroundPositionY),
+                            zoom: parseFloat(style.backgroundSize.split(' ')[1]),
+                        };
                     }"""
                 )
             )
@@ -654,23 +658,84 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
 
         rounded_x = {round(frame["x"], 1) for frame in camera_frames}
         self.assertEqual(len(rounded_x), 3, camera_frames)
-        self.assertTrue(all(frame["scale"] >= 1.2 for frame in camera_frames), camera_frames)
-        self.assertGreater(abs(camera_frames[0]["x"] - camera_frames[2]["x"]), 200, camera_frames)
+        self.assertTrue(all(frame["zoom"] >= 200 for frame in camera_frames), camera_frames)
+        self.assertEqual(len({round(frame["zoom"], 1) for frame in camera_frames}), 1, camera_frames)
+        self.assertGreater(abs(camera_frames[0]["x"] - camera_frames[2]["x"]), 75, camera_frames)
 
         travel_state = self.base_state(page, "region-build-create", stage=1)
         self.load_state(page, travel_state, ".screen--map")
         traveling = page.evaluate(
             """() => {
                 document.querySelector('[data-node-id="domain-software-apps"]').click();
+                const atlas = getComputedStyle(document.querySelector('.atlas-art'));
                 return {
                     world: Boolean(document.querySelector('.rpg-world.is-traveling')),
                     avatar: Boolean(document.querySelector('.map-avatar.is-traveling')),
                     destination: Boolean(document.querySelector('.world-stop.is-destination')),
+                    cameraAnimation: atlas.animationName,
+                    cameraZoom: atlas.backgroundSize,
                 };
             }"""
         )
-        self.assertEqual(traveling, {"world": True, "avatar": True, "destination": True})
+        self.assertEqual(
+            traveling,
+            {
+                "world": True,
+                "avatar": True,
+                "destination": True,
+                "cameraAnimation": "none",
+                "cameraZoom": "auto 250%",
+            },
+        )
         self.assert_clean(errors)
+
+    def test_route_branches_snap_to_and_react_with_destination_cards(self) -> None:
+        """Keep every route endpoint paired with its pointer and keyboard target."""
+
+        failures: list[str] = []
+        all_errors: list[str] = []
+        for width, height in ((390, 844), (1440, 900)):
+            page, errors = self.new_page(width, height)
+            all_errors.extend(errors)
+            for stage in (0, 1, 2):
+                state = self.base_state(page, "region-build-create", stage=stage)
+                self.load_state(page, state, ".screen--map")
+                offsets = page.evaluate(
+                    """() => [...document.querySelectorAll('.route-option')].map(group => {
+                        const path = group.querySelector('.route-line');
+                        const endpoint = path.getPointAtLength(path.getTotalLength());
+                        const screenPoint = new DOMPoint(endpoint.x, endpoint.y)
+                            .matrixTransform(path.getScreenCTM());
+                        const card = document.querySelector(
+                            `.world-stop[data-route-node-id="${group.dataset.routeNodeId}"]`
+                        ).getBoundingClientRect();
+                        return {
+                            id: group.dataset.routeNodeId,
+                            x: Math.abs(screenPoint.x - (card.left + card.width / 2)),
+                            y: Math.abs(screenPoint.y - (card.top + card.height / 2)),
+                        };
+                    })"""
+                )
+                for offset in offsets:
+                    if offset["x"] > 1 or offset["y"] > 1:
+                        failures.append(
+                            f"{width}x{height} stage={stage} {offset['id']} endpoint offset "
+                            f"x={offset['x']:.1f} y={offset['y']:.1f}"
+                        )
+
+            state = self.base_state(page, "region-build-create", stage=1)
+            self.load_state(page, state, ".screen--map")
+            first_choice = page.locator('[data-node-id="domain-software-apps"]')
+            first_choice.focus()
+            self.assertIn("has-route-focus", page.locator(".rpg-world").get_attribute("class") or "")
+            self.assertEqual(page.locator(".route-option.is-focused").count(), 1)
+            opacities = page.locator(".route-option").evaluate_all(
+                "groups => groups.map(group => parseFloat(getComputedStyle(group).opacity))"
+            )
+            self.assertGreater(opacities[0], opacities[1])
+
+        self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(all_errors)
 
     def test_avatar_and_skill_dock_never_cover_visible_map_decisions(self) -> None:
         """Protect route cards across phone, short-landscape, and desktop maps."""
@@ -804,6 +869,65 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(all_errors)
 
+    def test_skill_selection_updates_without_rerendering_or_scrolling(self) -> None:
+        """A loadout click must leave the same screen node and viewport in place."""
+
+        page, errors = self.new_page(390, 844)
+        skills = self.state_for_screen(page, "skill-select")
+        self.load_state(page, skills, ".screen--skills")
+        target = page.locator('[data-skill-id="starter-visual-design"]')
+        target.scroll_into_view_if_needed()
+        before = page.evaluate(
+            """() => {
+                window.__skillScreenBeforeClick = document.querySelector('.screen--skills');
+                return { scrollY: window.scrollY };
+            }"""
+        )
+        target.click()
+        after = page.evaluate(
+            """() => ({
+                sameScreen: document.querySelector('.screen--skills') === window.__skillScreenBeforeClick,
+                scrollY: window.scrollY,
+                activeSkill: document.activeElement && document.activeElement.dataset.skillId,
+                selectedCount: document.querySelectorAll('.starter-skill[aria-pressed="true"]').length,
+                dockCount: document.querySelectorAll('#skill-dock .hex-item').length,
+            })"""
+        )
+
+        self.assertTrue(after["sameScreen"])
+        self.assertLessEqual(abs(after["scrollY"] - before["scrollY"]), 1)
+        self.assertEqual(after["activeSkill"], "starter-visual-design")
+        self.assertEqual(after["selectedCount"], 3)
+        self.assertEqual(after["dockCount"], 3)
+        self.assert_clean(errors)
+
+    def test_map_travel_starts_inside_the_existing_world(self) -> None:
+        """Choosing a stop must animate the existing map instead of refreshing it."""
+
+        page, errors = self.new_page(390, 844)
+        state = self.base_state(page, "region-build-create", stage=1)
+        self.load_state(page, state, ".screen--map")
+        result = page.evaluate(
+            """() => {
+                const world = document.querySelector('.rpg-world');
+                const scrollY = window.scrollY;
+                document.querySelector('[data-node-id="domain-software-apps"]').click();
+                return {
+                    sameWorld: document.querySelector('.rpg-world') === world,
+                    scrollYBefore: scrollY,
+                    scrollYAfter: window.scrollY,
+                    traveling: world.classList.contains('is-traveling'),
+                    hasBanner: Boolean(world.querySelector('.travel-banner')),
+                };
+            }"""
+        )
+
+        self.assertTrue(result["sameWorld"])
+        self.assertEqual(result["scrollYAfter"], result["scrollYBefore"])
+        self.assertTrue(result["traveling"])
+        self.assertTrue(result["hasBanner"])
+        self.assert_clean(errors)
+
     def test_skill_badges_keep_the_supplied_visual_language(self) -> None:
         """Require icon-led blue badges in the picker and growing journey stack."""
 
@@ -811,13 +935,13 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         skills = self.state_for_screen(page, "skill-select")
         self.load_state(page, skills, ".screen--skills")
 
-        picker_icons = page.locator(".starter-glyph .hex-icon")
-        self.assertEqual(picker_icons.count(), 10)
-        icon_names = picker_icons.evaluate_all(
-            "elements => elements.map(element => element.dataset.icon)"
+        picker_badges = page.locator(".starter-badge-art")
+        self.assertEqual(picker_badges.count(), 10)
+        badge_sources = picker_badges.evaluate_all(
+            "elements => elements.map(element => element.currentSrc)"
         )
-        self.assertNotIn("spark", icon_names)
-        self.assertGreaterEqual(len(set(icon_names)), 8)
+        self.assertEqual(len(set(badge_sources)), 10)
+        self.assertTrue(all(source.startswith("data:image/jpeg;base64,") for source in badge_sources))
 
         map_state = self.base_state(page, "region-build-create", stage=1)
         self.load_state(page, map_state, ".screen--map")
@@ -886,6 +1010,39 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         assert fixed_dock is not None
         self.assertLessEqual(1440 - (fixed_dock["x"] + fixed_dock["width"]), 20)
         self.assertLessEqual(900 - (fixed_dock["y"] + fixed_dock["height"]), 20)
+        self.assert_clean(errors)
+
+    def test_eighth_skill_extends_honeycomb_without_earned_sublabel(self) -> None:
+        """A second career possibility must occupy the remaining lower-row slot."""
+
+        page, errors = self.new_page(1440, 900)
+        state = self.base_state(page, "region-build-create", stage=3)
+        state["screen"] = "career"
+        state["completed"].append("spec-architect-software")
+        state["earned"].append(
+            {
+                "skillId": "designer",
+                "nodeId": "spec-architect-software",
+                "earnedAt": 4,
+            }
+        )
+        self.load_state(page, state, ".screen--career")
+
+        badges = page.locator("#skill-dock .hex-item")
+        self.assertEqual(badges.count(), 8)
+        seventh = badges.nth(6).bounding_box()
+        eighth = badges.nth(7).bounding_box()
+        sixth = badges.nth(5).bounding_box()
+        self.assertIsNotNone(seventh)
+        self.assertIsNotNone(eighth)
+        self.assertIsNotNone(sixth)
+        assert seventh is not None and eighth is not None and sixth is not None
+        self.assertAlmostEqual(eighth["y"], sixth["y"], delta=0.5)
+        self.assertAlmostEqual(eighth["x"] - sixth["x"], 66, delta=0.5)
+        self.assertAlmostEqual(seventh["x"] - eighth["x"], 33, delta=0.5)
+        self.assertAlmostEqual(eighth["y"] - seventh["y"], 57, delta=0.5)
+        self.assertEqual(page.locator("#skill-dock .hex-item.is-earned small").count(), 0)
+        self.assertEqual(page.locator("#skill-dock .hex-item.is-starter small").count(), 0)
         self.assert_clean(errors)
 
     def test_single_cougar_explorer_is_consistent_across_the_journey(self) -> None:
