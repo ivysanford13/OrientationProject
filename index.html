@@ -1,0 +1,1728 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f1728">
+    <meta name="description" content="IS Career Launchpad — a playful career exploration game for BYU Information Systems students.">
+    <title>IS Career Launchpad</title>
+    <style>/*
+ * IS Career Launchpad — “paper map / neon terminal” visual system
+ * The scene is intentionally tactile: a midnight desk, map cards as labels,
+ * and a bottom honeycomb that makes progression visible without relying on color.
+ */
+:root {
+  --ink: #152238;
+  --ink-soft: #4f637d;
+  --night: #0f1728;
+  --night-2: #16243b;
+  --paper: #fbfcff;
+  --paper-blue: #eef4ff;
+  --line: #ccd9ec;
+  --line-strong: #94a9c8;
+  --blue: #2770e8;
+  --blue-dark: #174fb0;
+  --violet: #7b43e6;
+  --violet-dark: #4f25a6;
+  --green: #00a477;
+  --green-dark: #007559;
+  --gold: #ffb647;
+  --coral: #ff6f5b;
+  --cyan: #46d8dc;
+  --white: #fff;
+  --shadow: 0 16px 40px rgba(21, 34, 56, .13);
+  --shadow-tight: 0 8px 18px rgba(21, 34, 56, .14);
+  --radius-card: 18px;
+  --radius-pill: 999px;
+  --font-display: Impact, Haettenschweiler, "Arial Black", sans-serif;
+  --font-body: "Trebuchet MS", Verdana, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+  --dock-height: 126px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { min-width: 320px; scroll-padding-bottom: calc(var(--dock-height) + 28px); background: var(--night); }
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  padding-bottom: var(--dock-height);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(70, 216, 220, .15), transparent 29rem),
+    radial-gradient(circle at 10% 48%, rgba(123, 67, 230, .16), transparent 32rem),
+    linear-gradient(152deg, #f4f8ff 0%, #f8faff 55%, #edf4fb 100%);
+  font-family: var(--font-body);
+  line-height: 1.45;
+}
+
+body::before {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  pointer-events: none;
+  opacity: .07;
+  content: "";
+  background-image: repeating-linear-gradient(0deg, rgba(13, 26, 49, .22) 0 1px, transparent 1px 4px);
+  mix-blend-mode: multiply;
+}
+
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 10px;
+  left: 10px;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  color: var(--night);
+  background: var(--gold);
+  font-weight: 800;
+  transform: translateY(-160%);
+  transition: transform .18s ease;
+}
+.skip-link:focus { transform: translateY(0); }
+
+.site-header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 78px;
+  padding: 15px clamp(18px, 4vw, 64px);
+  color: var(--white);
+  background: var(--night);
+  box-shadow: 0 5px 0 rgba(20, 34, 57, .1), 0 13px 30px rgba(15, 23, 40, .14);
+}
+
+.brand-lockup { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: var(--night);
+  background: var(--gold);
+  clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: .06em;
+}
+.brand-mark i { position: absolute; right: 7px; bottom: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--coral); }
+.eyebrow { margin: 0; color: var(--cyan); font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .11em; }
+.brand-name { margin: 1px 0 0; font-family: var(--font-display); font-size: clamp(18px, 2vw, 23px); letter-spacing: .08em; line-height: 1; }
+.brand-name span { color: var(--gold); }
+.header-status { display: flex; align-items: center; gap: 10px; color: #b9c8e3; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; }
+.status-lamp { width: 9px; height: 9px; border: 2px solid var(--cyan); border-radius: 50%; box-shadow: 0 0 0 4px rgba(70, 216, 220, .13), 0 0 14px var(--cyan); }
+
+#app { position: relative; z-index: 1; min-height: calc(100vh - 78px); padding: clamp(34px, 6vw, 82px) clamp(16px, 5vw, 72px) 180px; }
+.screen { width: min(1240px, 100%); margin: 0 auto; animation: screen-in .45s cubic-bezier(.2, .7, .25, 1) both; }
+@keyframes screen-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.screen-kicker { margin: 0 0 10px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.screen-title { max-width: 850px; margin: 0; color: var(--ink); font-family: var(--font-display); font-size: clamp(42px, 7vw, 86px); font-weight: 900; letter-spacing: -.015em; line-height: .94; text-transform: uppercase; }
+.screen-title em { color: var(--blue); font-style: normal; }
+.screen-subtitle { max-width: 660px; margin: 18px 0 0; color: var(--ink-soft); font-size: clamp(16px, 2vw, 20px); }
+.screen-heading-row { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 30px; }
+.screen-heading-row .screen-title { font-size: clamp(34px, 5vw, 62px); }
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 11px 20px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  color: var(--white);
+  background: var(--blue);
+  box-shadow: 0 5px 0 var(--blue-dark), var(--shadow-tight);
+  font-weight: 900;
+  letter-spacing: .03em;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.button:hover { background: #3b80ef; transform: translateY(-2px); box-shadow: 0 7px 0 var(--blue-dark), var(--shadow-tight); }
+.button:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--blue-dark); }
+.button-secondary { color: var(--blue-dark); border-color: var(--line-strong); background: var(--white); box-shadow: 0 4px 0 var(--line-strong); }
+.button-secondary:hover { color: var(--ink); background: var(--paper-blue); box-shadow: 0 6px 0 var(--line-strong); }
+.button-quiet { min-height: 44px; padding: 7px 12px; border-color: #40526f; color: #dce7f9; background: transparent; box-shadow: none; font-size: 11px; }
+.button-quiet:hover { color: var(--white); background: #263752; box-shadow: none; }
+.button-coral { background: var(--coral); box-shadow: 0 5px 0 #c84545, var(--shadow-tight); }
+.button-coral:hover { background: #ff826d; box-shadow: 0 7px 0 #c84545, var(--shadow-tight); }
+
+.hero-screen { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); align-items: center; gap: clamp(28px, 7vw, 100px); min-height: 520px; }
+.hero-copy { position: relative; }
+.hero-copy::before { position: absolute; z-index: -1; top: -58px; left: -55px; width: 210px; height: 210px; border-radius: 50%; background: rgba(70, 216, 220, .18); content: ""; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 13px; margin-top: 31px; }
+.hero-note { display: flex; align-items: center; gap: 8px; margin: 26px 0 0; color: var(--ink-soft); font-family: var(--font-mono); font-size: 11px; }
+.hero-note b { color: var(--coral); font-size: 16px; }
+
+.launch-card { position: relative; padding: 30px 27px 26px; border: 2px solid #c6d6ed; border-radius: var(--radius-card); background: rgba(255, 255, 255, .83); box-shadow: var(--shadow); transform: rotate(1.2deg); }
+.launch-card::before { position: absolute; top: -14px; left: 20%; width: 76px; height: 24px; border-radius: 2px; background: rgba(255, 182, 71, .72); box-shadow: 0 2px 4px rgba(21, 34, 56, .1); content: ""; transform: rotate(-4deg); }
+.launch-card::after { position: absolute; inset: 10px; border: 1px dashed #c7d5e8; border-radius: 12px; pointer-events: none; content: ""; }
+.card-label { margin: 0 0 13px; color: var(--violet); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.terminal-lines { display: grid; gap: 14px; margin: 20px 0 27px; }
+.terminal-line { display: grid; grid-template-columns: 35px 1fr; align-items: center; gap: 10px; }
+.terminal-line > span:first-child { display: grid; place-items: center; width: 31px; height: 31px; border: 2px solid var(--line-strong); border-radius: 50%; color: var(--blue-dark); font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+.terminal-line p { margin: 0; color: var(--ink); font-size: 14px; font-weight: 700; }
+.terminal-line small { display: block; margin-top: 2px; color: var(--ink-soft); font-size: 11px; font-weight: 400; }
+
+.avatar-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin: 29px 0; }
+.avatar-choice { position: relative; min-height: 126px; padding: 13px; border: 2px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--white); text-align: left; transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
+.avatar-choice:hover { border-color: var(--blue); transform: translateY(-3px); box-shadow: var(--shadow-tight); }
+.avatar-choice.is-selected { border-color: var(--gold); box-shadow: inset 0 0 0 3px rgba(255, 182, 71, .25), var(--shadow-tight); }
+.avatar-choice.is-selected::after { position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--green); content: ""; }
+.avatar-portrait { display: grid; place-items: center; width: 53px; height: 53px; margin-bottom: 10px; border: 3px solid var(--ink); border-radius: 18px 18px 21px 9px; color: var(--white); background: var(--blue); font-family: var(--font-display); font-size: 23px; }
+.avatar-choice:nth-child(2) .avatar-portrait { background: var(--violet); border-radius: 50% 50% 16px 16px; }
+.avatar-choice:nth-child(3) .avatar-portrait { background: var(--green); border-radius: 11px 24px 11px 24px; }
+.avatar-choice:nth-child(4) .avatar-portrait { background: var(--coral); border-radius: 50% 13px 50% 13px; }
+.avatar-name { display: block; font-weight: 900; font-size: 13px; }
+.avatar-tag { display: block; margin-top: 2px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; }
+
+.skill-picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin: 32px 0; }
+.skill-card { display: flex; min-height: 102px; align-items: center; gap: 13px; padding: 14px; border: 2px solid var(--line); border-radius: 15px; color: var(--ink); background: rgba(255,255,255,.83); text-align: left; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+.skill-card:hover { border-color: var(--blue); background: var(--white); transform: translateY(-2px); }
+.skill-card.is-selected { border-color: var(--green); background: #f0fffa; box-shadow: inset 0 0 0 2px rgba(0, 164, 119, .12); }
+.skill-glyph, .mini-glyph { display: grid; flex: 0 0 47px; place-items: center; width: 47px; height: 54px; color: var(--white); background: var(--blue); clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); font-family: var(--font-display); font-size: 17px; }
+.skill-card:nth-child(3n) .skill-glyph { background: var(--violet); }
+.skill-card:nth-child(3n + 1) .skill-glyph { background: var(--green); }
+.skill-card strong { display: block; font-size: 14px; }
+.skill-card small { display: block; margin-top: 3px; color: var(--ink-soft); font-size: 11px; }
+.selection-meter { display: flex; align-items: center; justify-content: space-between; max-width: 430px; margin: 15px 0 0; color: var(--ink-soft); font-family: var(--font-mono); font-size: 12px; }
+.meter-track { width: 180px; height: 8px; overflow: hidden; border-radius: 10px; background: #d8e2f1; }
+.meter-track i { display: block; width: var(--meter, 0%); height: 100%; border-radius: inherit; background: var(--green); transition: width .3s ease; }
+
+.map-screen { max-width: 1430px; }
+.map-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 28px; }
+.map-intro .screen-title { font-size: clamp(37px, 5.6vw, 72px); }
+.map-progress { min-width: 200px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.7); color: var(--ink-soft); font-family: var(--font-mono); font-size: 11px; }
+.map-progress strong { display: block; margin-bottom: 5px; color: var(--ink); font-size: 14px; }
+.map-progress-bar { height: 7px; overflow: hidden; border-radius: 9px; background: #d9e3f1; }
+.map-progress-bar i { display: block; width: var(--progress, 16%); height: 100%; border-radius: inherit; background: var(--green); transition: width .4s ease; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0 0 22px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
+.map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.map-legend i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.map-legend .legend-open { color: var(--blue); }.map-legend .legend-done { color: var(--green); }.map-legend .legend-lock { color: #98a9c0; }
+.map-board { position: relative; overflow: hidden; padding: clamp(18px, 4vw, 45px) clamp(12px, 3.5vw, 42px) 35px; border: 2px solid #c5d5eb; border-radius: 24px; background: rgba(244, 248, 255, .72); box-shadow: var(--shadow); }
+.map-board::before { position: absolute; inset: 0; opacity: .55; pointer-events: none; content: ""; background-image: linear-gradient(rgba(133, 157, 192, .11) 1px, transparent 1px), linear-gradient(90deg, rgba(133, 157, 192, .11) 1px, transparent 1px); background-size: 40px 40px; }
+.map-board::after { position: absolute; right: -75px; bottom: -110px; width: 280px; height: 280px; border-radius: 50%; background: rgba(70, 216, 220, .15); content: ""; }
+.map-start { position: relative; z-index: 1; width: min(390px, 90%); margin: 0 auto 35px; padding: 16px 21px; border: 2px solid var(--line-strong); border-radius: 15px; background: var(--white); text-align: center; box-shadow: var(--shadow-tight); }
+.map-start::after { position: absolute; bottom: -36px; left: 50%; width: 2px; height: 35px; background: var(--line-strong); content: ""; }
+.map-start small { display: block; color: var(--blue-dark); font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.map-start strong { display: block; margin-top: 5px; font-family: var(--font-display); font-size: clamp(18px, 3vw, 25px); letter-spacing: .02em; text-transform: uppercase; }
+.map-regions { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(13px, 2vw, 26px); }
+.map-region { position: relative; min-width: 0; }
+.map-region:not(:last-child)::after { position: absolute; top: 46px; right: -15px; width: 16px; height: 2px; background: var(--line-strong); content: ""; }
+.region-card { min-height: 91px; padding: 15px 15px 13px; border-radius: 15px; color: var(--white); box-shadow: var(--shadow-tight); }
+.region-card h2 { margin: 0; font-family: var(--font-display); font-size: clamp(19px, 2.3vw, 28px); letter-spacing: .03em; line-height: 1; text-transform: uppercase; }
+.region-card p { margin: 8px 0 0; color: rgba(255,255,255,.83); font-size: 11px; }
+.region-build .region-card { background: var(--blue); }.region-analyze .region-card { background: var(--violet); }.region-people .region-card { background: var(--green); }
+.map-domain-group { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; margin-top: 28px; }
+.map-domain-group::before { position: absolute; top: -16px; left: 25%; width: 50%; height: 15px; border-top: 2px solid var(--line-strong); border-left: 2px solid var(--line-strong); border-right: 2px solid var(--line-strong); content: ""; }
+.map-domain { min-width: 0; padding: 14px 11px 11px; border: 2px solid var(--line-strong); border-radius: 13px; background: rgba(255,255,255,.88); box-shadow: 0 4px 0 rgba(148,169,200,.22); }
+.map-domain h3 { margin: 0; color: var(--ink); font-size: clamp(13px, 1.5vw, 17px); line-height: 1.08; }
+.map-domain p { min-height: 31px; margin: 5px 0 12px; color: var(--ink-soft); font-size: 10px; }
+.node-stack { display: grid; gap: 7px; }
+.map-node { position: relative; display: block; width: 100%; min-height: 51px; padding: 8px 9px 7px 13px; border: 1px solid var(--line); border-left: 5px solid var(--blue); border-radius: 9px; color: var(--ink); background: var(--paper-blue); text-align: left; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+.map-node:hover:not(:disabled) { border-color: var(--blue); transform: translateX(3px); box-shadow: 0 4px 9px rgba(39,112,232,.14); }
+.map-node strong { display: block; font-size: 11px; line-height: 1.1; }
+.map-node small { display: block; margin-top: 3px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 9px; }
+.map-node .node-state { position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border: 2px solid currentColor; border-radius: 50%; color: var(--blue); }
+.map-node.is-complete { border-left-color: var(--green); background: #effcf8; }.map-node.is-complete .node-state { color: var(--green); background: var(--green); }
+.map-node.is-locked { border-left-color: #9aacbf; color: #7e8fa5; background: #f0f3f8; }.map-node.is-locked .node-state { color: #9aacbf; background: transparent; }
+.map-node.is-locked small { color: #8fa0b6; }
+.specialization-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-top: 23px; }
+.specialization-row .map-node { min-height: 70px; border-left-width: 3px; padding: 10px 8px; text-align: center; }
+.specialization-row .map-node strong { font-size: 10px; }.specialization-row .map-node small { font-size: 8px; }
+.map-footer { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 29px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; text-align: center; }.map-footer::before, .map-footer::after { width: 60px; height: 1px; background: var(--line); content: ""; }
+
+.career-layout { display: grid; grid-template-columns: minmax(0, .65fr) minmax(0, 1.35fr); gap: 22px; align-items: start; }
+.career-identity { position: sticky; top: 22px; padding: 24px; border-radius: 18px; color: var(--white); background: var(--night); box-shadow: var(--shadow); }
+.career-identity .mini-glyph { margin-bottom: 17px; background: var(--gold); color: var(--night); }
+.career-identity h1 { margin: 0; color: var(--white); font-family: var(--font-display); font-size: clamp(33px, 4vw, 55px); line-height: .95; text-transform: uppercase; }
+.career-identity p { margin: 13px 0 0; color: #c4d2e8; font-size: 14px; }
+.career-pill-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 21px; }.career-pill { padding: 7px 9px; border: 1px solid #4c6281; border-radius: 7px; color: var(--cyan); font-family: var(--font-mono); font-size: 10px; }
+.career-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }.fact-card { padding: 18px; border: 2px solid var(--line); border-radius: 14px; background: var(--white); }.fact-card h2 { margin: 0 0 8px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }.fact-card p { margin: 0; font-size: 13px; }.fact-card--wide { grid-column: 1 / -1; }
+.career-actions { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 21px; }
+
+.mission-screen { width: min(920px, 100%); }
+.mission-topline { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 24px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; }.mission-topline strong { color: var(--coral); }
+.mission-card { position: relative; overflow: hidden; padding: clamp(23px, 5vw, 43px); border: 2px solid #c5d5eb; border-radius: 21px; background: var(--white); box-shadow: var(--shadow); }.mission-card::before { position: absolute; top: 0; right: 0; width: 38%; height: 7px; background: var(--gold); content: ""; }
+.mission-card h1 { max-width: 700px; margin: 0; font-family: var(--font-display); font-size: clamp(33px, 5vw, 60px); line-height: .95; text-transform: uppercase; }.mission-card h1 em { color: var(--blue); font-style: normal; }.mission-card > p { max-width: 650px; margin: 17px 0 0; color: var(--ink-soft); }
+.mission-visual { display: grid; place-items: center; min-height: 220px; margin: 27px 0 23px; border: 2px dashed var(--line-strong); border-radius: 14px; background: linear-gradient(135deg, #eef5ff, #f8f2ff); text-align: center; }.mission-visual .placeholder-icon { font-size: 54px; line-height: 1; }.mission-visual strong { display: block; margin-top: 10px; color: var(--ink); font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }.mission-visual small { display: block; margin-top: 6px; color: var(--ink-soft); }.mission-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; }.mission-actions .button-secondary { margin-left: auto; }
+.reward-card { max-width: 620px; margin: 0 auto; padding: 31px; border: 2px solid var(--gold); border-radius: 19px; background: var(--white); box-shadow: var(--shadow); text-align: center; }.reward-hex { display: grid; place-items: center; width: 88px; height: 100px; margin: 0 auto 22px; color: var(--night); background: var(--gold); clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); font-family: var(--font-display); font-size: 25px; animation: float-hex 2.4s ease-in-out infinite; }.reward-card h1 { margin: 0; font-family: var(--font-display); font-size: clamp(35px, 5vw, 58px); line-height: 1; text-transform: uppercase; }.reward-card p { color: var(--ink-soft); }.reward-card .button { margin-top: 10px; }
+@keyframes float-hex { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-7px) rotate(3deg); } }
+
+.interview-layout { display: grid; grid-template-columns: minmax(220px, .55fr) minmax(0, 1.45fr); gap: 23px; align-items: start; }.interview-rail { padding: 20px; border-radius: 17px; color: var(--white); background: var(--night); }.interview-rail h2 { margin: 0; color: var(--gold); font-family: var(--font-display); font-size: 25px; text-transform: uppercase; }.interview-rail p { margin: 9px 0 17px; color: #b8c9e2; font-size: 12px; }.question-steps { display: grid; gap: 7px; }.question-step { display: flex; align-items: center; gap: 9px; padding: 9px; border: 1px solid #3c526f; border-radius: 8px; color: #aebfd7; background: transparent; font-size: 11px; text-align: left; }.question-step::before { display: grid; flex: 0 0 19px; place-items: center; width: 19px; height: 19px; border: 1px solid currentColor; border-radius: 50%; content: attr(data-step); font-family: var(--font-mono); font-size: 9px; }.question-step.is-current { border-color: var(--cyan); color: var(--white); background: #1c2d46; }.question-step.is-complete { color: var(--cyan); }.question-step.is-complete::before { content: "✓"; }.question-card { padding: clamp(23px, 5vw, 42px); border: 2px solid var(--line); border-radius: 19px; background: var(--white); box-shadow: var(--shadow); }.question-type { display: inline-block; padding: 6px 9px; border-radius: 5px; color: var(--violet-dark); background: #eee7ff; font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }.question-card h1 { margin: 18px 0; font-size: clamp(24px, 3.3vw, 37px); line-height: 1.1; }.answer-box { display: block; width: 100%; min-height: 178px; resize: vertical; padding: 14px; border: 2px solid var(--line); border-radius: 11px; color: var(--ink); background: #fbfcff; }.answer-box::placeholder { color: #8fa0b6; }.answer-actions { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 16px; }.answer-actions .button-secondary { margin-left: auto; }
+.feedback-card { margin-top: 20px; padding: 19px; border-left: 5px solid var(--green); border-radius: 10px; background: #effcf8; }.feedback-card h2 { margin: 0; color: var(--green-dark); font-size: 16px; }.feedback-card p { margin: 7px 0 0; font-size: 13px; }.strong-answer { margin-top: 14px; padding: 13px; border-radius: 8px; background: var(--white); }.strong-answer strong { display: block; margin-bottom: 5px; color: var(--violet-dark); font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }.strong-answer p { margin: 0; font-size: 12px; }
+
+.results-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; margin: 30px 0; }.result-card { min-height: 170px; padding: 20px; border: 2px solid var(--line); border-radius: 15px; background: var(--white); }.result-card h2 { margin: 0 0 7px; font-family: var(--font-display); font-size: 23px; text-transform: uppercase; }.result-card p { margin: 0; color: var(--ink-soft); font-size: 12px; }.result-card .button { margin-top: 17px; padding: 8px 13px; font-size: 11px; }
+
+.skill-dock { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; min-height: var(--dock-height); color: var(--white); background: rgba(15, 23, 40, .97); box-shadow: 0 -9px 35px rgba(15, 23, 40, .2); }
+.dock-inner { display: flex; align-items: center; gap: clamp(15px, 3vw, 38px); width: min(1440px, 100%); min-height: var(--dock-height); margin: 0 auto; padding: 12px clamp(14px, 4vw, 56px); }.dock-label { display: flex; flex: 0 0 165px; align-items: center; gap: 10px; }.dock-pip { width: 8px; height: 41px; border-radius: 4px; background: var(--gold); box-shadow: 0 0 15px rgba(255,182,71,.6); }.dock-label h2 { margin: 0; font-family: var(--font-display); font-size: 17px; letter-spacing: .08em; }.dock-label p { margin: 3px 0 0; color: #aebed6; font-family: var(--font-mono); font-size: 10px; line-height: 1.2; }.hex-track { display: flex; flex: 1; align-items: center; gap: 7px; min-width: 0; overflow-x: auto; padding: 4px 2px 9px; scrollbar-width: thin; scrollbar-color: #49617f transparent; }.hex-track::-webkit-scrollbar { height: 5px; }.hex-track::-webkit-scrollbar-thumb { border-radius: 8px; background: #49617f; }.hex-empty { display: flex; align-items: center; gap: 8px; min-width: 142px; color: #9caeca; font-family: var(--font-mono); font-size: 10px; line-height: 1.1; }.hex-empty > span:first-child { display: grid; flex: 0 0 38px; place-items: center; width: 38px; height: 43px; border: 1px dashed #6380a5; color: #91aacb; clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); font-size: 18px; }.hex-item { position: relative; display: grid; flex: 0 0 72px; place-items: center; min-height: 84px; color: var(--night); background: var(--gold); clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); text-align: center; animation: skill-pop .46s cubic-bezier(.2, .9, .3, 1.2) both; }.hex-item:nth-child(3n) { background: var(--cyan); }.hex-item:nth-child(3n + 1) { background: #bda3ff; }.hex-item strong { max-width: 54px; font-size: 10px; line-height: 1.02; }.hex-item small { display: block; margin-top: 4px; font-family: var(--font-mono); font-size: 7px; font-weight: 700; text-transform: uppercase; }.hex-item[aria-label] { cursor: help; }.hex-item:hover { filter: brightness(1.12); transform: translateY(-4px); }.hex-flight { position: fixed; z-index: 50; width: 44px; height: 51px; pointer-events: none; background: var(--gold); clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); animation: skill-flight .7s ease-in-out both; }.dock-tip { flex: 0 0 auto; color: #8fa3c2; font-family: var(--font-mono); font-size: 9px; white-space: nowrap; }.dock-tip span { color: var(--gold); font-size: 17px; vertical-align: -2px; }
+@keyframes skill-pop { from { opacity: 0; transform: translateY(25px) scale(.4) rotate(-12deg); } to { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
+@keyframes skill-flight { 0% { opacity: 0; transform: translate(var(--flight-x, 0), var(--flight-y, 0)) scale(.4) rotate(-30deg); } 35% { opacity: 1; } 100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); } }
+
+.toast { position: fixed; z-index: 80; right: 18px; bottom: calc(var(--dock-height) + 17px); max-width: min(380px, calc(100% - 36px)); padding: 12px 16px; border: 1px solid #486383; border-radius: 8px; color: var(--white); background: var(--night); box-shadow: var(--shadow-tight); font-size: 12px; animation: toast-in .25s ease both; }.toast[hidden] { display: none; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+.modal-root:empty { display: none; }.modal-root { position: fixed; z-index: 70; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(15, 23, 40, .64); }.modal { width: min(540px, 100%); max-height: min(720px, 90vh); overflow: auto; padding: 28px; border-radius: 17px; background: var(--white); box-shadow: 0 25px 80px rgba(0,0,0,.35); }.modal h2 { margin-top: 0; font-family: var(--font-display); text-transform: uppercase; }.modal-close { float: right; min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; color: var(--ink); background: var(--paper-blue); font-size: 20px; }
+
+.empty-state { padding: 45px 25px; border: 2px dashed var(--line-strong); border-radius: 17px; background: rgba(255,255,255,.7); text-align: center; }.empty-state h1 { margin: 0; font-family: var(--font-display); font-size: 42px; text-transform: uppercase; }.empty-state p { color: var(--ink-soft); }
+.visually-hidden, .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
+
+@media (max-width: 980px) {
+  .hero-screen { grid-template-columns: 1fr; max-width: 720px; margin: 0 auto; }
+  .hero-copy { text-align: center; }.hero-copy::before { left: 20%; }.hero-copy .screen-subtitle { margin-right: auto; margin-left: auto; }.hero-actions, .hero-note { justify-content: center; }
+  .launch-card { max-width: 560px; margin: 0 auto; }
+  .map-region:not(:last-child)::after { right: -12px; width: 13px; }
+  .dock-tip { display: none; }
+}
+
+@media (max-width: 767px) {
+  :root { --dock-height: 108px; }
+  body { padding-bottom: var(--dock-height); }
+  .site-header { min-height: 66px; padding: 11px 16px; }.brand-mark { width: 35px; height: 35px; }.eyebrow { font-size: 8px; }.brand-name { font-size: 17px; }.status-copy { display: none; }.header-status { gap: 8px; }
+  #app { min-height: calc(100vh - 66px); padding: 32px 15px calc(var(--dock-height) + 72px); }.screen-title { font-size: clamp(39px, 13vw, 64px); }.screen-subtitle { font-size: 15px; }
+  .avatar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }.avatar-choice { min-height: 108px; }.avatar-portrait { width: 42px; height: 42px; margin-bottom: 7px; font-size: 18px; }.avatar-name { font-size: 12px; }
+  .map-intro, .screen-heading-row { display: block; }.map-progress { margin-top: 16px; }.map-board { padding: 18px 10px 25px; border-radius: 17px; }.map-regions { grid-template-columns: 1fr; gap: 27px; }.map-region:not(:last-child)::after { top: auto; right: auto; bottom: -16px; left: 50%; width: 2px; height: 15px; }.map-domain-group::before { left: 15%; width: 70%; }.specialization-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }.map-start { margin-bottom: 31px; }
+  .career-layout, .interview-layout { grid-template-columns: 1fr; }.career-identity { position: static; }.career-facts, .results-grid { grid-template-columns: 1fr; }.fact-card--wide { grid-column: auto; }.interview-rail { order: 2; }.question-card { order: 1; }
+  .mission-actions .button-secondary { margin-left: 0; }.mission-visual { min-height: 180px; }
+  .dock-inner { display: block; min-height: var(--dock-height); padding: 8px 12px 7px; }.dock-label { height: 27px; gap: 7px; }.dock-pip { width: 6px; height: 24px; }.dock-label h2 { font-size: 13px; }.dock-label p { display: inline; margin-left: 7px; font-size: 9px; }.hex-track { height: 67px; padding: 1px 0 3px; }.hex-item { flex-basis: 53px; min-height: 61px; }.hex-item strong { max-width: 40px; font-size: 8px; }.hex-item small { margin-top: 2px; font-size: 6px; }.hex-empty { min-width: 120px; font-size: 9px; }.hex-empty > span:first-child { flex-basis: 32px; width: 32px; height: 36px; }
+  .toast { bottom: auto; }
+}
+
+@media (max-width: 430px) {
+  .skill-picker { grid-template-columns: 1fr; }.skill-card { min-height: 76px; }.screen-heading-row .screen-title, .map-intro .screen-title { font-size: 39px; }.map-domain-group { grid-template-columns: 1fr; }.map-domain-group::before { display: none; }.map-domain { padding: 13px; }.specialization-row { grid-template-columns: 1fr 1fr; }.specialization-row .map-node { min-height: 65px; }.career-identity { padding: 20px; }.career-facts { gap: 9px; }.button--wide { width: 100%; }.topbar .button, .map-side .button, .hero-actions .button { width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Runtime view contracts                                                     */
+/* These selectors match the small, data-driven renderer in app.js. Keeping  */
+/* them separate from the component primitives above lets future mini-games   */
+/* replace their placeholder stage without changing the map or dock shell.   */
+/* -------------------------------------------------------------------------- */
+
+.screen--landing { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, .72fr); align-items: center; gap: clamp(28px, 7vw, 100px); min-height: 530px; }
+.landing-sky { position: absolute; z-index: -1; top: -50px; right: -20px; width: min(54vw, 600px); height: 510px; overflow: hidden; border-radius: 48% 52% 44% 56%; opacity: .95; background: radial-gradient(circle at 62% 34%, rgba(70,216,220,.22), transparent 2px), radial-gradient(circle at 18% 22%, rgba(255,182,71,.4), transparent 2px), linear-gradient(142deg, transparent 42%, rgba(123,67,230,.09) 43% 68%, transparent 69%); }
+.landing-sky::after { position: absolute; right: 9%; bottom: 8%; width: 230px; height: 100px; border: 2px solid rgba(39,112,232,.17); border-radius: 50%; content: ""; transform: rotate(-15deg); }
+.star { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 14px var(--gold); }.star--one { top: 18%; left: 25%; }.star--two { top: 58%; left: 69%; width: 5px; height: 5px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }.star--three { top: 33%; right: 20%; width: 4px; height: 4px; background: var(--coral); }
+.planet { position: absolute; right: 14%; bottom: 17%; width: 150px; height: 150px; border: 11px solid rgba(39,112,232,.15); border-radius: 50%; box-shadow: inset -16px -12px rgba(123,67,230,.1); }.planet::after { position: absolute; top: 55px; left: -30px; width: 190px; height: 22px; border: 3px solid rgba(0,164,119,.2); border-radius: 50%; content: ""; transform: rotate(-18deg); }
+.landing-copy { position: relative; z-index: 1; }.landing-copy h1 { max-width: 760px; margin: 0; color: var(--ink); font-family: var(--font-display); font-size: clamp(50px, 7vw, 94px); line-height: .9; text-transform: uppercase; }.landing-copy h1 em { color: var(--blue); font-style: normal; }.landing-copy .lede { max-width: 610px; margin: 21px 0 0; color: var(--ink-soft); font-size: clamp(16px, 2vw, 20px); }.landing-note { position: absolute; right: 0; bottom: -20px; margin: 0; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.start-card { max-width: 555px; margin-top: 31px; padding: 20px 22px 21px; border: 2px solid #c3d3e9; border-radius: 16px; background: rgba(255,255,255,.91); box-shadow: var(--shadow); }.start-card > label { display: block; margin-bottom: 7px; color: var(--ink); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }.start-card input { display: block; width: 100%; min-height: 46px; padding: 9px 12px; border: 2px solid var(--line); border-radius: 8px; color: var(--ink); background: #f8faff; font-size: 15px; }.start-card input:focus { border-color: var(--blue); outline: 3px solid rgba(39,112,232,.17); }.start-card fieldset { margin: 17px 0 19px; padding: 0; border: 0; }.start-card legend { margin-bottom: 8px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }.start-card .avatar-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; }.start-card .avatar-choice { display: flex; min-height: 77px; flex-direction: column; align-items: center; justify-content: center; padding: 8px; text-align: center; }.avatar-glyph { display: grid; place-items: center; width: 35px; height: 35px; margin-bottom: 5px; border-radius: 11px; color: var(--white); background: var(--blue); font-family: var(--font-display); font-size: 19px; }.avatar-choice:nth-child(2) .avatar-glyph { background: var(--violet); }.avatar-choice:nth-child(3) .avatar-glyph { background: var(--green); }.avatar-choice:nth-child(4) .avatar-glyph { background: var(--coral); }.start-card .avatar-choice > span:last-child { font-size: 10px; font-weight: 800; }.button--wide { width: 100%; }.button--primary { color: var(--white); background: var(--blue); }.text-button { min-height: 44px; padding: 7px 0; border: 0; color: var(--blue-dark); background: transparent; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }.text-button:hover { color: var(--violet-dark); }.landing-copy > .text-button { margin-top: 10px; }
+
+.screen--map { width: min(1430px, 100%); }.topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 19px; }.topbar .button { flex: 0 0 auto; }.map-instruction { max-width: 760px; margin: 0 0 22px; color: var(--ink-soft); font-size: 15px; }.world-map { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(13px, 2vw, 26px); padding: 25px clamp(10px, 2.4vw, 30px) 30px; border: 2px solid #c4d4e9; border-radius: 21px; background: rgba(246,249,255,.78); box-shadow: var(--shadow); }.world-map::before { position: absolute; inset: 0; opacity: .52; pointer-events: none; content: ""; background-image: linear-gradient(rgba(133,157,192,.11) 1px, transparent 1px), linear-gradient(90deg, rgba(133,157,192,.11) 1px, transparent 1px); background-size: 36px 36px; }.map-region { position: relative; z-index: 1; min-width: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }.map-region:not(:last-child)::after { top: 46px; right: -15px; width: 15px; height: 2px; background: var(--line-strong); }.region-ribbon { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 10px; min-height: 101px; padding: 14px 14px 13px; border-radius: 14px; color: var(--white); background: var(--region-color, var(--blue)); box-shadow: var(--shadow-tight); }.region-index { display: grid; place-items: center; width: 30px; height: 36px; border: 2px solid rgba(255,255,255,.57); border-radius: 8px; font-family: var(--font-display); font-size: 21px; }.region-ribbon h2 { margin: 0; font-family: var(--font-display); font-size: clamp(19px, 2.2vw, 28px); line-height: 1; text-transform: uppercase; }.region-ribbon p { margin: 7px 0 0; color: rgba(255,255,255,.82); font-size: 10px; line-height: 1.25; }.region-skill { grid-column: 2; margin-top: -4px; color: rgba(255,255,255,.92); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }.map-children { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 29px; }.map-children::before { position: absolute; top: -16px; left: 25%; width: 50%; height: 16px; border-top: 2px solid var(--line-strong); border-left: 2px solid var(--line-strong); border-right: 2px solid var(--line-strong); content: ""; }.map-domain { position: relative; min-width: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }.map-node { display: block; min-width: 0; width: 100%; overflow: hidden; }.map-node--domain { min-height: 124px; padding: 13px 11px 10px; border: 2px solid var(--line-strong); border-left-width: 5px; border-radius: 12px; color: var(--ink); background: rgba(255,255,255,.9); box-shadow: 0 4px 0 rgba(148,169,200,.24); text-align: left; }.map-node--domain:hover:not(:disabled) { border-color: var(--blue); border-left-color: var(--blue); }.node-number { display: block; margin-bottom: 5px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 9px; font-weight: 700; }.node-title { display: block; color: var(--ink); font-size: clamp(12px, 1.4vw, 16px); font-weight: 900; line-height: 1.05; }.node-subtitle { display: block; min-height: 27px; margin-top: 5px; color: var(--ink-soft); font-size: 10px; line-height: 1.15; }.node-reward { display: inline-block; margin-top: 9px; padding: 4px 6px; border-radius: 5px; color: var(--violet-dark); background: #eee8ff; font-family: var(--font-mono); font-size: 8px; font-weight: 700; text-transform: uppercase; }.node-status { position: absolute; top: 10px; right: 9px; color: var(--blue); font-family: var(--font-mono); font-size: 13px; font-weight: 700; }.map-domain.is-complete .map-node--domain { border-color: var(--green); background: #f0fffa; }.map-domain.is-future .map-node--domain, .map-node.is-future { border-color: #b3c0d1; border-left-color: #9aacbf; background: #f1f4f8; }.map-domain.is-future .node-title, .map-node.is-future .node-title { color: #77899f; }.map-specializations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 21px -2px 0; }.map-specializations::before { position: absolute; top: 144px; left: 50%; width: 2px; height: 19px; background: var(--line-strong); content: ""; }.map-node--specialization { position: relative; min-height: 84px; padding: 9px 7px 8px; border: 2px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--paper-blue); text-align: center; }.map-node--specialization:hover:not(:disabled) { border-color: var(--blue); transform: translateY(-2px); }.map-node--specialization .node-number { margin-bottom: 4px; font-size: 8px; }.map-node--specialization .node-title { font-size: 10px; line-height: 1.1; }.map-node--specialization .node-career { display: block; margin-top: 5px; color: var(--ink-soft); font-size: 9px; font-weight: 700; line-height: 1.1; }.map-node--specialization .node-reward { margin-top: 6px; padding: 3px 4px; font-size: 7px; }.map-node--specialization .node-status { top: 7px; right: 7px; font-size: 10px; }.map-node--specialization.is-complete { border-color: var(--green); background: #effcf8; }.map-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 16px; margin-top: 17px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; }.legend-dot { display: inline-block; width: 8px; height: 8px; margin-right: -11px; border-radius: 50%; background: var(--blue); }.legend-dot--done { background: var(--green); }.legend-dot--future { background: #9aacbf; }
+
+.screen--challenge { width: min(1180px, 100%); }.progress-chip { padding: 6px 9px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); color: var(--violet-dark); background: rgba(255,255,255,.65); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .1em; }.challenge-layout { display: grid; grid-template-columns: minmax(0, .86fr) minmax(360px, 1.14fr); gap: clamp(22px, 5vw, 72px); align-items: center; min-height: 460px; }.challenge-copy h1 { max-width: 550px; margin: 0; font-family: var(--font-display); font-size: clamp(42px, 6vw, 78px); line-height: .92; text-transform: uppercase; }.challenge-copy .lede { max-width: 560px; margin: 17px 0 0; color: var(--ink-soft); font-size: 16px; }.reward-callout { display: flex; align-items: center; gap: 12px; max-width: 400px; margin-top: 25px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.78); }.hex { display: grid; place-items: center; color: var(--night); background: var(--skill-color, var(--gold)); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); }.hex--small { flex: 0 0 47px; width: 47px; height: 54px; }.reward-callout strong { display: block; margin-top: 2px; font-family: var(--font-display); font-size: 22px; line-height: 1; text-transform: uppercase; }.reward-callout p { margin: 3px 0 0; color: var(--ink-soft); font-size: 11px; }.challenge-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 24px; }.placeholder-stage { position: relative; display: grid; place-items: center; min-height: 410px; overflow: hidden; border: 2px solid #bdcde4; border-radius: 20px; background: var(--night); box-shadow: var(--shadow); }.stage-grid { position: absolute; inset: 0; opacity: .43; background-image: linear-gradient(rgba(70,216,220,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(70,216,220,.18) 1px, transparent 1px); background-size: 33px 33px; transform: perspective(350px) rotateX(48deg) scale(1.5); transform-origin: bottom; }.placeholder-stage::before { position: absolute; top: 15%; left: 18%; width: 70px; height: 70px; border: 1px solid rgba(255,182,71,.6); border-radius: 50%; box-shadow: 0 0 28px rgba(255,182,71,.32); content: ""; }.placeholder-stage::after { position: absolute; right: 14%; bottom: 18%; width: 32px; height: 32px; border: 2px solid rgba(70,216,220,.76); clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); content: ""; }.placeholder-card { position: relative; z-index: 1; width: min(320px, 78%); padding: 26px 20px; border: 1px solid #4d6687; border-radius: 13px; color: var(--white); background: rgba(22,36,59,.91); box-shadow: 0 15px 35px rgba(0,0,0,.3); text-align: center; }.placeholder-icon { display: block; color: var(--gold); font-family: var(--font-mono); font-size: 41px; line-height: 1; }.placeholder-card .eyebrow { display: block; margin-top: 13px; color: var(--cyan); }.placeholder-card h2 { margin: 8px 0 0; font-family: var(--font-display); font-size: 25px; letter-spacing: .03em; text-transform: uppercase; }.placeholder-card p { margin: 8px 0 0; color: #c2d3ea; font-size: 12px; }.placeholder-meta { display: flex; justify-content: center; gap: 9px; margin-top: 16px; }.placeholder-meta span { padding: 5px 7px; border-radius: 5px; color: var(--gold); background: #263b5a; font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
+
+.screen--career { width: min(1250px, 100%); }.career-hero { position: relative; overflow: hidden; margin-bottom: 24px; padding: clamp(25px, 5vw, 49px); border-radius: 20px; color: var(--white); background: var(--night); box-shadow: var(--shadow); }.career-hero::after { position: absolute; right: 6%; bottom: -110px; width: 300px; height: 300px; border: 2px solid rgba(70,216,220,.2); border-radius: 50%; box-shadow: 0 0 0 23px rgba(70,216,220,.04), 0 0 0 52px rgba(70,216,220,.04); content: ""; }.career-hero h1 { position: relative; z-index: 1; max-width: 800px; margin: 0; color: var(--white); font-family: var(--font-display); font-size: clamp(46px, 7vw, 88px); line-height: .9; text-transform: uppercase; }.career-hero .lede { position: relative; z-index: 1; max-width: 700px; margin: 17px 0 0; color: #c6d4e8; font-size: 16px; }.career-hero .eyebrow { color: var(--cyan); }.career-hero-meta { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 9px; margin-top: 25px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }.career-hero-meta span { padding: 7px 9px; border: 1px solid #48617f; border-radius: 6px; color: #b9cbe4; }.career-hero-meta strong { color: var(--gold); }.career-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(250px, .6fr); gap: 20px; align-items: start; }.career-facts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }.fact { min-width: 0; padding: 18px; border: 2px solid var(--line); border-radius: 13px; background: var(--white); }.fact h2 { margin: 0 0 9px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }.fact ul { margin: 0; padding-left: 17px; }.fact li { margin: 5px 0; color: var(--ink-soft); font-size: 12px; }.career-sidebar { position: sticky; top: 18px; display: grid; gap: 12px; }.career-stat { padding: 18px; border: 2px solid var(--line); border-radius: 13px; background: var(--white); }.career-stat strong { display: block; margin-top: 5px; color: var(--ink); font-family: var(--font-display); font-size: 24px; line-height: 1.05; }.career-stat p { margin: 6px 0 0; color: var(--ink-soft); font-size: 12px; }.career-stat small { display: block; margin-top: 8px; color: #8193aa; font-size: 10px; }.career-sidebar .text-button { text-align: center; }
+
+/* app.js replaces the initial dock contents after the first render. */
+.skill-dock.has-skills .dock-inner { min-height: var(--dock-height); }.skill-dock .dock-inner { display: flex; align-items: center; }.skill-dock .dock-label { display: grid; flex: 0 0 170px; gap: 2px; }.skill-dock .dock-label .eyebrow { color: var(--cyan); font-size: 11px; }.skill-dock .dock-label > span:last-child { color: #aebed6; font-family: var(--font-mono); font-size: 10px; }.skill-honeycomb { display: flex; flex: 1; align-items: center; gap: 7px; min-width: 0; overflow-x: auto; padding: 3px 2px 8px; scrollbar-width: thin; scrollbar-color: #49617f transparent; }.skill-honeycomb::-webkit-scrollbar { height: 5px; }.skill-honeycomb::-webkit-scrollbar-thumb { border-radius: 8px; background: #49617f; }.skill-hex { position: relative; display: grid; flex: 0 0 72px; place-items: center; min-height: 82px; padding: 11px 8px; border: 0; color: var(--night); background: var(--skill-color, var(--gold)); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); text-align: center; transition: filter .16s ease, transform .16s ease; }.skill-hex > span { position: absolute; top: 10px; font-size: 12px; }.skill-hex strong { max-width: 52px; margin-top: 11px; font-size: 10px; line-height: 1.03; text-transform: uppercase; }.skill-hex:hover { filter: brightness(1.1); transform: translateY(-4px); }.skill-hex--new { animation: skill-pop .55s cubic-bezier(.2,.9,.3,1.2) both; }.empty-stack { display: flex; align-items: center; gap: 9px; min-width: 220px; color: #9caeca; font-family: var(--font-mono); font-size: 10px; line-height: 1.1; }.hex--ghost { flex: 0 0 43px; width: 43px; height: 50px; border: 1px dashed #6380a5; color: #91aacb; background: transparent; font-size: 20px; }
+.toast-region { position: fixed; z-index: 80; right: 18px; bottom: calc(var(--dock-height) + 17px); width: min(380px, calc(100% - 36px)); }.toast { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 12px 15px; border: 1px solid #486383; border-radius: 8px; color: var(--white); background: var(--night); box-shadow: var(--shadow-tight); font-size: 12px; animation: toast-in .25s ease both; }.toast-mark { display: grid; flex: 0 0 25px; place-items: center; width: 25px; height: 29px; color: var(--night); background: var(--skill-color, var(--gold)); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); }.toast--reward { border-color: var(--gold); }.modal-backdrop { position: fixed; z-index: 71; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(15,23,40,.7); }.modal { width: min(540px, 100%); max-height: min(720px, 90vh); overflow: auto; padding: 28px; border: 2px solid var(--line); border-radius: 17px; background: var(--white); box-shadow: 0 25px 80px rgba(0,0,0,.35); }.modal h2 { margin: 7px 0 11px; color: var(--ink); font-family: var(--font-display); font-size: 36px; line-height: 1; text-transform: uppercase; }.modal-close { float: right; display: grid; place-items: center; min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; color: var(--ink); background: var(--paper-blue); font-size: 20px; }.modal p { color: var(--ink-soft); font-size: 13px; }.modal-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 10px; margin-top: 19px; }.button--danger { background: var(--coral); box-shadow: 0 4px 0 #c84545; }.hex--modal { float: left; width: 54px; height: 63px; margin: 0 13px 6px 0; color: var(--night); font-size: 20px; }
+
+@media (max-width: 980px) {
+  .screen--landing { grid-template-columns: 1fr; max-width: 720px; margin: 0 auto; }.landing-copy { text-align: center; }.landing-copy .lede { margin-right: auto; margin-left: auto; }.start-card { margin-right: auto; margin-left: auto; text-align: left; }.landing-sky { top: 30px; right: 0; width: 100%; opacity: .6; }.landing-note { position: static; margin-top: 21px; text-align: center; }.world-map { grid-template-columns: 1fr; }.map-region:not(:last-child)::after { top: auto; right: auto; bottom: -16px; left: 50%; width: 2px; height: 15px; }.challenge-layout { grid-template-columns: 1fr; max-width: 760px; margin: 0 auto; }.challenge-copy { text-align: center; }.challenge-copy .lede { margin-right: auto; margin-left: auto; }.reward-callout { margin-right: auto; margin-left: auto; text-align: left; }.challenge-actions { justify-content: center; }.placeholder-stage { min-height: 330px; }.career-grid { grid-template-columns: 1fr; }.career-sidebar { position: static; grid-template-columns: repeat(2, minmax(0,1fr)); }.career-sidebar .button--wide, .career-sidebar .text-button { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .topbar { align-items: flex-start; }.topbar .button--quiet { min-height: 40px; padding: 7px 10px; font-size: 10px; }.topbar > .progress-chip { margin-top: 7px; }.world-map { padding: 17px 10px 23px; border-radius: 16px; }.region-ribbon { min-height: 92px; }.map-children { margin-top: 27px; }.map-node--domain { min-height: 114px; }.screen--challenge .topbar .progress-chip { display: none; }.challenge-layout { min-height: 0; }.placeholder-stage { min-height: 255px; }.career-hero { padding: 25px 20px; }.career-facts { grid-template-columns: 1fr; }.career-sidebar { grid-template-columns: 1fr; }.career-sidebar .button--wide, .career-sidebar .text-button { grid-column: auto; }.skill-dock .dock-inner { display: block; min-height: var(--dock-height); padding: 7px 12px; }.skill-dock .dock-label { display: block; height: 26px; }.skill-dock .dock-label .eyebrow { display: inline; font-size: 10px; }.skill-dock .dock-label > span:last-child { display: inline; margin-left: 7px; font-size: 9px; }.skill-honeycomb { height: 68px; }.skill-hex { flex-basis: 53px; min-height: 61px; }.skill-hex strong { max-width: 41px; font-size: 8px; }.skill-hex > span { top: 6px; font-size: 9px; }.empty-stack { min-width: 190px; font-size: 9px; }.hex--ghost { flex-basis: 35px; width: 35px; height: 41px; }.toast-region { bottom: calc(var(--dock-height) + 12px); }
+}
+@media (max-width: 430px) {
+  .landing-copy h1 { font-size: 49px; }.start-card { padding: 17px 14px; }.start-card .avatar-choice { min-height: 72px; }.region-ribbon h2 { font-size: 19px; }.map-children { grid-template-columns: 1fr; }.map-children::before { left: 17%; width: 66%; }.map-specializations { margin-top: 16px; }.map-specializations::before { display: none; }.map-node--specialization { min-height: 74px; }.career-hero h1 { font-size: 47px; }.button--wide { width: 100%; }
+}
+
+/* Release-gate refinements: focus safety, readable locked states, and a true
+   growing honeycomb dock without changing the mini-game component contract. */
+button, [tabindex] { scroll-margin-bottom: calc(var(--dock-height) + 28px); }
+.button--quiet { min-height: 44px; }
+.map-side { display: grid; justify-items: end; gap: 10px; }
+.map-side .button { width: auto; }
+.region-heading { display: block; margin: 0; font-family: var(--font-display); font-size: clamp(19px, 2.2vw, 28px); line-height: 1; text-transform: uppercase; }
+.region-description { display: block; margin-top: 7px; color: var(--white); font-size: 11px; font-weight: 700; line-height: 1.25; }
+.map-domain.is-future .node-title, .map-node.is-future .node-title,
+.map-domain.is-locked .node-title, .map-node.is-locked .node-title { color: #536981; }
+.career-stat small { color: #536981; font-size: 11px; }
+.skill-honeycomb, .hex-track { gap: 0; padding-left: 8px; padding-bottom: 19px; }
+.skill-hex, .hex-item { margin-left: -17px; }
+.skill-hex:first-child, .hex-item:first-child { margin-left: 0; }
+.skill-hex:nth-child(even), .hex-item:nth-child(even) { top: 20px; }
+.skill-hex:hover, .skill-hex:focus-visible, .hex-item:hover, .hex-item:focus-visible { z-index: 2; }
+.toast-region { top: 92px; bottom: auto; }
+.toast-region .toast { position: static; right: auto; bottom: auto; }
+.hex-flight { z-index: 90; background: var(--skill-color, var(--gold)); animation: skill-flight .7s cubic-bezier(.2,.8,.25,1) both; }
+@keyframes skill-flight { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.35) rotate(-25deg); } 24% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--flight-x, 0px)), calc(-50% + var(--flight-y, 0px))) scale(.8) rotate(18deg); } }
+
+@media (max-width: 767px) {
+  .topbar .button--quiet { min-height: 44px; }
+  .map-side { justify-items: start; margin-top: 14px; }
+  .toast-region { top: 76px; bottom: auto; }
+  .skill-honeycomb, .hex-track { padding-bottom: 11px; }
+  .skill-hex, .hex-item { margin-left: -12px; }
+  .skill-hex:nth-child(even), .hex-item:nth-child(even) { top: 10px; }
+}
+
+@media (max-width: 430px) {
+  .region-heading { font-size: 19px; }
+  .button--wide { width: 100%; }
+  .topbar .button, .map-side .button, .hero-actions .button { width: auto; }
+}
+</style>
+  </head>
+  <body>
+    <a class="skip-link" href="#app">Skip to game</a>
+
+    <header class="site-header" aria-label="IS Career Launchpad">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span>IS</span><i></i></div>
+        <div>
+          <p class="eyebrow">BYU · INFORMATION SYSTEMS</p>
+          <p class="brand-name">CAREER <span>LAUNCHPAD</span></p>
+        </div>
+      </div>
+      <div class="header-status" aria-label="Journey status">
+        <span class="status-lamp" aria-hidden="true"></span>
+        <span class="status-copy" id="header-status-copy">READY TO EXPLORE</span>
+        <button class="button button-quiet" id="restart-button" type="button" hidden>Restart</button>
+      </div>
+    </header>
+
+    <main id="app" tabindex="-1"></main>
+
+    <aside id="skill-dock" class="skill-dock" aria-labelledby="skill-dock-title">
+      <div class="dock-inner">
+        <div class="dock-label">
+          <span class="dock-pip" aria-hidden="true"></span>
+          <div>
+            <h2 id="skill-dock-title">SKILL STACK</h2>
+            <p id="skill-dock-count">Your launch kit is empty</p>
+          </div>
+        </div>
+        <div class="hex-track" id="skill-dock-list" role="list" aria-label="Skills earned during this journey">
+          <div class="hex-empty" id="skill-dock-empty" role="listitem">
+            <span aria-hidden="true">+</span><span>Earn skills<br>as you explore</span>
+          </div>
+        </div>
+        <div class="dock-tip"><span aria-hidden="true">⌁</span> Each mission adds a new edge</div>
+      </div>
+    </aside>
+
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <div id="modal-root" class="modal-root" aria-live="polite"></div>
+
+    <script>/*
+ * Information Systems Career Launchpad data
+ *
+ * This file is intentionally the single source of truth for the map.  Mini-games
+ * are currently placeholders; each placeholder has a stable id and metadata so a
+ * future game can replace it without changing the progression state machine.
+ */
+
+/**
+ * @typedef {Object} EarnedSkill
+ * @property {string} id Stable skill id used by the skill-stack renderer.
+ * @property {string} label Student-facing skill label.
+ * @property {string} category Foundation, domain, or specialization skill.
+ */
+
+/**
+ * @typedef {Object} MiniGamePlan
+ * @property {string} id Stable mini-game id.
+ * @property {string} title Planned game title.
+ * @property {string} concept One-sentence description of the future interaction.
+ * @property {number} durationSeconds Target play time for the future game.
+ * @property {string} instructions Placeholder instructions shown before implementation.
+ * @property {"planned"|"ready"} status Implementation status.
+ * @property {string} visualType Renderer hint for the future game workspace.
+ */
+
+/**
+ * @typedef {Object} MapNode
+ * @property {string} id Stable map-node id.
+ * @property {1|2|3} tier 1 = region, 2 = domain, 3 = specialization/career match.
+ * @property {string|null} parentId Parent map-node id, or null for a region.
+ * @property {string} title Map title.
+ * @property {string} subtitle Short map label.
+ * @property {string} description Student-facing explanation.
+ * @property {string} color Hex color token for the branch.
+ * @property {string} theme Theme name used by the visual renderer.
+ * @property {EarnedSkill} earnedSkill Skill awarded when the placeholder is skipped/completed.
+ * @property {MiniGamePlan} miniGame Planned mini-game metadata.
+ * @property {string|null} careerId Career-result id for tier-three nodes.
+ */
+
+/**
+ * @typedef {Object} CareerProfile
+ * @property {string} id Stable career id.
+ * @property {string} title Exact career title shown in the result card.
+ * @property {string} summary Editable role summary.
+ * @property {string[]} dayToDay Typical day-to-day responsibilities.
+ * @property {string[]} typicalProjects Example projects to expand with research later.
+ * @property {string[]} workSettings Places this role commonly works.
+ * @property {string[]} industries Example industries.
+ * @property {string[]} companyTypes Example employer types.
+ * @property {string[]} technicalSkills Technical preparation areas.
+ * @property {string[]} toolsAndTechnologies Tools to verify and expand through research.
+ * @property {string[]} entryLevelNeeds Editable preparation checklist.
+ * @property {{status:string,range:string|null,source:string|null,note:string}} salary Salary is intentionally unresearched in v1.
+ * @property {string[]} careerGrowth Potential next steps.
+ * @property {{skills:string[],experience:string[],projects:string[],certifications:string[]}} strongCandidate Candidate profile fields.
+ * @property {string[]} sourceRefs Source-ledger ids to add when research is completed.
+ * @property {"research-pending"|"researched"} researchStatus Content research status.
+ */
+
+/** @param {string} id @param {string} label @param {string} category */
+function makeSkill(id, label, category) {
+  return { id, label, category };
+}
+
+/**
+ * @param {string} id
+ * @param {string} title
+ * @param {string} concept
+ * @param {string} visualType
+ * @param {string} instructions
+ * @returns {MiniGamePlan}
+ */
+function makeMiniGame(id, title, concept, visualType, instructions) {
+  return {
+    id,
+    title,
+    concept,
+    durationSeconds: 60,
+    instructions,
+    status: "planned",
+    visualType,
+  };
+}
+
+/**
+ * @param {Object} input
+ * @param {string} input.id
+ * @param {1|2|3} input.tier
+ * @param {string|null} input.parentId
+ * @param {string} input.title
+ * @param {string} input.subtitle
+ * @param {string} input.description
+ * @param {string} input.color
+ * @param {string} input.theme
+ * @param {EarnedSkill} input.earnedSkill
+ * @param {MiniGamePlan} input.miniGame
+ * @param {string|null} [input.careerId]
+ * @returns {MapNode}
+ */
+function makeNode(input) {
+  return {
+    id: input.id,
+    tier: input.tier,
+    parentId: input.parentId,
+    title: input.title,
+    subtitle: input.subtitle,
+    description: input.description,
+    color: input.color,
+    theme: input.theme,
+    earnedSkill: input.earnedSkill,
+    miniGame: input.miniGame,
+    careerId: input.careerId || null,
+  };
+}
+
+const SKILLS = {
+  creativity: makeSkill("creativity", "Creativity", "foundation"),
+  software: makeSkill("software", "Software", "domain"),
+  coder: makeSkill("coder", "Coder", "specialization"),
+  designer: makeSkill("designer", "Designer", "specialization"),
+  hardware: makeSkill("hardware", "Hardware", "domain"),
+  cloudBuilder: makeSkill("cloud-builder", "Cloud Builder", "specialization"),
+  systemsThinker: makeSkill("systems-thinker", "Systems Thinker", "specialization"),
+  analyst: makeSkill("analyst", "Analyst", "foundation"),
+  numbers: makeSkill("numbers", "Numbers", "domain"),
+  trendy: makeSkill("trendy", "Trendy", "specialization"),
+  fortuneTeller: makeSkill("fortune-teller", "Fortune Teller", "specialization"),
+  hacker: makeSkill("hacker", "Hacker", "domain"),
+  detective: makeSkill("detective", "Detective", "specialization"),
+  bodyguard: makeSkill("bodyguard", "Bodyguard", "specialization"),
+  peopleSkills: makeSkill("people-skills", "People Skills", "foundation"),
+  speech: makeSkill("speech", "Speech", "domain"),
+  logistical: makeSkill("logistical", "Logistical", "specialization"),
+  renovator: makeSkill("renovator", "Renovator", "specialization"),
+  marketReach: makeSkill("market-reach", "Market Reach", "domain"),
+  creative: makeSkill("creative", "Creative", "specialization"),
+  strategist: makeSkill("strategist", "Strategist", "specialization"),
+};
+
+const COLORS = {
+  build: "#2f6fed",
+  buildLight: "#8bbcff",
+  analyze: "#7c3aed",
+  analyzeLight: "#c4b5fd",
+  people: "#059669",
+  peopleLight: "#6ee7b7",
+};
+
+const REGIONS = [
+  makeNode({
+    id: "region-build-create",
+    tier: 1,
+    parentId: null,
+    title: "Build and Create",
+    subtitle: "I like making technology work.",
+    description: "Imagine, build, and improve the technology people use every day.",
+    color: COLORS.build,
+    theme: "build-create",
+    earnedSkill: SKILLS.creativity,
+    miniGame: makeMiniGame(
+      "minigame-build-create-door",
+      "Make a Door",
+      "Build a working doorway in a 2D Minecraft-style workspace.",
+      "minecraft-2d",
+      "Planned placeholder: place blocks to make a door that opens."
+    ),
+  }),
+  makeNode({
+    id: "region-analyze-solve",
+    tier: 1,
+    parentId: null,
+    title: "Analyze and Solve",
+    subtitle: "I like finding answers in complexity.",
+    description: "Look for patterns, investigate problems, and turn evidence into answers.",
+    color: COLORS.analyze,
+    theme: "analyze-solve",
+    earnedSkill: SKILLS.analyst,
+    miniGame: makeMiniGame(
+      "minigame-analyze-solve-jigsaw",
+      "Solve the Evidence Puzzle",
+      "Assemble a simple jigsaw puzzle to reveal the next clue.",
+      "jigsaw",
+      "Planned placeholder: arrange the evidence pieces into one clear picture."
+    ),
+  }),
+  makeNode({
+    id: "region-people-lead",
+    tier: 1,
+    parentId: null,
+    title: "People and Lead",
+    subtitle: "I like helping people move forward.",
+    description: "Coordinate people, communicate clearly, and create useful experiences.",
+    color: COLORS.people,
+    theme: "people-lead",
+    earnedSkill: SKILLS.peopleSkills,
+    miniGame: makeMiniGame(
+      "minigame-people-lead-team",
+      "Build a Team",
+      "Choose two or three characters whose strengths fit the mission.",
+      "team-builder",
+      "Planned placeholder: pick a balanced team for the project brief."
+    ),
+  }),
+];
+
+const DOMAINS = [
+  makeNode({
+    id: "domain-software-apps",
+    tier: 2,
+    parentId: "region-build-create",
+    title: "Software and Apps",
+    subtitle: "Create digital products.",
+    description: "Turn ideas into useful interfaces, applications, and reliable software.",
+    color: COLORS.buildLight,
+    theme: "build-create",
+    earnedSkill: SKILLS.software,
+    miniGame: makeMiniGame(
+      "minigame-software-scratch",
+      "Block Coding Studio",
+      "Arrange Scratch-style blocks to make a character respond to a user.",
+      "block-coding",
+      "Planned placeholder: snap blocks together to make the interaction work."
+    ),
+  }),
+  makeNode({
+    id: "domain-systems-tech",
+    tier: 2,
+    parentId: "region-build-create",
+    title: "Systems and Tech",
+    subtitle: "Keep technology running.",
+    description: "Understand hardware and connected platforms that keep organizations moving.",
+    color: COLORS.buildLight,
+    theme: "build-create",
+    earnedSkill: SKILLS.hardware,
+    miniGame: makeMiniGame(
+      "minigame-systems-cpu",
+      "Find the CPU",
+      "Identify the CPU in a labeled cross-section of a computer.",
+      "computer-cross-section",
+      "Planned placeholder: inspect the computer and click the processor."
+    ),
+  }),
+  makeNode({
+    id: "domain-data-insights",
+    tier: 2,
+    parentId: "region-analyze-solve",
+    title: "Data Insight",
+    subtitle: "Turn data into answers.",
+    description: "Use numbers, charts, and models to explain what is happening and what may happen next.",
+    color: COLORS.analyzeLight,
+    theme: "analyze-solve",
+    earnedSkill: SKILLS.numbers,
+    miniGame: makeMiniGame(
+      "minigame-data-chart-match",
+      "Match Data to Charts",
+      "Match three datasets to the three charts that communicate them best.",
+      "data-chart-match",
+      "Planned placeholder: connect each dataset to its most useful chart."
+    ),
+  }),
+  makeNode({
+    id: "domain-security-risk",
+    tier: 2,
+    parentId: "region-analyze-solve",
+    title: "Security and Risk",
+    subtitle: "Protect systems and trust.",
+    description: "Spot threats, understand controls, and help people make safer technology decisions.",
+    color: COLORS.analyzeLight,
+    theme: "analyze-solve",
+    earnedSkill: SKILLS.hacker,
+    miniGame: makeMiniGame(
+      "minigame-security-password",
+      "Guess the Password",
+      "Use Wordle-style clues to uncover a suspicious account password.",
+      "wordle-password",
+      "Planned placeholder: make guesses and use the clues to narrow the answer."
+    ),
+  }),
+  makeNode({
+    id: "domain-projects-delivery",
+    tier: 2,
+    parentId: "region-people-lead",
+    title: "Projects and Delivery",
+    subtitle: "Guide work to completion.",
+    description: "Coordinate people, priorities, and communication so work can ship successfully.",
+    color: COLORS.peopleLight,
+    theme: "people-lead",
+    earnedSkill: SKILLS.speech,
+    miniGame: makeMiniGame(
+      "minigame-projects-slide",
+      "Build the Briefing Slide",
+      "Arrange supplied components into a clear presentation slide.",
+      "slide-builder",
+      "Planned placeholder: place the title, evidence, and recommendation in a useful order."
+    ),
+  }),
+  makeNode({
+    id: "domain-users-products",
+    tier: 2,
+    parentId: "region-people-lead",
+    title: "Users and Product",
+    subtitle: "Shape useful experiences.",
+    description: "Learn what users need and turn that insight into products people can use.",
+    color: COLORS.peopleLight,
+    theme: "people-lead",
+    earnedSkill: SKILLS.marketReach,
+    miniGame: makeMiniGame(
+      "minigame-users-github-deploy",
+      "Publish the Project",
+      "Drag a file into GitHub, find its host, and publish it.",
+      "deploy-drag-drop",
+      "Planned placeholder: move the project file to GitHub and select its hosting destination."
+    ),
+  }),
+];
+
+const SPECIALIZATIONS = [
+  makeNode({
+    id: "spec-code-build-uis",
+    tier: 3,
+    parentId: "domain-software-apps",
+    title: "Code and Build UIs",
+    subtitle: "Make ideas interactive.",
+    description: "Build interfaces and application features that turn a user need into a working experience.",
+    color: COLORS.buildLight,
+    theme: "build-create",
+    earnedSkill: SKILLS.coder,
+    careerId: "application-developer",
+    miniGame: makeMiniGame(
+      "minigame-code-build-uis",
+      "UI Builder Challenge",
+      "A future Scratch-style activity will connect interface blocks into a working interaction.",
+      "block-coding",
+      "Planned placeholder: the detailed UI-building challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-architect-software",
+    tier: 3,
+    parentId: "domain-software-apps",
+    title: "Architect Reliable Software",
+    subtitle: "Design systems that last.",
+    description: "Think about how software pieces fit together so products stay dependable as they grow.",
+    color: COLORS.buildLight,
+    theme: "build-create",
+    earnedSkill: SKILLS.designer,
+    careerId: "software-engineer",
+    miniGame: makeMiniGame(
+      "minigame-architect-software",
+      "System Blueprint",
+      "A future planning activity will arrange software components into a reliable architecture.",
+      "architecture-blueprint",
+      "Planned placeholder: the detailed architecture challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-deploy-cloud-platforms",
+    tier: 3,
+    parentId: "domain-systems-tech",
+    title: "Deploy Cloud Platforms",
+    subtitle: "Connect the right infrastructure.",
+    description: "Plan and support cloud resources that let teams deliver technology reliably.",
+    color: COLORS.buildLight,
+    theme: "build-create",
+    earnedSkill: SKILLS.cloudBuilder,
+    careerId: "cloud-engineer",
+    miniGame: makeMiniGame(
+      "minigame-deploy-cloud-platforms",
+      "Cloud Route Planner",
+      "A future infrastructure activity will connect services to a working cloud deployment.",
+      "cloud-topology",
+      "Planned placeholder: the detailed cloud deployment challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-support-connected-systems",
+    tier: 3,
+    parentId: "domain-systems-tech",
+    title: "Support Connected Systems",
+    subtitle: "Keep the network healthy.",
+    description: "Trace a technology issue across connected systems and restore a dependable service.",
+    color: COLORS.buildLight,
+    theme: "build-create",
+    earnedSkill: SKILLS.systemsThinker,
+    careerId: "systems-engineer",
+    miniGame: makeMiniGame(
+      "minigame-support-connected-systems",
+      "Systems Troubleshooter",
+      "A future diagnostic activity will trace a failure through connected technology.",
+      "systems-diagnostic",
+      "Planned placeholder: the detailed systems troubleshooting challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-explain-trends-data",
+    tier: 3,
+    parentId: "domain-data-insights",
+    title: "Explain Trends with Data",
+    subtitle: "Tell the story in the numbers.",
+    description: "Turn a dataset into a clear explanation that helps someone make a decision.",
+    color: COLORS.analyzeLight,
+    theme: "analyze-solve",
+    earnedSkill: SKILLS.trendy,
+    careerId: "data-analyst",
+    miniGame: makeMiniGame(
+      "minigame-explain-trends-data",
+      "Data Story",
+      "A future analysis activity will turn a small dataset into one useful insight.",
+      "data-story",
+      "Planned placeholder: the detailed data-story challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-predict-outcomes-models",
+    tier: 3,
+    parentId: "domain-data-insights",
+    title: "Predict Outcomes with Models",
+    subtitle: "Explore what could happen next.",
+    description: "Use patterns in data to estimate outcomes and communicate uncertainty responsibly.",
+    color: COLORS.analyzeLight,
+    theme: "analyze-solve",
+    earnedSkill: SKILLS.fortuneTeller,
+    careerId: "data-scientist",
+    miniGame: makeMiniGame(
+      "minigame-predict-outcomes-models",
+      "Forecast the Next Move",
+      "A future modeling activity will use patterns to make a careful prediction.",
+      "model-forecast",
+      "Planned placeholder: the detailed forecasting challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-detect-investigate-threats",
+    tier: 3,
+    parentId: "domain-security-risk",
+    title: "Detect and Investigate Threats",
+    subtitle: "Follow the evidence.",
+    description: "Investigate suspicious activity and decide what evidence deserves attention first.",
+    color: COLORS.analyzeLight,
+    theme: "analyze-solve",
+    earnedSkill: SKILLS.detective,
+    careerId: "cybersecurity-analyst",
+    miniGame: makeMiniGame(
+      "minigame-detect-investigate-threats",
+      "Threat Investigation",
+      "A future investigation activity will connect clues to the most likely security incident.",
+      "threat-investigation",
+      "Planned placeholder: the detailed threat-investigation challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-evaluate-controls-risk",
+    tier: 3,
+    parentId: "domain-security-risk",
+    title: "Evaluate Controls and Risk",
+    subtitle: "Guard what matters.",
+    description: "Evaluate safeguards and explain how a team can reduce technology risk.",
+    color: COLORS.analyzeLight,
+    theme: "analyze-solve",
+    earnedSkill: SKILLS.bodyguard,
+    careerId: "it-risk-analyst",
+    miniGame: makeMiniGame(
+      "minigame-evaluate-controls-risk",
+      "Risk Watch",
+      "A future risk activity will compare safeguards and choose the strongest control.",
+      "risk-controls",
+      "Planned placeholder: the detailed controls-and-risk challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-plan-timelines-delivery",
+    tier: 3,
+    parentId: "domain-projects-delivery",
+    title: "Plan Timelines and Delivery",
+    subtitle: "Make the work happen.",
+    description: "Coordinate scope, people, and timing so a project can move from idea to delivery.",
+    color: COLORS.peopleLight,
+    theme: "people-lead",
+    earnedSkill: SKILLS.logistical,
+    careerId: "it-project-manager",
+    miniGame: makeMiniGame(
+      "minigame-plan-timelines-delivery",
+      "Timeline Tactics",
+      "A future delivery activity will place project work in a realistic sequence.",
+      "timeline-planner",
+      "Planned placeholder: the detailed timeline-and-delivery challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-improve-processes-requirements",
+    tier: 3,
+    parentId: "domain-projects-delivery",
+    title: "Improve Processes and Requirements",
+    subtitle: "Make the system clearer.",
+    description: "Listen to stakeholders, clarify requirements, and improve how work gets done.",
+    color: COLORS.peopleLight,
+    theme: "people-lead",
+    earnedSkill: SKILLS.renovator,
+    careerId: "business-analyst",
+    miniGame: makeMiniGame(
+      "minigame-improve-processes-requirements",
+      "Process Renovation",
+      "A future requirements activity will turn a messy request into a clearer process.",
+      "process-mapping",
+      "Planned placeholder: the detailed process-improvement challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-research-design-experiences",
+    tier: 3,
+    parentId: "domain-users-products",
+    title: "Research and Design Experiences",
+    subtitle: "Start with the user.",
+    description: "Explore user needs and shape an experience that feels useful, clear, and welcoming.",
+    color: COLORS.peopleLight,
+    theme: "people-lead",
+    earnedSkill: SKILLS.creative,
+    careerId: "ux-designer",
+    miniGame: makeMiniGame(
+      "minigame-research-design-experiences",
+      "Experience Sketch",
+      "A future design activity will organize user clues into a first experience concept.",
+      "experience-design",
+      "Planned placeholder: the detailed user-experience challenge will be added later."
+    ),
+  }),
+  makeNode({
+    id: "spec-set-strategy-prioritize-value",
+    tier: 3,
+    parentId: "domain-users-products",
+    title: "Set Strategy and Prioritize Value",
+    subtitle: "Choose what matters most.",
+    description: "Balance user value, business goals, and constraints to decide what a product should do next.",
+    color: COLORS.peopleLight,
+    theme: "people-lead",
+    earnedSkill: SKILLS.strategist,
+    careerId: "product-manager",
+    miniGame: makeMiniGame(
+      "minigame-set-strategy-prioritize-value",
+      "Product Priorities",
+      "A future product activity will rank opportunities by user value and effort.",
+      "priority-board",
+      "Planned placeholder: the detailed product-prioritization challenge will be added later."
+    ),
+  }),
+];
+
+/**
+ * Salary is deliberately a research-pending object.  Do not fill in a number
+ * until the source ledger has verified geography, year, and entry-level method.
+ * @param {string} id
+ * @param {string} title
+ * @param {string} summary
+ * @param {string[]} dayToDay
+ * @param {string[]} projects
+ * @param {string[]} settings
+ * @param {string[]} industries
+ * @param {string[]} companyTypes
+ * @param {string[]} technicalSkills
+ * @param {string[]} tools
+ * @param {string[]} entryLevelNeeds
+ * @param {string[]} growth
+ * @param {CareerProfile["strongCandidate"]} candidate
+ * @returns {CareerProfile}
+ */
+function makeCareer(id, title, summary, dayToDay, projects, settings, industries, companyTypes, technicalSkills, tools, entryLevelNeeds, growth, candidate) {
+  return {
+    id,
+    title,
+    summary,
+    dayToDay,
+    typicalProjects: projects,
+    workSettings: settings,
+    industries,
+    companyTypes,
+    technicalSkills,
+    toolsAndTechnologies: tools,
+    entryLevelNeeds,
+    salary: {
+      status: "research-pending",
+      range: null,
+      source: null,
+      note: "Add a sourced U.S. entry-level range with geography, year, and methodology before publishing salary data.",
+    },
+    careerGrowth: growth,
+    strongCandidate: candidate,
+    sourceRefs: [],
+    researchStatus: "research-pending",
+  };
+}
+
+const CAREERS = [
+  makeCareer(
+    "application-developer",
+    "Application Developer",
+    "Build and improve software applications that solve a real user or business need.",
+    ["Translate requirements into features", "Write and test application code", "Fix bugs and improve usability"],
+    ["Student or internal web app", "Mobile or workflow prototype", "Feature enhancement"],
+    ["Product team", "Engineering team", "Consulting project"],
+    ["Technology", "Health care", "Finance", "Education"],
+    ["Software company", "Enterprise IT team", "Digital consultancy"],
+    ["Programming fundamentals", "Web or application development", "Testing and debugging", "Data structures"],
+    ["HTML/CSS/JavaScript", "Python or Java", "Git", "An IDE", "APIs"],
+    ["One small working application", "Basic version control", "Ability to explain design choices"],
+    ["Software Engineer", "Full-stack Developer", "Technical Lead"],
+    { skills: ["Programming", "Problem solving", "Communication"], experience: ["Coursework or internship"], projects: ["Deployed class project"], certifications: ["Optional; verify relevance by employer"] }
+  ),
+  makeCareer(
+    "software-engineer",
+    "Software Engineer",
+    "Design, implement, and maintain reliable software systems as part of a technical team.",
+    ["Design components and interfaces", "Review code and test changes", "Monitor and improve reliability"],
+    ["Service or platform feature", "Automation tool", "System integration"],
+    ["Engineering team", "Platform team", "Remote product squad"],
+    ["Technology", "Retail", "Manufacturing", "Public sector"],
+    ["Software company", "Large enterprise", "Engineering consultancy"],
+    ["Programming", "Algorithms and data structures", "System design basics", "Testing"],
+    ["Python, Java, or JavaScript", "GitHub", "SQL", "Cloud platform basics", "Testing tools"],
+    ["A readable code portfolio", "Git workflow", "Fundamental debugging skills"],
+    ["Senior Software Engineer", "Staff Engineer", "Engineering Manager"],
+    { skills: ["Programming", "Systems thinking", "Collaboration"], experience: ["Team software project"], projects: ["Well-documented application"], certifications: ["Usually optional at entry level"] }
+  ),
+  makeCareer(
+    "cloud-engineer",
+    "Cloud Engineer",
+    "Configure and support cloud infrastructure so applications and teams can operate reliably.",
+    ["Provision cloud resources", "Monitor availability and cost", "Automate repeatable infrastructure work"],
+    ["Cloud migration", "Deployment pipeline", "Infrastructure monitoring"],
+    ["Cloud operations team", "Platform engineering team", "Managed services provider"],
+    ["Technology", "Finance", "Health care", "Government"],
+    ["Cloud services company", "Enterprise infrastructure team", "Consultancy"],
+    ["Networking basics", "Operating systems", "Cloud architecture", "Infrastructure as code", "Security fundamentals"],
+    ["AWS, Azure, or Google Cloud", "Linux", "Docker", "Terraform", "GitHub Actions"],
+    ["Cloud lab or class project", "Basic networking knowledge", "Ability to document a deployment"],
+    ["Cloud Architect", "Site Reliability Engineer", "Platform Lead"],
+    { skills: ["Systems thinking", "Troubleshooting", "Automation"], experience: ["Hands-on cloud lab"], projects: ["Documented hosted service"], certifications: ["Entry cloud certification can be relevant; verify employer requirements"] }
+  ),
+  makeCareer(
+    "systems-engineer",
+    "Systems Engineer",
+    "Keep connected technology systems dependable by understanding how hardware, software, and networks work together.",
+    ["Diagnose incidents", "Configure connected systems", "Document fixes and improve reliability"],
+    ["Systems integration", "Network or endpoint rollout", "Reliability improvement"],
+    ["IT operations team", "Systems integration project", "Internal support team"],
+    ["Technology", "Manufacturing", "Health care", "Education"],
+    ["Enterprise IT department", "Systems integrator", "Managed service provider"],
+    ["Operating systems", "Networking", "Hardware fundamentals", "Scripting", "Incident response"],
+    ["Linux or Windows", "Networking tools", "PowerShell or Python", "Monitoring platforms", "Ticketing systems"],
+    ["Troubleshooting practice", "Clear technical documentation", "Basic network and hardware literacy"],
+    ["Systems Administrator", "Infrastructure Engineer", "Solutions Architect"],
+    { skills: ["Hardware literacy", "Troubleshooting", "Communication"], experience: ["IT lab or support role"], projects: ["Documented system setup"], certifications: ["Relevant certification may help; verify requirements"] }
+  ),
+  makeCareer(
+    "data-analyst",
+    "Data Analyst",
+    "Turn raw data into clear findings that help a team understand performance and make decisions.",
+    ["Clean and query datasets", "Build reports or visualizations", "Explain findings to stakeholders"],
+    ["Performance dashboard", "Survey or customer analysis", "Operations report"],
+    ["Analytics team", "Business unit", "Consulting engagement"],
+    ["Retail", "Finance", "Health care", "Marketing", "Education"],
+    ["Enterprise analytics team", "Consultancy", "Research group"],
+    ["SQL", "Statistics", "Data cleaning", "Visualization", "Business communication"],
+    ["Excel or Google Sheets", "SQL", "Tableau or Power BI", "Python or R", "Jupyter"],
+    ["A clear analysis project", "Ability to explain chart choices", "Basic statistics and SQL"],
+    ["Senior Analyst", "Analytics Engineer", "Analytics Manager"],
+    { skills: ["Curiosity", "Numerical reasoning", "Storytelling"], experience: ["Coursework or internship analysis"], projects: ["Annotated dashboard"], certifications: ["Usually optional at entry level"] }
+  ),
+  makeCareer(
+    "data-scientist",
+    "Data Scientist",
+    "Use statistical and computational models to explore patterns and estimate possible outcomes.",
+    ["Frame analytical questions", "Prepare data and evaluate models", "Communicate uncertainty and recommendations"],
+    ["Forecasting model", "Experiment analysis", "Classification or prediction study"],
+    ["Data science team", "Research group", "Product analytics team"],
+    ["Technology", "Finance", "Health care", "Marketing", "Public policy"],
+    ["Technology company", "Research organization", "Enterprise data team"],
+    ["Statistics", "Python", "Machine learning foundations", "Data preparation", "Model evaluation"],
+    ["Python", "Jupyter", "pandas", "scikit-learn", "SQL", "Cloud notebooks"],
+    ["A reproducible analysis", "Clear model evaluation", "Ability to explain limitations"],
+    ["Senior Data Scientist", "Machine Learning Engineer", "Data Science Lead"],
+    { skills: ["Quantitative reasoning", "Experimentation", "Communication"], experience: ["Research or class project"], projects: ["Reproducible model notebook"], certifications: ["Usually optional; verify role requirements"] }
+  ),
+  makeCareer(
+    "cybersecurity-analyst",
+    "Cybersecurity Analyst",
+    "Monitor systems, investigate suspicious activity, and help an organization reduce security risk.",
+    ["Review alerts and logs", "Investigate potential incidents", "Document and recommend response steps"],
+    ["Security monitoring", "Phishing investigation", "Access review"],
+    ["Security operations center", "Internal security team", "Managed security provider"],
+    ["Technology", "Finance", "Health care", "Government"],
+    ["Enterprise security team", "Security consultancy", "Managed security provider"],
+    ["Networking", "Identity and access", "Log analysis", "Threat concepts", "Risk communication"],
+    ["SIEM platform", "Wireshark", "Linux", "Python", "Ticketing systems", "Cloud security tools"],
+    ["Security lab practice", "Basic networking", "Careful incident documentation"],
+    ["Incident Responder", "Security Engineer", "Security Operations Lead"],
+    { skills: ["Curiosity", "Attention to detail", "Calm communication"], experience: ["Security lab or capture-the-flag practice"], projects: ["Documented investigation"], certifications: ["Entry certification may help; verify employer requirements"] }
+  ),
+  makeCareer(
+    "it-risk-analyst",
+    "IT Risk Analyst",
+    "Evaluate technology controls and communicate practical ways to reduce operational and security risk.",
+    ["Review controls and evidence", "Document risk findings", "Partner with teams on remediation"],
+    ["Access-control review", "Compliance evidence collection", "Risk assessment"],
+    ["Risk and compliance team", "Internal audit group", "Consulting engagement"],
+    ["Finance", "Health care", "Technology", "Government"],
+    ["Enterprise risk team", "Audit and advisory firm", "Regulated company"],
+    ["Risk frameworks", "Controls testing", "Access management", "Audit evidence", "Business writing"],
+    ["Spreadsheets", "GRC platform", "SQL basics", "Identity platforms", "Documentation tools"],
+    ["Careful evidence review", "Clear written findings", "Basic security and business-process knowledge"],
+    ["Senior Risk Analyst", "IT Auditor", "Risk Manager"],
+    { skills: ["Judgment", "Attention to detail", "Professional writing"], experience: ["Audit, controls, or process coursework"], projects: ["Control-mapping exercise"], certifications: ["Relevant certification may help; verify requirements"] }
+  ),
+  makeCareer(
+    "it-project-manager",
+    "IT Project Manager",
+    "Help teams plan, communicate, and deliver technology work against a shared goal.",
+    ["Track scope and milestones", "Facilitate project communication", "Surface risks and unblock decisions"],
+    ["System implementation", "Product launch", "Process or platform migration"],
+    ["Project team", "PMO", "Client delivery team"],
+    ["Technology", "Health care", "Finance", "Government"],
+    ["Enterprise PMO", "Technology consultancy", "Software company"],
+    ["Planning", "Risk management", "Stakeholder communication", "Agile basics", "Requirements tracking"],
+    ["Jira", "Confluence", "Microsoft Project", "Asana", "Spreadsheets", "Presentation tools"],
+    ["A project plan", "Evidence of coordination", "Clear status communication"],
+    ["Program Manager", "Product Operations Lead", "Portfolio Manager"],
+    { skills: ["Organization", "Communication", "Facilitation"], experience: ["Team project leadership"], projects: ["Timeline and risk register"], certifications: ["Project certification may help; verify entry-level value"] }
+  ),
+  makeCareer(
+    "business-analyst",
+    "Business Analyst",
+    "Understand a business problem, clarify requirements, and help teams improve a process or system.",
+    ["Interview stakeholders", "Map current and future processes", "Write and validate requirements"],
+    ["Workflow improvement", "System requirements", "Data or process redesign"],
+    ["Business unit", "IT delivery team", "Consulting engagement"],
+    ["Technology", "Health care", "Finance", "Retail"],
+    ["Enterprise IT team", "Consultancy", "Operations group"],
+    ["Requirements analysis", "Process mapping", "SQL basics", "Facilitation", "Documentation"],
+    ["BPMN or diagramming tools", "Jira", "Confluence", "Excel", "SQL", "Presentation tools"],
+    ["A process map", "Requirements-writing practice", "Ability to listen and clarify"],
+    ["Senior Business Analyst", "Systems Analyst", "Product Manager"],
+    { skills: ["Listening", "Structured thinking", "Communication"], experience: ["Stakeholder or process project"], projects: ["Before-and-after process map"], certifications: ["Usually optional at entry level"] }
+  ),
+  makeCareer(
+    "ux-designer",
+    "UX Designer",
+    "Research user needs and shape interfaces that are useful, understandable, and inclusive.",
+    ["Conduct lightweight user research", "Sketch and prototype flows", "Test designs and iterate"],
+    ["Mobile or web redesign", "Onboarding flow", "Usability study"],
+    ["Product design team", "Research team", "Agency or consultancy"],
+    ["Technology", "Education", "Health care", "Consumer products"],
+    ["Product company", "Design consultancy", "Internal innovation team"],
+    ["User research", "Interaction design", "Prototyping", "Accessibility", "Information architecture"],
+    ["Figma", "FigJam", "Prototyping tools", "Analytics tools", "Design systems"],
+    ["A concise portfolio", "Research-to-design rationale", "Accessible interaction basics"],
+    ["Senior UX Designer", "Product Designer", "Design Lead"],
+    { skills: ["Empathy", "Visual communication", "Iteration"], experience: ["User research or design project"], projects: ["Tested clickable prototype"], certifications: ["Portfolio is usually more important than certification"] }
+  ),
+  makeCareer(
+    "product-manager",
+    "Product Manager",
+    "Connect user needs, business goals, and delivery constraints to decide what a product should do next.",
+    ["Set priorities and clarify outcomes", "Work with design and engineering", "Learn from product performance and users"],
+    ["Feature roadmap", "New product discovery", "Experiment or launch plan"],
+    ["Product team", "Startup", "Enterprise product organization"],
+    ["Technology", "Finance", "Health care", "Consumer products"],
+    ["Software company", "Startup", "Digital transformation group"],
+    ["Product discovery", "Prioritization", "Market and user research", "Analytics literacy", "Communication"],
+    ["Jira", "Product analytics", "Figma", "Roadmapping tools", "SQL basics", "Presentation tools"],
+    ["A product case study", "Evidence of prioritization", "Ability to explain tradeoffs"],
+    ["Senior Product Manager", "Group Product Manager", "Product Director"],
+    { skills: ["Curiosity", "Judgment", "Influence without authority"], experience: ["Product, club, or team leadership"], projects: ["User-informed product proposal"], certifications: ["Usually optional at entry level"] }
+  ),
+];
+
+const ALL_NODES = [...REGIONS, ...DOMAINS, ...SPECIALIZATIONS];
+
+/** @type {Record<string, MapNode>} */
+const NODE_BY_ID = Object.fromEntries(ALL_NODES.map((node) => [node.id, node]));
+
+/** @type {Record<string, CareerProfile>} */
+const CAREER_BY_ID = Object.fromEntries(CAREERS.map((career) => [career.id, career]));
+
+/**
+ * Public application data contract.  Keep this object JSON-like: content agents
+ * can edit the arrays above without touching app behavior or mini-game code.
+ */
+const CAREER_LAUNCHPAD_DATA = {
+  version: "1.0.0",
+  title: "IS Career Launchpad",
+  targetJourneyMinutes: 10,
+  skills: Object.values(SKILLS),
+  regions: REGIONS,
+  domains: DOMAINS,
+  specializations: SPECIALIZATIONS,
+  nodes: ALL_NODES,
+  careers: CAREERS,
+  nodeById: NODE_BY_ID,
+  careerById: CAREER_BY_ID,
+  map: {
+    tiers: {
+      1: REGIONS.map((node) => node.id),
+      2: DOMAINS.map((node) => node.id),
+      3: SPECIALIZATIONS.map((node) => node.id),
+    },
+    childIdsByParentId: ALL_NODES.reduce((groups, node) => {
+      const parent = node.parentId || "root";
+      groups[parent] = groups[parent] || [];
+      groups[parent].push(node.id);
+      return groups;
+    }, {}),
+  },
+};
+
+// The browser build loads this file as a classic script, so expose one stable global.
+// globalThis fallback makes the data easy to validate in a non-browser test runner.
+const DATA_ROOT = typeof window !== "undefined" ? window : globalThis;
+DATA_ROOT.CAREER_LAUNCHPAD_DATA = CAREER_LAUNCHPAD_DATA;
+</script>
+    <script>/*
+ * IS Career Launchpad — progression controller
+ *
+ * This module intentionally owns behavior only. The visual system lives in
+ * styles.css and content is supplied by data.js as window.CAREER_LAUNCHPAD_DATA.
+ * The normalizer below accepts the current tree contract as well as a few
+ * obvious aliases, which keeps the app easy to evolve while the content team
+ * is still iterating.
+ */
+(function careerLaunchpadApp() {
+  'use strict';
+
+  var STORAGE_KEY = 'is-career-launchpad:v1';
+  var root = document.getElementById('app');
+  var dock = document.getElementById('skill-dock');
+  var toastRegion = document.getElementById('toast-region') || document.getElementById('toast');
+  var modalRoot = document.getElementById('modal-root');
+
+  if (!root) return;
+
+  var rawData = window.CAREER_LAUNCHPAD_DATA || {};
+  var model = normalizeData(rawData);
+  var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var state = loadState();
+  var lastFocusedSelector = null;
+  var modalReturnFocus = null;
+
+  // ---------- Data normalization ------------------------------------------------
+
+  function fallbackData() {
+    var skills = [
+      { id: 'creativity', name: 'Creativity', shortName: 'Create', color: '#ffb347' },
+      { id: 'software', name: 'Software', shortName: 'Code', color: '#79d6ff' },
+      { id: 'hardware', name: 'Hardware', shortName: 'Build', color: '#b8a1ff' },
+      { id: 'coder', name: 'Coder', shortName: 'Code', color: '#7ee7b8' },
+      { id: 'designer', name: 'Designer', shortName: 'Design', color: '#f9a3d1' },
+      { id: 'analyst', name: 'Analyst', shortName: 'Analyze', color: '#b8a1ff' },
+      { id: 'numbers', name: 'Numbers', shortName: 'Data', color: '#84d8cf' },
+      { id: 'trendy', name: 'Trendy', shortName: 'Trends', color: '#ffd36b' },
+      { id: 'fortune-teller', name: 'Fortune Teller', shortName: 'Predict', color: '#f7a8ff' },
+      { id: 'hacker', name: 'Hacker', shortName: 'Secure', color: '#ef8d8d' },
+      { id: 'detective', name: 'Detective', shortName: 'Investigate', color: '#f7bd7a' },
+      { id: 'bodyguard', name: 'Bodyguard', shortName: 'Protect', color: '#94b9ff' },
+      { id: 'people-skills', name: 'People Skills', shortName: 'People', color: '#84dfae' },
+      { id: 'speech', name: 'Speech', shortName: 'Present', color: '#ffd36b' },
+      { id: 'logistical', name: 'Logistical', shortName: 'Plan', color: '#9bd8ff' },
+      { id: 'renovator', name: 'Renovator', shortName: 'Improve', color: '#79e0cc' },
+      { id: 'market-reach', name: 'Market Reach', shortName: 'Reach', color: '#f6a5cf' },
+      { id: 'creative', name: 'Creative', shortName: 'Imagine', color: '#e6a2ff' },
+      { id: 'strategist', name: 'Strategist', shortName: 'Strategy', color: '#ffd47e' }
+    ];
+
+    function node(id, title, subtitle, skill, children, career, miniTitle, miniDescription) {
+      return {
+        id: id,
+        title: title,
+        name: title,
+        subtitle: subtitle,
+        description: subtitle,
+        skill: skill,
+        earnedSkill: skill,
+        children: children || [],
+        career: career || null,
+        miniGame: {
+          id: id + '-placeholder',
+          title: miniTitle || 'A short challenge is waiting here',
+          description: miniDescription || 'This sixty-second activity is planned for a future version.',
+          status: 'planned',
+          rewardSkill: skill
+        }
+      };
+    }
+
+    var developer = node('1.1.1', 'Code & build UIs', 'Turn ideas into useful interfaces.', 'coder', [], {
+      id: 'application-developer', title: 'Application Developer', whatTheyDo: 'Build and improve software products for real users.',
+      responsibilities: ['Translate ideas into working features', 'Test and debug code', 'Collaborate with designers and stakeholders'],
+      projects: ['A student portal feature', 'A mobile workflow', 'An internal automation'], workplace: 'Product teams, agencies, and technology groups',
+      industries: ['Technology', 'Healthcare', 'Finance'], companies: ['Startups', 'Enterprise IT teams', 'Software vendors'],
+      technicalSkills: ['Programming fundamentals', 'Version control', 'Web or application development'], tools: ['JavaScript', 'Python', 'GitHub'],
+      entryLevel: 'Be able to explain a small project, read unfamiliar code, and show a habit of testing.', salary: '$60,000–$85,000 (illustrative entry-level range)',
+      growth: 'Developer → Senior Developer → Technical Lead or Engineering Manager', candidate: ['Curiosity', 'Clear communication', 'A small portfolio project'], sources: []
+    }, 'Scratch studio', 'A block-coding space will let students connect logic blocks to make a tiny interface.');
+    var software = node('1.1', 'Software & Apps', 'Create digital products that people can use.', 'software', [developer, node('1.1.2', 'Architect reliable software', 'Design the systems behind dependable products.', 'designer', [], { id: 'software-engineer', title: 'Software Engineer', whatTheyDo: 'Design, build, and maintain software systems.', responsibilities: ['Break work into technical tasks', 'Review changes with teammates'], projects: ['API service', 'Data-backed feature'], workplace: 'Engineering organizations', industries: ['Technology', 'Retail', 'Financial services'], companies: ['Software companies', 'Digital teams'], technicalSkills: ['Programming', 'Data structures', 'Testing'], tools: ['GitHub', 'Cloud platforms', 'SQL'], entryLevel: 'Practice explaining trade-offs and debugging methodically.', salary: '$70,000–$95,000 (illustrative entry-level range)', growth: 'Engineer → Senior Engineer → Staff Engineer', candidate: ['Reliable execution', 'Teamwork', 'Projects that show learning'], sources: [] }, 'Block architecture', 'A future block-coding challenge will ask students to assemble a reliable feature.')], null, 'Scratch lab', 'Connect visual code blocks to make a small working feature.');
+    var hardware = node('1.2', 'Systems & Tech', 'Keep technology running and connected.', 'hardware', [node('1.2.1', 'Deploy cloud platforms', 'Set up dependable technical foundations.', 'designer', [], { id: 'cloud-engineer', title: 'Cloud Engineer', whatTheyDo: 'Help organizations run services on scalable infrastructure.', responsibilities: ['Configure environments', 'Monitor service health'], projects: ['Cloud deployment', 'Infrastructure automation'], workplace: 'Cloud operations and platform teams', industries: ['Technology', 'Education', 'Healthcare'], companies: ['Cloud consultancies', 'Enterprise technology teams'], technicalSkills: ['Networking', 'Linux', 'Cloud concepts'], tools: ['AWS or Azure', 'Terraform', 'Git'], entryLevel: 'Understand basic networking and explain how you would troubleshoot a service.', salary: '$65,000–$90,000 (illustrative entry-level range)', growth: 'Cloud Engineer → Platform Engineer → Cloud Architect', candidate: ['Calm troubleshooting', 'Documentation', 'Hands-on labs'], sources: [] }, 'CPU cross-section', 'Inspect a computer cross-section and identify the CPU.'), node('1.2.2', 'Support connected systems', 'Troubleshoot technology people depend on.', 'coder', [], { id: 'systems-engineer', title: 'Systems Engineer', whatTheyDo: 'Connect hardware, software, and people into reliable systems.', responsibilities: ['Monitor systems', 'Resolve incidents', 'Document fixes'], projects: ['Device rollout', 'Systems migration'], workplace: 'IT operations and infrastructure teams', industries: ['Government', 'Business services', 'Manufacturing'], companies: ['Managed service providers', 'Enterprise IT'], technicalSkills: ['Systems administration', 'Networking', 'Security basics'], tools: ['PowerShell', 'Linux', 'Monitoring platforms'], entryLevel: 'Show a repeatable troubleshooting process and comfort asking clarifying questions.', salary: '$58,000–$82,000 (illustrative entry-level range)', growth: 'Systems Engineer → Senior Engineer → Infrastructure Lead', candidate: ['Patience', 'Systems thinking', 'Clear notes'], sources: [] }, 'Computer anatomy', 'Identify the hardware component that keeps the computer thinking.')], null, 'Hardware lab', 'A future cross-section activity will ask learners to identify core computer components.');
+    var dataAnalyst = node('2.1.1', 'Explain trends with data', 'Turn numbers into a clear story.', 'trendy', [], { id: 'data-analyst', title: 'Data Analyst', whatTheyDo: 'Use data to explain what is happening and support decisions.', responsibilities: ['Clean and query data', 'Build clear reports', 'Explain findings to partners'], projects: ['Enrollment dashboard', 'Customer behavior report'], workplace: 'Analytics, operations, and strategy teams', industries: ['Retail', 'Healthcare', 'Education'], companies: ['Consultancies', 'Product teams', 'Large organizations'], technicalSkills: ['SQL', 'Spreadsheets', 'Descriptive statistics'], tools: ['Excel', 'SQL', 'Tableau or Power BI'], entryLevel: 'Practice asking a useful question before choosing a chart.', salary: '$55,000–$78,000 (illustrative entry-level range)', growth: 'Analyst → Senior Analyst → Analytics Manager', candidate: ['Data curiosity', 'Storytelling', 'A portfolio dashboard'], sources: [] }, 'Chart match', 'Match three small datasets to the charts that reveal their shape.');
+    var data = node('2.1', 'Data & Insights', 'Turn data into answers people can act on.', 'numbers', [dataAnalyst, node('2.1.2', 'Predict outcomes with models', 'Use evidence to make a thoughtful forecast.', 'fortune-teller', [], { id: 'data-scientist', title: 'Data Scientist', whatTheyDo: 'Use statistics and models to find patterns and forecast outcomes.', responsibilities: ['Explore datasets', 'Evaluate model performance'], projects: ['Forecasting demand', 'Experiment analysis'], workplace: 'Data science and research teams', industries: ['Technology', 'Finance', 'Healthcare'], companies: ['Research groups', 'Product organizations'], technicalSkills: ['Python', 'Statistics', 'Model evaluation'], tools: ['Python', 'Jupyter', 'SQL'], entryLevel: 'Explain a model in plain language and name its limitations.', salary: '$70,000–$100,000 (illustrative entry-level range)', growth: 'Data Scientist → Senior Data Scientist → ML Lead', candidate: ['Quantitative reasoning', 'Humility about uncertainty', 'Reproducible work'], sources: [] }, 'Forecast card sort', 'A future challenge will ask students to choose evidence before making a forecast.')], null, 'Data detective', 'Pair a dataset with the chart that makes its story easiest to see.');
+    var security = node('2.2', 'Security & Risk', 'Protect systems, people, and trust.', 'hacker', [node('2.2.1', 'Detect & investigate threats', 'Follow clues when something looks suspicious.', 'detective', [], { id: 'cybersecurity-analyst', title: 'Cybersecurity Analyst', whatTheyDo: 'Monitor systems and investigate events that may threaten them.', responsibilities: ['Triage alerts', 'Collect evidence', 'Recommend mitigations'], projects: ['Phishing investigation', 'Access review'], workplace: 'Security operations and risk teams', industries: ['Technology', 'Government', 'Financial services'], companies: ['Security providers', 'Enterprise security teams'], technicalSkills: ['Networking', 'Threat concepts', 'Log analysis'], tools: ['SIEM platforms', 'Wireshark', 'Ticketing tools'], entryLevel: 'Describe how you would preserve evidence and escalate an uncertain alert.', salary: '$60,000–$88,000 (illustrative entry-level range)', growth: 'Analyst → Incident Responder → Security Engineer', candidate: ['Attention to detail', 'Ethics', 'Calm investigation'], sources: [] }, 'Threat Wordle', 'A future Wordle-style challenge will use clues to guess a safe password.'), node('2.2.2', 'Evaluate controls & risk', 'Help teams make safer decisions.', 'bodyguard', [], { id: 'it-risk-analyst', title: 'IT Risk Analyst', whatTheyDo: 'Evaluate technology risks and help teams improve controls.', responsibilities: ['Document risks', 'Test controls', 'Communicate recommendations'], projects: ['Vendor review', 'Access-control audit'], workplace: 'Risk, compliance, and internal audit teams', industries: ['Finance', 'Healthcare', 'Government'], companies: ['Banks', 'Consultancies', 'Enterprise teams'], technicalSkills: ['Risk frameworks', 'Controls', 'Clear writing'], tools: ['GRC platforms', 'Spreadsheets', 'Documentation tools'], entryLevel: 'Connect a risk to a practical control and explain residual uncertainty.', salary: '$58,000–$82,000 (illustrative entry-level range)', growth: 'Risk Analyst → Senior Analyst → Risk Manager', candidate: ['Judgment', 'Writing', 'Constructive challenge'], sources: [] }, 'Control checkpoint', 'A future challenge will ask students to choose controls that protect a system.')], null, 'Security lab', 'Use clues to identify which account behavior needs attention.');
+    var projects = node('3.1', 'Projects & Delivery', 'Guide work from idea to outcome.', 'speech', [node('3.1.1', 'Plan timelines & delivery', 'Make a team plan people can follow.', 'logistical', [], { id: 'it-project-manager', title: 'IT Project Manager', whatTheyDo: 'Coordinate people, plans, and risks to deliver technology work.', responsibilities: ['Clarify scope', 'Track dependencies', 'Communicate status'], projects: ['System rollout', 'Student team launch'], workplace: 'Project and program teams', industries: ['Technology', 'Consulting', 'Education'], companies: ['Enterprise teams', 'Agencies'], technicalSkills: ['Planning', 'Risk management', 'Agile concepts'], tools: ['Jira', 'Roadmapping tools', 'Docs'], entryLevel: 'Show how you would break ambiguity into a next step and communicate trade-offs.', salary: '$58,000–$85,000 (illustrative entry-level range)', growth: 'Project Manager → Program Manager → Portfolio Lead', candidate: ['Organization', 'Facilitation', 'Follow-through'], sources: [] }, 'Timeline builder', 'Arrange project pieces into a clear presentation-ready plan.'), node('3.1.2', 'Improve processes & requirements', 'Turn messy needs into workable change.', 'renovator', [], { id: 'business-analyst', title: 'Business Analyst', whatTheyDo: 'Translate business needs into requirements and process improvements.', responsibilities: ['Interview stakeholders', 'Map current processes', 'Define acceptance criteria'], projects: ['Workflow redesign', 'Requirements brief'], workplace: 'Product, operations, and technology teams', industries: ['Business services', 'Healthcare', 'Retail'], companies: ['Consultancies', 'Internal technology teams'], technicalSkills: ['Requirements', 'Process mapping', 'Data literacy'], tools: ['Diagramming tools', 'SQL basics', 'Jira'], entryLevel: 'Ask precise questions and show how requirements connect to outcomes.', salary: '$55,000–$80,000 (illustrative entry-level range)', growth: 'Business Analyst → Senior Analyst → Product or Program Lead', candidate: ['Listening', 'Structured thinking', 'Process project'], sources: [] }, 'Slide renovator', 'A future activity will turn loose components into a concise project slide.')], null, 'Delivery studio', 'Assemble the pieces of a clear project plan.');
+    var users = node('3.2', 'Users & Products', 'Shape experiences people choose to use.', 'market-reach', [node('3.2.1', 'Research & design experiences', 'Learn what users need and prototype a response.', 'creative', [], { id: 'ux-designer', title: 'UX Designer', whatTheyDo: 'Research, design, and test experiences that solve user problems.', responsibilities: ['Interview users', 'Prototype flows', 'Test and iterate'], projects: ['Onboarding flow', 'Service blueprint'], workplace: 'Design and product teams', industries: ['Technology', 'Consumer services', 'Education'], companies: ['Product companies', 'Design agencies'], technicalSkills: ['Interaction design', 'Research', 'Prototyping'], tools: ['Figma', 'Whiteboarding tools', 'Analytics'], entryLevel: 'Show a case study with the problem, decisions, and evidence behind the design.', salary: '$55,000–$82,000 (illustrative entry-level range)', growth: 'UX Designer → Product Designer → Design Lead', candidate: ['Empathy', 'Iteration', 'A clear case study'], sources: [] }, 'Publish the flow', 'A future drag-and-drop activity will connect a design file to its host.'), node('3.2.2', 'Set strategy & prioritize value', 'Choose what to build next and why.', 'strategist', [], { id: 'product-manager', title: 'Product Manager', whatTheyDo: 'Set direction and align teams around valuable product outcomes.', responsibilities: ['Understand users', 'Prioritize opportunities', 'Define success'], projects: ['Product roadmap', 'Feature launch'], workplace: 'Product organizations and startups', industries: ['Technology', 'Finance', 'Consumer products'], companies: ['Startups', 'Platform companies', 'Digital teams'], technicalSkills: ['Product discovery', 'Metrics', 'Technical fluency'], tools: ['Roadmapping tools', 'Analytics', 'Docs'], entryLevel: 'Explain a prioritization decision with evidence and a clear trade-off.', salary: '$65,000–$95,000 (illustrative entry-level range)', growth: 'Product Manager → Senior PM → Group Product Manager', candidate: ['Customer focus', 'Decisiveness', 'A shipped project'], sources: [] }, 'Strategy sort', 'A future activity will ask students to prioritize a product opportunity.')], null, 'Product studio', 'Move a project toward its users, then identify where it should be hosted.');
+
+    return { skills: skills, regions: [
+      { id: 'build-create', number: '1', title: 'Build + Create', subtitle: 'I like making technology work.', color: '#3b82f6', skill: 'creativity', children: [software, hardware] },
+      { id: 'analyze-solve', number: '2', title: 'Analyze + Solve', subtitle: 'I like finding answers in complexity.', color: '#8b5cf6', skill: 'analyst', children: [data, security] },
+      { id: 'people-lead', number: '3', title: 'People + Lead', subtitle: 'I like helping people move forward.', color: '#10a879', skill: 'people-skills', children: [projects, users] }
+    ] };
+  }
+
+  function normalizeData(source) {
+    var fallback = fallbackData();
+    var data = source && typeof source === 'object' ? source : {};
+    var sourceSkills = data.skills || data.skillPool || data.skillOptions;
+    var skillMap = {};
+    (Array.isArray(sourceSkills) ? sourceSkills : fallback.skills).forEach(function (skill) {
+      if (!skill) return;
+      var id = String(skill.id || skill.key || slug(skill.name || skill.title));
+      skillMap[id] = Object.assign({ id: id, name: skill.name || skill.label || skill.title || id, shortName: skill.shortName || skill.name || skill.label || id }, skill);
+    });
+    var regions = data.regions || (data.map && data.map.regions) || data.map || data.tree;
+    // The source-of-truth file is intentionally flat. Stitch its parent IDs
+    // into a nested tree for rendering while retaining the original IDs.
+    if (Array.isArray(data.regions) && (Array.isArray(data.domains) || Array.isArray(data.specializations))) {
+      var domains = Array.isArray(data.domains) ? data.domains : [];
+      var specs = Array.isArray(data.specializations) ? data.specializations : [];
+      var careers = data.careerById || indexById(data.careers || []);
+      regions = data.regions.map(function (region, regionIndex) {
+        var regionCopy = Object.assign({ number: String(regionIndex + 1) }, region);
+        regionCopy.children = domains.filter(function (domain) { return domain.parentId === region.id; }).map(function (domain) {
+          var domainCopy = Object.assign({}, domain);
+          domainCopy.children = specs.filter(function (spec) { return spec.parentId === domain.id; }).map(function (spec) {
+            return Object.assign({}, spec, { career: spec.career || careers[spec.careerId] || null });
+          });
+          return domainCopy;
+        });
+        return regionCopy;
+      });
+    }
+    if (!Array.isArray(regions)) regions = fallback.regions;
+    regions = regions.map(function (region, index) { return normalizeNode(region, index, null, skillMap, fallback.regions[index]); });
+    if (!regions.length) regions = fallback.regions;
+    return { skills: Object.keys(skillMap).length ? skillMap : indexSkills(fallback.skills), regions: regions };
+  }
+
+  function indexSkills(list) {
+    var map = {};
+    list.forEach(function (skill) { map[skill.id] = skill; });
+    return map;
+  }
+
+  function indexById(list) {
+    var map = {};
+    (Array.isArray(list) ? list : []).forEach(function (item) { if (item && item.id) map[item.id] = item; });
+    return map;
+  }
+
+  function normalizeNode(item, index, parentId, skillMap, fallback) {
+    item = item || {};
+    fallback = fallback || {};
+    var id = String(item.id || item.key || item.pathId || fallback.id || ('node-' + index));
+    var children = item.children || item.nodes || item.options || item.specializations || [];
+    if (!Array.isArray(children)) children = [];
+    if (!children.length && fallback.children) children = fallback.children;
+    var skillValue = item.skill || item.earnedSkill || item.rewardSkill || (item.miniGame && (item.miniGame.rewardSkill || item.miniGame.skill)) || fallback.skill || id;
+    var skillId = typeof skillValue === 'object' ? String(skillValue.id || skillValue.key || slug(skillValue.name || skillValue.title)) : String(skillValue);
+    if (!skillMap[skillId]) skillMap[skillId] = typeof skillValue === 'object' ? Object.assign({ id: skillId, name: skillValue.name || skillValue.label || skillValue.title || skillId, shortName: skillValue.shortName || skillValue.name || skillValue.label || skillId }, skillValue) : { id: skillId, name: titleCase(skillId), shortName: titleCase(skillId) };
+    var career = item.career || item.careerMatch || item.outcome || fallback.career || null;
+    if (typeof career === 'string') career = { title: career };
+    var mini = item.miniGame || item.minigame || item.challenge || fallback.miniGame || {};
+    var node = Object.assign({}, item, {
+      id: id, parentId: parentId, title: item.title || item.name || fallback.title || titleCase(id), name: item.name || item.title || fallback.name || titleCase(id),
+      subtitle: item.subtitle || item.description || fallback.subtitle || '', description: item.description || item.subtitle || fallback.description || '',
+      skill: skillId, earnedSkill: skillId, career: career, miniGame: Object.assign({ status: 'planned', rewardSkill: skillId }, mini, { rewardSkill: mini.rewardSkill || skillId }),
+      children: children.map(function (child, childIndex) { return normalizeNode(child, childIndex, id, skillMap, (fallback.children || [])[childIndex]); })
+    });
+    return node;
+  }
+
+  function slug(value) { return String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  function titleCase(value) { return String(value || '').replace(/[-_]/g, ' ').replace(/\b\w/g, function (letter) { return letter.toUpperCase(); }); }
+
+  // ---------- State --------------------------------------------------------------
+
+  function defaultState() {
+    return { version: 1, screen: 'landing', name: '', avatar: 'comet', completed: [], earned: [], selectedNodeId: null, lastCareerId: null };
+  }
+
+  function loadState() {
+    var initial = defaultState();
+    try {
+      var saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null');
+      if (!saved || saved.version !== 1) return initial;
+      return Object.assign(initial, saved, { completed: Array.isArray(saved.completed) ? saved.completed : [], earned: Array.isArray(saved.earned) ? saved.earned : [] });
+    } catch (error) { return initial; }
+  }
+
+  function saveState() {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { /* private browsing can disable storage */ }
+  }
+
+  function resetState() { state = defaultState(); saveState(); closeModal(); render(); announce('Journey restarted. Choose your explorer.'); }
+
+  function findNode(id, nodes) {
+    nodes = nodes || model.regions;
+    for (var i = 0; i < nodes.length; i += 1) {
+      if (nodes[i].id === id) return nodes[i];
+      var found = findNode(id, nodes[i].children || []);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function getDepth(node) { var depth = 0; while (node && node.parentId) { depth += 1; node = findNode(node.parentId); } return depth; }
+  function isCompleted(id) { return state.completed.indexOf(id) !== -1; }
+
+  function isVisible(node) {
+    if (!node.parentId) return true;
+    var parent = findNode(node.parentId);
+    // A child opens only after its parent challenge has been acknowledged.
+    // This makes the map read as a journey rather than a flat career picker.
+    return !!parent && isCompleted(parent.id);
+  }
+
+  function skillFor(node) {
+    var id = node && (node.earnedSkill || node.skill);
+    return model.skills[id] || { id: id || 'new-skill', name: titleCase(id || 'New Skill'), shortName: titleCase(id || 'Skill'), color: '#f6c453' };
+  }
+
+  // ---------- Rendering -----------------------------------------------------------
+
+  function render() {
+    root.innerHTML = renderScreen();
+    renderDock();
+    wireEvents();
+    window.scrollTo(0, 0);
+    focusAfterRender();
+  }
+
+  function renderScreen() {
+    if (state.screen === 'landing') return renderLanding();
+    if (state.screen === 'map') return renderMap();
+    if (state.screen === 'mini') return renderMiniGame(findNode(state.selectedNodeId));
+    if (state.screen === 'career') return renderCareer(findNode(state.selectedNodeId));
+    return renderMap();
+  }
+
+  function renderLanding() {
+    var avatars = [
+      { id: 'comet', label: 'Comet', glyph: '✦' }, { id: 'pixel', label: 'Pixel', glyph: '▦' },
+      { id: 'sprout', label: 'Sprout', glyph: '✿' }, { id: 'orbit', label: 'Orbit', glyph: '◉' }
+    ];
+    return '<section class="screen hero-screen screen--landing" aria-labelledby="welcome-title">' +
+      '<div class="landing-sky" aria-hidden="true"><span class="star star--one"></span><span class="star star--two"></span><span class="star star--three"></span><span class="planet"></span></div>' +
+      '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS / FIELD GUIDE 01</p><h1 id="welcome-title" class="screen-title" tabindex="-1">Find the work<br><em>that feels like you.</em></h1><p class="screen-subtitle">Build a little world of skills, follow your curiosity, and meet the IS career paths waiting on the other side.</p>' +
+      '<form id="start-form" class="launch-card start-card"><p class="card-label">Start your field guide</p><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><fieldset><legend>Choose your explorer</legend><div class="avatar-grid">' + avatars.map(function (avatar) { return '<button class="avatar-choice' + (state.avatar === avatar.id ? ' is-selected' : '') + '" type="button" data-action="choose-avatar" data-avatar="' + avatar.id + '" aria-pressed="' + (state.avatar === avatar.id) + '"><span class="avatar-portrait" aria-hidden="true">' + avatar.glyph + '</span><span class="avatar-name">' + avatar.label + '</span><small class="avatar-tag">ready to explore</small></button>'; }).join('') + '</div></fieldset><button class="button button--primary button--wide" type="submit">Enter the field guide <span aria-hidden="true">↗</span></button></form>' +
+      (state.name ? '<button class="text-button" data-action="resume">Resume ' + escapeHtml(state.name) + '’s journey</button>' : '') + '</div>' +
+      '<p class="landing-note">A short, self-guided exploration · no wrong turns</p></section>';
+  }
+
+  function renderMap() {
+    var allComplete = state.completed.length;
+    return '<section class="screen map-screen screen--map" aria-labelledby="map-title"><div class="map-intro"><div><p class="screen-kicker">FIELD GUIDE / MAP</p><h1 id="map-title" class="screen-title" tabindex="-1">Which kind of work<br><em>gives you energy?</em></h1><p class="screen-subtitle">Choose a point that feels natural. Every stop is a planned sixty-second challenge.</p></div><div class="map-side"><div class="map-progress"><strong>' + allComplete + ' discoveries</strong><span>Every skip grows your stack.</span></div><button class="button button--quiet map-restart" data-action="restart">Restart journey</button></div></div><div class="map-legend"><span class="legend-open"><i></i> Open route</span><span class="legend-done"><i></i> Explored</span><span class="legend-lock"><i></i> Ahead</span></div><section class="map-board" aria-labelledby="map-title"><div class="map-start"><small>START / ' + escapeHtml(state.name || 'EXPLORER') + '</small><strong>What gives you energy?</strong></div><div class="map-regions">' + model.regions.map(renderRegion).join('') + '</div><div class="map-footer">SKIP A CHALLENGE · ADD A SKILL · FIND YOUR NEXT PATH</div></section></section>';
+  }
+
+  function renderRegion(region) {
+    var open = isVisible(region);
+    return '<div class="map-region map-region--' + escapeAttr(slug(region.id)) + (open ? '' : ' is-future') + '"><button class="region-card region-ribbon" type="button" data-action="open-node" data-node-id="' + escapeAttr(region.id) + '" ' + (open ? '' : 'disabled') + ' style="--region-color:' + escapeAttr(region.color || '#5b8def') + '" aria-label="' + escapeAttr(region.title + ', earns ' + skillFor(region).name) + '"><span class="region-index">' + escapeHtml(region.number || '') + '</span><span><span class="region-heading">' + escapeHtml(region.title) + '</span><span class="region-description">' + escapeHtml(region.subtitle || region.description || '') + '</span></span><span class="region-skill">+' + escapeHtml(skillFor(region).name) + '</span><span class="node-status" aria-hidden="true">' + (isCompleted(region.id) ? '✓' : '↗') + '</span></button><div class="map-domain-group">' + region.children.map(function (child) { return renderDomain(child, region); }).join('') + '</div></div>';
+  }
+
+  function renderDomain(node, region) {
+    var open = isVisible(node);
+    var done = isCompleted(node.id);
+    return '<div class="map-domain ' + (open ? 'is-open' : 'is-locked') + ' ' + (done ? 'is-complete' : '') + '"><button class="map-node map-node--domain" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + (done ? ', explored' : '')) + '"><strong>' + escapeHtml(node.title) + '</strong><small>' + escapeHtml(node.subtitle || '') + '</small><span class="node-state" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button><div class="specialization-row">' + node.children.map(renderSpecialization).join('') + '</div></div>';
+  }
+
+  function renderSpecialization(node) {
+    var open = isVisible(node), done = isCompleted(node.id);
+    return '<button class="map-node map-node--specialization ' + (open ? 'is-open' : 'is-locked') + ' ' + (done ? 'is-complete' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + ', ' + (node.career && (node.career.title || node.career.name) || 'career match')) + '"><strong>' + escapeHtml(node.title) + '</strong><small>' + escapeHtml(node.career && (node.career.title || node.career.name) || 'Career match') + '</small><span class="node-state" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button>';
+  }
+
+  function renderMiniGame(node) {
+    if (!node) return renderMap();
+    var skill = skillFor(node), mini = node.miniGame || {};
+    var done = isCompleted(node.id);
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + (done ? 'EXPLORED' : 'NEXT STOP') + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / PLANNED MINI-GAME</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title || node.title) + '</h1><p class="lede">' + escapeHtml(mini.description || mini.concept || 'A focused, sixty-second activity is planned for this point on the map.') + '</p><div class="reward-callout"><span class="hex hex--small" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><div><span class="eyebrow">YOU WILL ADD</span><strong>' + escapeHtml(skill.name) + '</strong><p>One more tile in your growing skill stack.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="skip-node">' + (done ? 'Keep this skill' : 'Skip for now') + ' <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE</span><h2>' + escapeHtml(mini.title || 'Mini-game') + '</h2><p>Placeholder ready for a future interactive build.</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>skill reward</span></div></div></div></div></section>';
+  }
+
+  function renderCareer(node) {
+    var career = node && node.career || { title: 'Career match', whatTheyDo: 'A career path is ready to explore.' };
+    var title = career.title || career.name || 'Career match';
+    var candidate = career.candidate || career.strongCandidate;
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) candidate = (candidate.skills || []).concat(candidate.experience || [], candidate.projects || [], candidate.certifications || []);
+    var lists = [
+      ['Day to day', career.responsibilities || career.dayToDay], ['Typical projects', career.projects || career.typicalProjects],
+      ['Where they work', career.workplace || career.workSettings], ['Industries', career.industries], ['Company types', career.companies || career.companyTypes],
+      ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.tools || career.toolsAndTechnologies || career.technologies],
+      ['Entry-level needs', career.entryLevel || career.entryLevelNeeds], ['Strong candidate', candidate]
+    ];
+    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node && node.id || '') + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(title) + '</h1><p class="lede">' + escapeHtml(career.whatTheyDo || career.summary || 'Explore the kind of work this path opens up.') + '</p><div class="career-hero-meta"><span>Skill unlocked: <strong>' + escapeHtml(skillFor(node).name) + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(formatSalary(career.salary)) + '</strong><small>Research-backed salary data will be added in the content phase.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.growth || career.careerGrowth || 'Build experience, then choose your next direction.')) + '</p></div><button class="button button-coral button--wide" data-action="explore-another">Explore another path ↗</button><button class="text-button" data-action="back-map">View the full map</button></aside></div></section>';
+  }
+
+  function renderFact(label, value) {
+    var values = Array.isArray(value) ? value : (value ? [value] : ['Add this detail in the content file.']);
+    return '<section class="fact"><h2>' + escapeHtml(label) + '</h2><ul>' + values.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul></section>';
+  }
+
+  function renderFactList(value) {
+    var values = Array.isArray(value) ? value : (value ? [value] : ['Add this detail in the content file.']);
+    return '<ul>' + values.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul>';
+  }
+
+  function formatList(value) { return Array.isArray(value) ? value.join(' · ') : String(value || ''); }
+
+  function formatSalary(salary) {
+    if (!salary) return 'Research pending';
+    if (typeof salary === 'string') return salary;
+    if (typeof salary === 'object') {
+      var range = salary.range || salary.entryRange || salary.amount;
+      if (range) return String(range) + (salary.note ? ' · ' + String(salary.note) : '');
+      if (salary.status === 'research-pending') return 'Research pending';
+    }
+    return 'Research pending';
+  }
+
+  function renderDock() {
+    if (!dock) return;
+    var earned = state.earned.map(function (entry) { return typeof entry === 'string' ? { skillId: entry, nodeId: '' } : entry; });
+    var items = earned.map(function (entry, index) {
+      var skill = model.skills[entry.skillId] || { id: entry.skillId, name: titleCase(entry.skillId), color: '#f6c453' };
+      var node = findNode(entry.nodeId);
+      return '<button class="hex-item' + (index === earned.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-skill-id="' + escapeAttr(skill.id) + '" aria-label="' + escapeAttr(skill.name + ' skill, earned from ' + (node ? node.title : 'your journey')) + '" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '"><span aria-hidden="true">✦</span><strong>' + escapeHtml(skill.shortName || skill.name) + '</strong><small>' + escapeHtml(skill.category || 'discovery') + '</small></button>';
+    });
+    dock.className = 'skill-dock' + (items.length ? ' has-skills' : '');
+    dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2>SKILL STACK</h2><p>' + (items.length ? items.length + ' discovered' : 'Your launch kit is empty') + '</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Skills earned during this journey">' + (items.length ? items.join('') : '<div class="hex-empty" role="listitem"><span aria-hidden="true">+</span><span>Earn skills<br>as you explore</span></div>') + '</div><div class="dock-tip"><span aria-hidden="true">⌁</span> Each mission adds a new edge</div></div>';
+  }
+
+  // ---------- Events and transitions --------------------------------------------
+
+  function wireEvents() {
+    root.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    if (dock) dock.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    var form = document.getElementById('start-form');
+    if (form) form.addEventListener('submit', handleStart);
+  }
+
+  function handleStart(event) {
+    event.preventDefault();
+    var input = document.getElementById('player-name');
+    var name = input && input.value.trim();
+    if (!name) { if (input) { input.focus(); input.setCustomValidity('Add your first name to begin.'); input.reportValidity(); } return; }
+    if (input) input.setCustomValidity('');
+    state.name = name; state.screen = 'map'; saveState(); render(); announce('Welcome, ' + name + '. Choose a starting region.');
+  }
+
+  function handleAction(event) {
+    var element = event.currentTarget, action = element.getAttribute('data-action');
+    if (action === 'choose-avatar') { state.avatar = element.getAttribute('data-avatar') || 'comet'; render(); return; }
+    if (action === 'resume') { state.screen = 'map'; saveState(); render(); announce('Journey resumed.'); return; }
+    if (action === 'open-node') { openNode(element.getAttribute('data-node-id')); return; }
+    if (action === 'skip-node') { completeNode(state.selectedNodeId); return; }
+    if (action === 'back-map' || action === 'explore-another') { state.screen = 'map'; state.selectedNodeId = null; saveState(); render(); announce('Back on the map. Choose another point to explore.'); return; }
+    if (action === 'restart') { modalReturnFocus = element; showRestartModal(); return; }
+    if (action === 'inspect-skill') { modalReturnFocus = element; showSkillModal(element.getAttribute('data-skill-id')); return; }
+  }
+
+  function openNode(id) {
+    var node = findNode(id);
+    if (!node || !isVisible(node)) return;
+    state.selectedNodeId = id;
+    if (node.children && node.children.length && !node.career) {
+      // Domain nodes still get their own planned challenge; its children become available after Skip.
+    }
+    state.screen = 'mini'; saveState(); render(); announce(node.title + ' opened. Planned mini-game placeholder.');
+  }
+
+  function completeNode(id) {
+    var node = findNode(id); if (!node) return;
+    var alreadyDone = isCompleted(id);
+    if (!alreadyDone) state.completed.push(id);
+    var skill = skillFor(node);
+    var hasReward = state.earned.some(function (entry) { return (typeof entry === 'string' ? entry : entry.nodeId) === id; });
+    if (!hasReward) state.earned.push({ skillId: skill.id, nodeId: id, earnedAt: Date.now() });
+    state.lastAward = true;
+    state.selectedNodeId = id;
+    saveState();
+    if (node.career) { state.lastCareerId = node.career.id || node.career.title; state.screen = 'career'; saveState(); render(); animateSkillReward(skill); announce('Career match unlocked: ' + (node.career.title || node.career.name) + '.'); return; }
+    state.screen = 'map'; saveState(); render();
+    if (!alreadyDone) animateSkillReward(skill);
+    announce(alreadyDone ? skill.name + ' is already in your stack.' : skill.name + ' added to your skill stack.');
+    showToast(alreadyDone ? 'Skill already discovered' : '+' + skill.name + ' added to your stack', skill, !alreadyDone);
+    window.setTimeout(function () { state.lastAward = false; renderDock(); }, prefersReducedMotion ? 0 : 850);
+  }
+
+  function showToast(message, skill, reward) {
+    if (!toastRegion) return;
+    toastRegion.innerHTML = '<div class="toast ' + (reward ? 'toast--reward' : '') + '" role="status"><span class="toast-mark" style="--skill-color:' + escapeAttr(skill && skill.color || '#f6c453') + '" aria-hidden="true">✦</span><span>' + escapeHtml(message) + '</span></div>';
+    window.setTimeout(function () { if (toastRegion) toastRegion.innerHTML = ''; }, 3200);
+  }
+
+  function animateSkillReward(skill) {
+    if (prefersReducedMotion || !dock) return;
+    var target = dock.getBoundingClientRect();
+    var startX = window.innerWidth * 0.5;
+    var startY = window.innerHeight * 0.42;
+    var endX = Math.min(target.right - 90, target.left + Math.max(250, target.width * 0.42));
+    var endY = target.top + 34;
+    var flight = document.createElement('span');
+    flight.className = 'hex-flight';
+    flight.setAttribute('aria-hidden', 'true');
+    flight.style.left = startX + 'px';
+    flight.style.top = startY + 'px';
+    flight.style.setProperty('--skill-color', skill && skill.color || '#f6c453');
+    flight.style.setProperty('--flight-x', (endX - startX) + 'px');
+    flight.style.setProperty('--flight-y', (endY - startY) + 'px');
+    document.body.appendChild(flight);
+    window.setTimeout(function () { if (flight.parentNode) flight.parentNode.removeChild(flight); }, 760);
+  }
+
+  function announce(message) {
+    if (toastRegion) {
+      toastRegion.setAttribute('aria-live', 'polite');
+      // Keep map/challenge transitions audible even when there is no visual toast.
+      toastRegion.innerHTML = '<span class="sr-only" role="status">' + escapeHtml(message) + '</span>';
+    }
+    if (window.console && window.console.debug) window.console.debug('[Launchpad]', message);
+  }
+
+  // ---------- Small modal surfaces ------------------------------------------------
+
+  function showRestartModal() {
+    if (!modalRoot) { resetState(); return; }
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="restart-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">RESET FIELD GUIDE</p><h2 id="restart-title">Start a fresh journey?</h2><p>Your current name, map progress, and skill stack will be cleared from this browser.</p><div class="modal-actions"><button class="button button--quiet" data-action="close-modal">Keep exploring</button><button class="button button--danger" data-action="confirm-restart">Restart journey</button></div></section></div>';
+    modalRoot.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', function (event) { if (event.target === event.currentTarget && element.getAttribute('data-action') === 'close-modal') closeModal(); else if (element.getAttribute('data-action') === 'close-modal') closeModal(); else if (element.getAttribute('data-action') === 'confirm-restart') resetState(); }); });
+    var close = modalRoot.querySelector('.modal-close'); if (close) close.focus();
+  }
+
+  function showSkillModal(skillId) {
+    var skill = model.skills[skillId] || { name: titleCase(skillId), color: '#f6c453' };
+    var earned = state.earned.find(function (entry) { return (typeof entry === 'string' ? entry : entry.skillId) === skillId; });
+    var node = earned && typeof earned !== 'string' ? findNode(earned.nodeId) : null;
+    if (!modalRoot) return;
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="skill-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><span class="hex hex--modal" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><p class="eyebrow">SKILL DISCOVERED</p><h2 id="skill-title">' + escapeHtml(skill.name) + '</h2><p>' + escapeHtml((node ? 'You found this by exploring “' + node.title + '.”' : 'A building block in your career field guide.')) + '</p><button class="button button--primary button--wide" data-action="close-modal">Back to journey</button></section></div>';
+    modalRoot.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', function () { closeModal(); }); });
+    var close = modalRoot.querySelector('.modal-close'); if (close) close.focus();
+  }
+
+  function closeModal() {
+    if (modalRoot) modalRoot.innerHTML = '';
+    setModalSurfaces(false);
+    var returnTarget = modalReturnFocus;
+    modalReturnFocus = null;
+    if (returnTarget && document.body.contains(returnTarget)) returnTarget.focus();
+  }
+
+  function setModalSurfaces(isOpen) {
+    [root, dock, document.querySelector('.site-header')].forEach(function (surface) {
+      if (surface) surface.inert = isOpen;
+    });
+  }
+
+  function trapModalFocus(event) {
+    if (!modalRoot || !modalRoot.innerHTML || event.key !== 'Tab') return;
+    var focusable = Array.prototype.slice.call(modalRoot.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(function (element) { return !element.disabled; });
+    if (!focusable.length) { event.preventDefault(); return; }
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
+
+  function focusAfterRender() {
+    var target = root.querySelector('h1, input, [data-action="open-node"]');
+    if (!target || document.activeElement === target) return;
+    window.setTimeout(function () { if (target && document.body.contains(target)) target.focus && target.focus(); }, prefersReducedMotion ? 0 : 40);
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && modalRoot && modalRoot.innerHTML) { closeModal(); return; }
+    trapModalFocus(event);
+  });
+
+  function escapeHtml(value) { return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
+  function escapeAttr(value) { return escapeHtml(value); }
+
+  render();
+  window.CareerLaunchpadApp = { render: render, reset: resetState, getState: function () { return state; }, getModel: function () { return model; } };
+}());
+</script>
+  </body>
+</html>

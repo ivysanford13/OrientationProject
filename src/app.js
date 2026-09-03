@@ -23,6 +23,7 @@
   var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var state = loadState();
   var lastFocusedSelector = null;
+  var modalReturnFocus = null;
 
   // ---------- Data normalization ------------------------------------------------
 
@@ -111,8 +112,8 @@
       var domains = Array.isArray(data.domains) ? data.domains : [];
       var specs = Array.isArray(data.specializations) ? data.specializations : [];
       var careers = data.careerById || indexById(data.careers || []);
-      regions = data.regions.map(function (region) {
-        var regionCopy = Object.assign({}, region);
+      regions = data.regions.map(function (region, regionIndex) {
+        var regionCopy = Object.assign({ number: String(regionIndex + 1) }, region);
         regionCopy.children = domains.filter(function (domain) { return domain.parentId === region.id; }).map(function (domain) {
           var domainCopy = Object.assign({}, domain);
           domainCopy.children = specs.filter(function (spec) { return spec.parentId === domain.id; }).map(function (spec) {
@@ -219,6 +220,7 @@
     root.innerHTML = renderScreen();
     renderDock();
     wireEvents();
+    window.scrollTo(0, 0);
     focusAfterRender();
   }
 
@@ -237,26 +239,26 @@
     ];
     return '<section class="screen hero-screen screen--landing" aria-labelledby="welcome-title">' +
       '<div class="landing-sky" aria-hidden="true"><span class="star star--one"></span><span class="star star--two"></span><span class="star star--three"></span><span class="planet"></span></div>' +
-      '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS / FIELD GUIDE 01</p><h1 id="welcome-title" class="screen-title">Find the work<br><em>that feels like you.</em></h1><p class="screen-subtitle">Build a little world of skills, follow your curiosity, and meet the IS career paths waiting on the other side.</p>' +
-      '<form id="start-form" class="launch-card"><p class="card-label">Start your field guide</p><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><fieldset><legend>Choose your explorer</legend><div class="avatar-grid">' + avatars.map(function (avatar) { return '<button class="avatar-choice' + (state.avatar === avatar.id ? ' is-selected' : '') + '" type="button" data-action="choose-avatar" data-avatar="' + avatar.id + '" aria-pressed="' + (state.avatar === avatar.id) + '"><span class="avatar-portrait" aria-hidden="true">' + avatar.glyph + '</span><span class="avatar-name">' + avatar.label + '</span><small class="avatar-tag">ready to explore</small></button>'; }).join('') + '</div></fieldset><button class="button button--primary button--wide" type="submit">Enter the field guide <span aria-hidden="true">↗</span></button></form>' +
+      '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS / FIELD GUIDE 01</p><h1 id="welcome-title" class="screen-title" tabindex="-1">Find the work<br><em>that feels like you.</em></h1><p class="screen-subtitle">Build a little world of skills, follow your curiosity, and meet the IS career paths waiting on the other side.</p>' +
+      '<form id="start-form" class="launch-card start-card"><p class="card-label">Start your field guide</p><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><fieldset><legend>Choose your explorer</legend><div class="avatar-grid">' + avatars.map(function (avatar) { return '<button class="avatar-choice' + (state.avatar === avatar.id ? ' is-selected' : '') + '" type="button" data-action="choose-avatar" data-avatar="' + avatar.id + '" aria-pressed="' + (state.avatar === avatar.id) + '"><span class="avatar-portrait" aria-hidden="true">' + avatar.glyph + '</span><span class="avatar-name">' + avatar.label + '</span><small class="avatar-tag">ready to explore</small></button>'; }).join('') + '</div></fieldset><button class="button button--primary button--wide" type="submit">Enter the field guide <span aria-hidden="true">↗</span></button></form>' +
       (state.name ? '<button class="text-button" data-action="resume">Resume ' + escapeHtml(state.name) + '’s journey</button>' : '') + '</div>' +
       '<p class="landing-note">A short, self-guided exploration · no wrong turns</p></section>';
   }
 
   function renderMap() {
     var allComplete = state.completed.length;
-    return '<section class="screen map-screen screen--map" aria-labelledby="map-title"><div class="map-intro"><div><p class="screen-kicker">FIELD GUIDE / MAP</p><h1 id="map-title" class="screen-title">Which kind of work<br><em>gives you energy?</em></h1><p class="screen-subtitle">Choose a point that feels natural. Every stop is a planned sixty-second challenge.</p></div><div class="map-progress"><strong>' + allComplete + ' discoveries</strong><span>Every skip grows your stack.</span></div></div><div class="map-legend"><span class="legend-open"><i></i> Open route</span><span class="legend-done"><i></i> Explored</span><span class="legend-lock"><i></i> Ahead</span></div><div class="map-board" role="tree" aria-label="Career path map"><div class="map-start"><small>START / ' + escapeHtml(state.name || 'EXPLORER') + '</small><strong>What gives you energy?</strong></div><div class="map-regions">' + model.regions.map(renderRegion).join('') + '</div><div class="map-footer">SKIP A CHALLENGE · ADD A SKILL · FIND YOUR NEXT PATH</div></div></section>';
+    return '<section class="screen map-screen screen--map" aria-labelledby="map-title"><div class="map-intro"><div><p class="screen-kicker">FIELD GUIDE / MAP</p><h1 id="map-title" class="screen-title" tabindex="-1">Which kind of work<br><em>gives you energy?</em></h1><p class="screen-subtitle">Choose a point that feels natural. Every stop is a planned sixty-second challenge.</p></div><div class="map-side"><div class="map-progress"><strong>' + allComplete + ' discoveries</strong><span>Every skip grows your stack.</span></div><button class="button button--quiet map-restart" data-action="restart">Restart journey</button></div></div><div class="map-legend"><span class="legend-open"><i></i> Open route</span><span class="legend-done"><i></i> Explored</span><span class="legend-lock"><i></i> Ahead</span></div><section class="map-board" aria-labelledby="map-title"><div class="map-start"><small>START / ' + escapeHtml(state.name || 'EXPLORER') + '</small><strong>What gives you energy?</strong></div><div class="map-regions">' + model.regions.map(renderRegion).join('') + '</div><div class="map-footer">SKIP A CHALLENGE · ADD A SKILL · FIND YOUR NEXT PATH</div></section></section>';
   }
 
   function renderRegion(region) {
     var open = isVisible(region);
-    return '<div class="map-region map-region--' + escapeAttr(slug(region.id)) + (open ? '' : ' is-future') + '" role="treeitem" aria-expanded="' + (open && region.children.length > 0) + '"><button class="region-card region-ribbon" type="button" data-action="open-node" data-node-id="' + escapeAttr(region.id) + '" ' + (open ? '' : 'disabled') + ' style="--region-color:' + escapeAttr(region.color || '#5b8def') + '" aria-label="' + escapeAttr(region.title + ', earns ' + skillFor(region).name) + '"><span class="region-index">' + escapeHtml(region.number || region.id.split('-')[0] || '') + '</span><span><h2>' + escapeHtml(region.title) + '</h2><p>' + escapeHtml(region.subtitle || region.description || '') + '</p></span><span class="region-skill">+' + escapeHtml(skillFor(region).name) + '</span><span class="node-status" aria-hidden="true">' + (isCompleted(region.id) ? '✓' : '↗') + '</span></button><div class="map-domain-group">' + region.children.map(function (child) { return renderDomain(child, region); }).join('') + '</div></div>';
+    return '<div class="map-region map-region--' + escapeAttr(slug(region.id)) + (open ? '' : ' is-future') + '"><button class="region-card region-ribbon" type="button" data-action="open-node" data-node-id="' + escapeAttr(region.id) + '" ' + (open ? '' : 'disabled') + ' style="--region-color:' + escapeAttr(region.color || '#5b8def') + '" aria-label="' + escapeAttr(region.title + ', earns ' + skillFor(region).name) + '"><span class="region-index">' + escapeHtml(region.number || '') + '</span><span><span class="region-heading">' + escapeHtml(region.title) + '</span><span class="region-description">' + escapeHtml(region.subtitle || region.description || '') + '</span></span><span class="region-skill">+' + escapeHtml(skillFor(region).name) + '</span><span class="node-status" aria-hidden="true">' + (isCompleted(region.id) ? '✓' : '↗') + '</span></button><div class="map-domain-group">' + region.children.map(function (child) { return renderDomain(child, region); }).join('') + '</div></div>';
   }
 
   function renderDomain(node, region) {
     var open = isVisible(node);
     var done = isCompleted(node.id);
-    return '<div class="map-domain ' + (open ? 'is-open' : 'is-locked') + ' ' + (done ? 'is-complete' : '') + '" role="treeitem" aria-expanded="' + (open && node.children.length > 0) + '"><button class="map-node map-node--domain" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + (done ? ', explored' : '')) + '"><strong>' + escapeHtml(node.title) + '</strong><small>' + escapeHtml(node.subtitle || '') + '</small><span class="node-state" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button><div class="specialization-row">' + node.children.map(renderSpecialization).join('') + '</div></div>';
+    return '<div class="map-domain ' + (open ? 'is-open' : 'is-locked') + ' ' + (done ? 'is-complete' : '') + '"><button class="map-node map-node--domain" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" ' + (open ? '' : 'disabled') + ' aria-label="' + escapeAttr(node.title + (done ? ', explored' : '')) + '"><strong>' + escapeHtml(node.title) + '</strong><small>' + escapeHtml(node.subtitle || '') + '</small><span class="node-state" aria-hidden="true">' + (done ? '✓' : open ? '↗' : '·') + '</span></button><div class="specialization-row">' + node.children.map(renderSpecialization).join('') + '</div></div>';
   }
 
   function renderSpecialization(node) {
@@ -268,7 +270,7 @@
     if (!node) return renderMap();
     var skill = skillFor(node), mini = node.miniGame || {};
     var done = isCompleted(node.id);
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + (done ? 'EXPLORED' : 'NEXT STOP') + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / PLANNED MINI-GAME</p><h1 id="challenge-title">' + escapeHtml(mini.title || node.title) + '</h1><p class="lede">' + escapeHtml(mini.description || mini.concept || 'A focused, sixty-second activity is planned for this point on the map.') + '</p><div class="reward-callout"><span class="hex hex--small" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><div><span class="eyebrow">YOU WILL ADD</span><strong>' + escapeHtml(skill.name) + '</strong><p>One more tile in your growing skill stack.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="skip-node">' + (done ? 'Keep this skill' : 'Skip for now') + ' <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE</span><h2>' + escapeHtml(mini.title || 'Mini-game') + '</h2><p>Placeholder ready for a future interactive build.</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>skill reward</span></div></div></div></div></section>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + (done ? 'EXPLORED' : 'NEXT STOP') + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / PLANNED MINI-GAME</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title || node.title) + '</h1><p class="lede">' + escapeHtml(mini.description || mini.concept || 'A focused, sixty-second activity is planned for this point on the map.') + '</p><div class="reward-callout"><span class="hex hex--small" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><div><span class="eyebrow">YOU WILL ADD</span><strong>' + escapeHtml(skill.name) + '</strong><p>One more tile in your growing skill stack.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="skip-node">' + (done ? 'Keep this skill' : 'Skip for now') + ' <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE</span><h2>' + escapeHtml(mini.title || 'Mini-game') + '</h2><p>Placeholder ready for a future interactive build.</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>skill reward</span></div></div></div></div></section>';
   }
 
   function renderCareer(node) {
@@ -282,7 +284,7 @@
       ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.tools || career.toolsAndTechnologies || career.technologies],
       ['Entry-level needs', career.entryLevel || career.entryLevelNeeds], ['Strong candidate', candidate]
     ];
-    return '<section class="screen career-layout screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><div class="career-actions"><button class="button button--quiet" data-action="restart">Restart</button></div></header><div class="career-identity"><span class="mini-glyph" aria-hidden="true">✦</span><p class="eyebrow">' + escapeHtml(node && node.id || '') + ' / CAREER MATCH</p><h1 id="career-title">' + escapeHtml(title) + '</h1><p>' + escapeHtml(career.whatTheyDo || career.summary || 'Explore the kind of work this path opens up.') + '</p><div class="career-pill-row"><span class="career-pill">Skill: ' + escapeHtml(skillFor(node).name) + '</span><span class="career-pill">Path complete ✓</span></div></div><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact-card"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><div class="career-actions"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(formatSalary(career.salary)) + '</strong><small>Use as a starting point, not a promise.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.growth || career.careerGrowth || 'Build experience, then choose your next direction.')) + '</p></div><button class="button button-coral" data-action="explore-another">Explore another path ↗</button><button class="button button-secondary" data-action="back-map">View the full map</button></div></section>';
+    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node && node.id || '') + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(title) + '</h1><p class="lede">' + escapeHtml(career.whatTheyDo || career.summary || 'Explore the kind of work this path opens up.') + '</p><div class="career-hero-meta"><span>Skill unlocked: <strong>' + escapeHtml(skillFor(node).name) + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE</span><strong>' + escapeHtml(formatSalary(career.salary)) + '</strong><small>Research-backed salary data will be added in the content phase.</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.growth || career.careerGrowth || 'Build experience, then choose your next direction.')) + '</p></div><button class="button button-coral button--wide" data-action="explore-another">Explore another path ↗</button><button class="text-button" data-action="back-map">View the full map</button></aside></div></section>';
   }
 
   function renderFact(label, value) {
@@ -345,8 +347,8 @@
     if (action === 'open-node') { openNode(element.getAttribute('data-node-id')); return; }
     if (action === 'skip-node') { completeNode(state.selectedNodeId); return; }
     if (action === 'back-map' || action === 'explore-another') { state.screen = 'map'; state.selectedNodeId = null; saveState(); render(); announce('Back on the map. Choose another point to explore.'); return; }
-    if (action === 'restart') { showRestartModal(); return; }
-    if (action === 'inspect-skill') { showSkillModal(element.getAttribute('data-skill-id')); return; }
+    if (action === 'restart') { modalReturnFocus = element; showRestartModal(); return; }
+    if (action === 'inspect-skill') { modalReturnFocus = element; showSkillModal(element.getAttribute('data-skill-id')); return; }
   }
 
   function openNode(id) {
@@ -369,8 +371,9 @@
     state.lastAward = true;
     state.selectedNodeId = id;
     saveState();
-    if (node.career) { state.lastCareerId = node.career.id || node.career.title; state.screen = 'career'; saveState(); render(); announce('Career match unlocked: ' + (node.career.title || node.career.name) + '.'); return; }
+    if (node.career) { state.lastCareerId = node.career.id || node.career.title; state.screen = 'career'; saveState(); render(); animateSkillReward(skill); announce('Career match unlocked: ' + (node.career.title || node.career.name) + '.'); return; }
     state.screen = 'map'; saveState(); render();
+    if (!alreadyDone) animateSkillReward(skill);
     announce(alreadyDone ? skill.name + ' is already in your stack.' : skill.name + ' added to your skill stack.');
     showToast(alreadyDone ? 'Skill already discovered' : '+' + skill.name + ' added to your stack', skill, !alreadyDone);
     window.setTimeout(function () { state.lastAward = false; renderDock(); }, prefersReducedMotion ? 0 : 850);
@@ -380,6 +383,25 @@
     if (!toastRegion) return;
     toastRegion.innerHTML = '<div class="toast ' + (reward ? 'toast--reward' : '') + '" role="status"><span class="toast-mark" style="--skill-color:' + escapeAttr(skill && skill.color || '#f6c453') + '" aria-hidden="true">✦</span><span>' + escapeHtml(message) + '</span></div>';
     window.setTimeout(function () { if (toastRegion) toastRegion.innerHTML = ''; }, 3200);
+  }
+
+  function animateSkillReward(skill) {
+    if (prefersReducedMotion || !dock) return;
+    var target = dock.getBoundingClientRect();
+    var startX = window.innerWidth * 0.5;
+    var startY = window.innerHeight * 0.42;
+    var endX = Math.min(target.right - 90, target.left + Math.max(250, target.width * 0.42));
+    var endY = target.top + 34;
+    var flight = document.createElement('span');
+    flight.className = 'hex-flight';
+    flight.setAttribute('aria-hidden', 'true');
+    flight.style.left = startX + 'px';
+    flight.style.top = startY + 'px';
+    flight.style.setProperty('--skill-color', skill && skill.color || '#f6c453');
+    flight.style.setProperty('--flight-x', (endX - startX) + 'px');
+    flight.style.setProperty('--flight-y', (endY - startY) + 'px');
+    document.body.appendChild(flight);
+    window.setTimeout(function () { if (flight.parentNode) flight.parentNode.removeChild(flight); }, 760);
   }
 
   function announce(message) {
@@ -395,6 +417,7 @@
 
   function showRestartModal() {
     if (!modalRoot) { resetState(); return; }
+    setModalSurfaces(true);
     modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="restart-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">RESET FIELD GUIDE</p><h2 id="restart-title">Start a fresh journey?</h2><p>Your current name, map progress, and skill stack will be cleared from this browser.</p><div class="modal-actions"><button class="button button--quiet" data-action="close-modal">Keep exploring</button><button class="button button--danger" data-action="confirm-restart">Restart journey</button></div></section></div>';
     modalRoot.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', function (event) { if (event.target === event.currentTarget && element.getAttribute('data-action') === 'close-modal') closeModal(); else if (element.getAttribute('data-action') === 'close-modal') closeModal(); else if (element.getAttribute('data-action') === 'confirm-restart') resetState(); }); });
     var close = modalRoot.querySelector('.modal-close'); if (close) close.focus();
@@ -405,12 +428,34 @@
     var earned = state.earned.find(function (entry) { return (typeof entry === 'string' ? entry : entry.skillId) === skillId; });
     var node = earned && typeof earned !== 'string' ? findNode(earned.nodeId) : null;
     if (!modalRoot) return;
+    setModalSurfaces(true);
     modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="skill-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><span class="hex hex--modal" style="--skill-color:' + escapeAttr(skill.color || '#f6c453') + '" aria-hidden="true">✦</span><p class="eyebrow">SKILL DISCOVERED</p><h2 id="skill-title">' + escapeHtml(skill.name) + '</h2><p>' + escapeHtml((node ? 'You found this by exploring “' + node.title + '.”' : 'A building block in your career field guide.')) + '</p><button class="button button--primary button--wide" data-action="close-modal">Back to journey</button></section></div>';
     modalRoot.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', function () { closeModal(); }); });
     var close = modalRoot.querySelector('.modal-close'); if (close) close.focus();
   }
 
-  function closeModal() { if (modalRoot) modalRoot.innerHTML = ''; }
+  function closeModal() {
+    if (modalRoot) modalRoot.innerHTML = '';
+    setModalSurfaces(false);
+    var returnTarget = modalReturnFocus;
+    modalReturnFocus = null;
+    if (returnTarget && document.body.contains(returnTarget)) returnTarget.focus();
+  }
+
+  function setModalSurfaces(isOpen) {
+    [root, dock, document.querySelector('.site-header')].forEach(function (surface) {
+      if (surface) surface.inert = isOpen;
+    });
+  }
+
+  function trapModalFocus(event) {
+    if (!modalRoot || !modalRoot.innerHTML || event.key !== 'Tab') return;
+    var focusable = Array.prototype.slice.call(modalRoot.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(function (element) { return !element.disabled; });
+    if (!focusable.length) { event.preventDefault(); return; }
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
 
   function focusAfterRender() {
     var target = root.querySelector('h1, input, [data-action="open-node"]');
@@ -418,7 +463,10 @@
     window.setTimeout(function () { if (target && document.body.contains(target)) target.focus && target.focus(); }, prefersReducedMotion ? 0 : 40);
   }
 
-  document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && modalRoot && modalRoot.innerHTML) closeModal(); });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && modalRoot && modalRoot.innerHTML) { closeModal(); return; }
+    trapModalFocus(event);
+  });
 
   function escapeHtml(value) { return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
   function escapeAttr(value) { return escapeHtml(value); }
