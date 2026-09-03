@@ -49,3 +49,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Modal confirmation handlers must both mutate state and close the modal so the page is never left inert after a confirmed action.
 - When a data factory gains new visual metadata, explicitly preserve that field through normalization instead of silently dropping it.
 - Programmatic focus after screen changes should use `preventScroll` and reset the new screen to the top.
+- Skill rewards use the supplied deep-blue enamel hexagon language: pale keyline, dark outline, line-art pictogram, condensed uppercase label, and honeycomb stacking.

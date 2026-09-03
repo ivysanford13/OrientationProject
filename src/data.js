@@ -59,9 +59,9 @@
  * @property {"research-pending"|"researched"} researchStatus Content research status.
  */
 
-/** @param {string} id @param {string} label @param {string} category */
-function makeSkill(id, label, category) {
-  return { id, label, category };
+/** @param {string} id @param {string} label @param {string} category @param {string} badgeIcon */
+function makeSkill(id, label, category, badgeIcon) {
+  return { id, label, category, badgeIcon };
 }
 
 /**
@@ -118,27 +118,27 @@ function makeNode(input) {
 }
 
 const SKILLS = {
-  creativity: makeSkill("creativity", "Creativity", "foundation"),
-  software: makeSkill("software", "Software", "domain"),
-  coder: makeSkill("coder", "Coder", "specialization"),
-  designer: makeSkill("designer", "Designer", "specialization"),
-  hardware: makeSkill("hardware", "Hardware", "domain"),
-  cloudBuilder: makeSkill("cloud-builder", "Cloud Builder", "specialization"),
-  systemsThinker: makeSkill("systems-thinker", "Systems Thinker", "specialization"),
-  analyst: makeSkill("analyst", "Analyst", "foundation"),
-  numbers: makeSkill("numbers", "Numbers", "domain"),
-  trendy: makeSkill("trendy", "Trendy", "specialization"),
-  fortuneTeller: makeSkill("fortune-teller", "Fortune Teller", "specialization"),
-  hacker: makeSkill("hacker", "Hacker", "domain"),
-  detective: makeSkill("detective", "Detective", "specialization"),
-  bodyguard: makeSkill("bodyguard", "Bodyguard", "specialization"),
-  peopleSkills: makeSkill("people-skills", "People Skills", "foundation"),
-  speech: makeSkill("speech", "Speech", "domain"),
-  logistical: makeSkill("logistical", "Logistical", "specialization"),
-  renovator: makeSkill("renovator", "Renovator", "specialization"),
-  marketReach: makeSkill("market-reach", "Market Reach", "domain"),
-  creative: makeSkill("creative", "Creative", "specialization"),
-  strategist: makeSkill("strategist", "Strategist", "specialization"),
+  creativity: makeSkill("creativity", "Creativity", "foundation", "lightbulb"),
+  software: makeSkill("software", "Software", "domain", "globe"),
+  coder: makeSkill("coder", "Coder", "specialization", "code-monitor"),
+  designer: makeSkill("designer", "Designer", "specialization", "pencil"),
+  hardware: makeSkill("hardware", "Hardware", "domain", "monitor"),
+  cloudBuilder: makeSkill("cloud-builder", "Cloud Builder", "specialization", "rocket"),
+  systemsThinker: makeSkill("systems-thinker", "Systems Thinker", "specialization", "network"),
+  analyst: makeSkill("analyst", "Analyst", "foundation", "gears"),
+  numbers: makeSkill("numbers", "Numbers", "domain", "numbers"),
+  trendy: makeSkill("trendy", "Trendy", "specialization", "camera"),
+  fortuneTeller: makeSkill("fortune-teller", "Fortune Teller", "specialization", "crystal"),
+  hacker: makeSkill("hacker", "Hacker", "domain", "laptop"),
+  detective: makeSkill("detective", "Detective", "specialization", "magnifier"),
+  bodyguard: makeSkill("bodyguard", "Bodyguard", "specialization", "shield"),
+  peopleSkills: makeSkill("people-skills", "People Skills", "foundation", "handshake"),
+  speech: makeSkill("speech", "Speech", "domain", "microphone"),
+  logistical: makeSkill("logistical", "Logistical", "specialization", "boxes"),
+  renovator: makeSkill("renovator", "Renovator", "specialization", "ruler-pencil"),
+  marketReach: makeSkill("market-reach", "Market Reach", "domain", "globe"),
+  creative: makeSkill("creative", "Creative", "specialization", "lightbulb"),
+  strategist: makeSkill("strategist", "Strategist", "specialization", "chess"),
 };
 
 const COLORS = {
@@ -230,6 +230,7 @@ const STARTER_SKILLS = [
     shortName: "Creative",
     description: "I enjoy imagining new ways something could work.",
     glyph: "✦",
+    badgeIcon: "lightbulb",
     color: "#f6b347",
     category: "starter",
     affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 1 },
@@ -240,6 +241,7 @@ const STARTER_SKILLS = [
     shortName: "Coding",
     description: "I like learning how instructions become working software.",
     glyph: "</>",
+    badgeIcon: "code-monitor",
     color: "#49cfe0",
     category: "starter",
     affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 0 },
@@ -250,6 +252,7 @@ const STARTER_SKILLS = [
     shortName: "Tech",
     description: "I enjoy setting up, fixing, and understanding devices.",
     glyph: "⚙",
+    badgeIcon: "monitor",
     color: "#7da8ff",
     category: "starter",
     affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 0 },
@@ -260,6 +263,7 @@ const STARTER_SKILLS = [
     shortName: "Design",
     description: "I notice how layout, color, and flow shape an experience.",
     glyph: "◈",
+    badgeIcon: "pencil",
     color: "#f49ac2",
     category: "starter",
     affinities: { "region-build-create": 2, "region-analyze-solve": 0, "region-people-lead": 2 },
@@ -270,6 +274,7 @@ const STARTER_SKILLS = [
     shortName: "Patterns",
     description: "I like spotting trends and making sense of data.",
     glyph: "▥",
+    badgeIcon: "numbers",
     color: "#a98df4",
     category: "starter",
     affinities: { "region-build-create": 0, "region-analyze-solve": 3, "region-people-lead": 1 },
@@ -280,6 +285,7 @@ const STARTER_SKILLS = [
     shortName: "Solve",
     description: "I enjoy breaking a difficult problem into smaller clues.",
     glyph: "?",
+    badgeIcon: "gears",
     color: "#8870e8",
     category: "starter",
     affinities: { "region-build-create": 1, "region-analyze-solve": 3, "region-people-lead": 1 },
@@ -290,6 +296,7 @@ const STARTER_SKILLS = [
     shortName: "Security",
     description: "I naturally look for risks, weak points, and safeguards.",
     glyph: "◇",
+    badgeIcon: "shield",
     color: "#ef7d78",
     category: "starter",
     affinities: { "region-build-create": 1, "region-analyze-solve": 3, "region-people-lead": 0 },
@@ -300,6 +307,7 @@ const STARTER_SKILLS = [
     shortName: "Speak",
     description: "I like making ideas clear for other people.",
     glyph: "“”",
+    badgeIcon: "microphone",
     color: "#5ed4a2",
     category: "starter",
     affinities: { "region-build-create": 0, "region-analyze-solve": 1, "region-people-lead": 3 },
@@ -310,6 +318,7 @@ const STARTER_SKILLS = [
     shortName: "Lead",
     description: "I enjoy organizing a group around a shared goal.",
     glyph: "▲",
+    badgeIcon: "chess",
     color: "#31b98d",
     category: "starter",
     affinities: { "region-build-create": 0, "region-analyze-solve": 1, "region-people-lead": 3 },
@@ -320,6 +329,7 @@ const STARTER_SKILLS = [
     shortName: "Empathy",
     description: "I pay attention to what people need and how they feel.",
     glyph: "♥",
+    badgeIcon: "handshake",
     color: "#78d9be",
     category: "starter",
     affinities: { "region-build-create": 1, "region-analyze-solve": 0, "region-people-lead": 3 },

@@ -570,6 +570,41 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(all_errors)
 
+    def test_skill_badges_keep_the_supplied_visual_language(self) -> None:
+        """Require icon-led blue badges in the picker and growing journey stack."""
+
+        page, errors = self.new_page(390, 844)
+        skills = self.state_for_screen(page, "skill-select")
+        self.load_state(page, skills, ".screen--skills")
+
+        picker_icons = page.locator(".starter-glyph .hex-icon")
+        self.assertEqual(picker_icons.count(), 10)
+        icon_names = picker_icons.evaluate_all(
+            "elements => elements.map(element => element.dataset.icon)"
+        )
+        self.assertNotIn("spark", icon_names)
+        self.assertGreaterEqual(len(set(icon_names)), 8)
+
+        map_state = self.base_state(page, "region-build-create", stage=1)
+        self.load_state(page, map_state, ".screen--map")
+        badges = page.locator("#skill-dock .hex-item")
+        self.assertEqual(badges.count(), 5)
+        self.assertEqual(
+            badges.last.locator(".hex-icon").get_attribute("data-icon"),
+            "lightbulb",
+        )
+        visual = badges.last.evaluate(
+            """element => ({
+                clip: getComputedStyle(element).clipPath,
+                face: getComputedStyle(element, '::after').backgroundImage,
+                keyline: getComputedStyle(element).backgroundColor,
+            })"""
+        )
+        self.assertIn("polygon", visual["clip"])
+        self.assertIn("linear-gradient", visual["face"])
+        self.assertNotEqual(visual["keyline"], "rgba(0, 0, 0, 0)")
+        self.assert_clean(errors)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -59,7 +59,8 @@
       shortName: skill.shortName || skill.label || skill.name || titleCase(id),
       category: skill.category || 'discovery',
       color: skill.color || '#f6b347',
-      glyph: skill.glyph || '✦'
+      glyph: skill.glyph || '✦',
+      badgeIcon: skill.badgeIcon || 'spark'
     }, skill);
   }
 
@@ -336,7 +337,7 @@
     return '<section class="screen screen--skills" aria-labelledby="skills-title"><div class="skills-heading"><div><p class="screen-kicker">LOADOUT / CHOOSE 4 OF 10</p><h1 id="skills-title" tabindex="-1">What are you good at—<br><em>or excited to become good at?</em></h1><p>Select exactly four. Your combination becomes your first skill stack and points your compass toward a career world.</p></div><div class="selection-meter" aria-live="polite"><strong>' + selected.length + '<span>/4</span></strong><small>skills selected</small></div></div><div class="starter-skill-grid">' + model.starterSkills.map(function (skill, index) {
       var picked = selected.indexOf(skill.id) !== -1;
       var unavailable = selected.length >= 4 && !picked;
-      return '<button class="starter-skill' + (picked ? ' is-picked' : '') + '" type="button" data-action="toggle-starter" data-skill-id="' + escapeAttr(skill.id) + '" aria-pressed="' + picked + '" ' + (unavailable ? 'aria-disabled="true"' : '') + ' style="--skill-color:' + escapeAttr(skill.color) + '"><span class="starter-number">' + String(index + 1).padStart(2, '0') + '</span><span class="starter-glyph" aria-hidden="true">' + escapeHtml(skill.glyph) + '</span><strong>' + escapeHtml(skill.label) + '</strong><small>' + escapeHtml(skill.description) + '</small><span class="pick-state">' + (picked ? 'Selected ✓' : 'Choose +') + '</span></button>';
+      return '<button class="starter-skill' + (picked ? ' is-picked' : '') + '" type="button" data-action="toggle-starter" data-skill-id="' + escapeAttr(skill.id) + '" aria-pressed="' + picked + '" ' + (unavailable ? 'aria-disabled="true"' : '') + ' style="--skill-color:' + escapeAttr(skill.color) + '"><span class="starter-number">' + String(index + 1).padStart(2, '0') + '</span><span class="starter-glyph" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><strong>' + escapeHtml(skill.label) + '</strong><small>' + escapeHtml(skill.description) + '</small><span class="pick-state">' + (picked ? 'Selected ✓' : 'Choose +') + '</span></button>';
     }).join('') + '</div><div class="skills-footer"><button class="text-button" data-action="back-landing">← Back</button><p>' + (selected.length === 4 ? 'Your compass is ready.' : 'Choose ' + (4 - selected.length) + ' more to continue.') + '</p><button class="button button--primary" data-action="confirm-skills" ' + (selected.length === 4 ? '' : 'disabled') + '>Reveal my world <span aria-hidden="true">↗</span></button></div></section>';
   }
 
@@ -428,7 +429,7 @@
     if (!node) return renderMap();
     var skill = skillFor(node);
     var mini = node.miniGame || {};
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small" style="--skill-color:' + escapeAttr(skill.color) + '" aria-hidden="true">✦</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
   }
 
   function renderReflection(node) {
@@ -564,6 +565,34 @@
     return value || 'Details coming soon';
   }
 
+  /** Render the supplied blue-badge art direction as crisp, offline SVG line art. */
+  function renderBadgeIcon(skill) {
+    var icons = {
+      lightbulb: '<path d="M17 29c-3-2.4-5-6-5-10a12 12 0 0 1 24 0c0 4-2 7.6-5 10l-2 3H19l-2-3Z"/><path d="M19 36h10M20 40h8M24 7V3M8 19H4M44 19h-4M11 8l3 3M37 8l-3 3"/>',
+      globe: '<circle cx="24" cy="24" r="17"/><path d="M7 24h34M24 7c5 5 7 10.7 7 17s-2 12-7 17c-5-5-7-10.7-7-17s2-12 7-17Z"/><path d="M11 14h26M11 34h26"/>',
+      monitor: '<rect x="6" y="8" width="36" height="25" rx="2"/><path d="M18 40h12M24 33v7"/>',
+      'code-monitor': '<rect x="5" y="7" width="38" height="27" rx="2"/><path d="m18 16-5 5 5 5M30 16l5 5-5 5M21 40h6M24 34v6"/>',
+      pencil: '<path d="m10 34 3-10L32 5l8 8-19 19-11 2Z"/><path d="m28 9 8 8M13 24l8 8M10 34l7-3"/>',
+      rocket: '<path d="M28 7c7-2 12-1 13 0 1 1 2 6 0 13L27 34l-13-1-1-13L28 7Z"/><path d="m18 33-5 7-5-1 1-5 6-5M28 34l-1 7M13 20l-7 1M28 15a4 4 0 1 0 8 0 4 4 0 0 0-8 0Z"/>',
+      network: '<circle cx="24" cy="10" r="5"/><circle cx="10" cy="36" r="5"/><circle cx="38" cy="36" r="5"/><path d="m21 14-8 17M27 14l8 17M15 36h18"/>',
+      gears: '<circle cx="18" cy="20" r="7"/><circle cx="31" cy="30" r="6"/><path d="M18 9v4M18 27v4M7 20h4M25 20h4M10 12l3 3M23 25l3 3M31 20v4M31 36v4M23 30h3M37 30h4"/>',
+      numbers: '<circle cx="15" cy="15" r="8"/><circle cx="33" cy="15" r="8"/><circle cx="15" cy="33" r="8"/><circle cx="33" cy="33" r="8"/><path d="M11 15h8M15 11v8M29 15h8M11 33h8M15 29v8M29 30l8 6M37 30l-8 6"/>',
+      camera: '<path d="M7 15h9l3-5h10l3 5h9v25H7V15Z"/><circle cx="24" cy="27" r="8"/><path d="M34 20h2"/>',
+      crystal: '<circle cx="24" cy="21" r="13"/><path d="M15 39h18M18 34h12M14 31c3-3 6-4 10-4s7 1 10 4"/><path d="M17 18c2-4 5-6 9-7"/>',
+      laptop: '<rect x="8" y="9" width="32" height="24" rx="2"/><path d="M4 38h40l-3 4H7l-3-4ZM18 20h12"/>',
+      magnifier: '<circle cx="20" cy="20" r="12"/><path d="m29 29 12 12M15 20h10M20 15v10"/>',
+      shield: '<path d="M24 5 39 11v10c0 10-6 17-15 22-9-5-15-12-15-22V11l15-6Z"/><path d="m17 24 5 5 10-12"/>',
+      handshake: '<path d="m5 25 9-9 8 3 5-3 16 12-7 8-12-9-5 4-7-1-7-5Z"/><path d="m27 16-7 7c-2 2 1 6 4 4l4-3M31 27l6 5M27 31l6 5M22 34l5 4"/>',
+      microphone: '<rect x="18" y="5" width="12" height="25" rx="6"/><path d="M12 23c0 7 5 12 12 12s12-5 12-12M24 35v8M18 43h12"/>',
+      boxes: '<path d="m7 17 10-6 10 6-10 6-10-6Zm0 0v12l10 6 10-6V17M17 23v12M23 33l9-5 9 5-9 6-9-6Zm9 6v7M23 33v8M41 33v8"/>',
+      'ruler-pencil': '<path d="M8 34 34 8l7 7-26 26-8 1 1-8Z"/><path d="m28 14 7 7M11 30l7 7M8 12l28 28M12 8l28 28"/>',
+      chess: '<path d="M20 7h8l-1 6 6 6-4 7 5 13H14l5-13-4-7 6-6-1-6Z"/><path d="M17 26h14M12 43h24"/>',
+      spark: '<path d="m24 5 4 13 13 6-13 5-4 14-5-14-13-5 13-6 5-13Z"/>'
+    };
+    var iconName = skill && skill.badgeIcon && icons[skill.badgeIcon] ? skill.badgeIcon : 'spark';
+    return '<svg class="hex-icon" viewBox="0 0 48 48" focusable="false" aria-hidden="true" data-icon="' + escapeAttr(iconName) + '" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + icons[iconName] + '</svg>';
+  }
+
   function renderDock() {
     if (!dock) return;
     var items = [];
@@ -593,7 +622,7 @@
     document.body.classList.toggle('dock-floating', !inlineDock);
     if (!items.length) { dock.innerHTML = ''; return; }
     dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2 id="skill-dock-title">SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
-      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span aria-hidden="true">' + escapeHtml(item.skill.glyph || '✦') + '</span><strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong><small>' + escapeHtml(item.starter ? 'starter' : 'earned') + '</small></button>';
+      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span class="hex-face" aria-hidden="true">' + renderBadgeIcon(item.skill) + '<strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong><small>' + escapeHtml(item.starter ? 'starter' : 'earned') + '</small></span></button>';
     }).join('') + '</div></div>';
   }
 
@@ -874,7 +903,7 @@
 
   function showToast(message, skill) {
     if (!toastRegion) return;
-    toastRegion.innerHTML = '<div class="toast toast--reward" role="status"><span class="toast-mark" style="--skill-color:' + escapeAttr(skill.color) + '" aria-hidden="true">✦</span><span>' + escapeHtml(message) + '</span></div>';
+    toastRegion.innerHTML = '<div class="toast toast--reward" role="status"><span class="toast-mark badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><span>' + escapeHtml(message) + '</span></div>';
     window.setTimeout(function () { if (toastRegion) toastRegion.innerHTML = ''; }, 3000);
   }
 
@@ -910,7 +939,7 @@
     var earned = state.earned.filter(function (entry) { return entry.skillId === skillId; })[0];
     var node = earned ? findNode(earned.nodeId) : null;
     setModalSurfaces(true);
-    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="skill-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><span class="hex hex--modal" style="--skill-color:' + escapeAttr(skill.color) + '" aria-hidden="true">' + escapeHtml(skill.glyph || '✦') + '</span><p class="eyebrow">' + (skill.category === 'starter' ? 'STARTER SKILL' : 'SKILL EARNED') + '</p><h2 id="skill-title">' + escapeHtml(skill.name) + '</h2><p>' + escapeHtml(node ? 'You earned this by enjoying “' + node.title + '.”' : 'One of the four strengths that set your initial direction.') + '</p><button class="button button--primary button--wide" data-action="close-modal">Back to journey</button></section></div>';
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal modal--skill" role="dialog" aria-modal="true" aria-labelledby="skill-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><span class="hex hex--modal badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><p class="eyebrow">' + (skill.category === 'starter' ? 'STARTER SKILL' : 'SKILL EARNED') + '</p><h2 id="skill-title">' + escapeHtml(skill.name) + '</h2><p>' + escapeHtml(node ? 'You earned this by enjoying “' + node.title + '.”' : 'One of the four strengths that set your initial direction.') + '</p><button class="button button--primary button--wide" data-action="close-modal">Back to journey</button></section></div>';
     wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
@@ -957,6 +986,9 @@
         // Do not steal focus when a keyboard user has already moved to a new
         // control during the short post-render delay.
         var active = document.activeElement;
+        // Browsers may restore the prior scroll position after initial render;
+        // enforce the screen-start contract even when focus is user-owned.
+        window.scrollTo(0, 0);
         if (active && active !== document.body && active !== root) return;
         try { target.focus({ preventScroll: true }); } catch (error) { target.focus(); }
         // Some older WebKit builds ignore focus({preventScroll}); enforce the

@@ -369,7 +369,12 @@ class QARunner:
             if title.casefold() != route.career_title.casefold():
                 raise AssertionError(f"expected career {route.career_title!r}, got {title!r}")
             state = page.evaluate("CareerLaunchpadApp.getState()")
-            earned_labels = page.locator(".hex-item.is-earned strong").all_inner_texts()
+            # Read authored labels rather than CSS-transformed presentation;
+            # the supplied badge design intentionally renders them uppercase.
+            earned_labels = [
+                label.strip()
+                for label in page.locator(".hex-item.is-earned strong").all_text_contents()
+            ]
             if len(state["completed"]) != 3 or len(state["earned"]) != 3:
                 raise AssertionError(f"route state should contain exactly 3 completed/rewards: {state}")
             if earned_labels != list(route.skills):
