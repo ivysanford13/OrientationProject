@@ -763,6 +763,26 @@
       announce('Guess ' + session.guesses.length + ' of ' + maxGuesses + ' submitted.');
     }
     refreshWordleStage(node);
+    if (session.status !== 'playing') showWordleResultModal(node);
+  }
+
+  function wordlePlayAgain(nodeId) {
+    var node = findNode(nodeId);
+    if (!node) return;
+    resetWordleSession(nodeId);
+    refreshWordleStage(node);
+  }
+
+  function showWordleResultModal(node) {
+    if (!modalRoot) return;
+    var session = getWordleSession(node);
+    if (!session) return;
+    var won = session.status === 'won';
+    var guessCount = session.guesses.length;
+    modalReturnFocus = root.querySelector('#challenge-title');
+    setModalSurfaces(true);
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="wordle-result-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">' + (won ? 'PASSWORD CRACKED' : 'OUT OF TRIES') + '</p><h2 id="wordle-result-title">' + (won ? 'You did it!' : 'So close!') + '</h2><p>' + (won ? 'Congrats — you cracked the password in ' + guessCount + ' guess' + (guessCount === 1 ? '' : 'es') + '.' : 'You ran out of chances. The password was ' + escapeHtml(session.answer) + '.') + '</p><div class="modal-actions"><button class="button button-secondary" data-action="wordle-play-again" data-node-id="' + escapeAttr(node.id) + '">Play again</button><button class="button button--primary" data-action="wordle-move-on">Move on <span aria-hidden="true">→</span></button></div></section></div>';
+    wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
   function renderWordleCell(letter, status) {
@@ -2097,6 +2117,15 @@
     activeMiniGame = null;
   }
 
+  function finishMiniGame() {
+    resetActiveMiniGame();
+    if (state.reviewingNodeId) {
+      var replayed = findNode(state.reviewingNodeId);
+      state.reviewingNodeId = null; state.screen = 'map'; saveState(); render();
+      announce(replayed ? replayed.title + ' replay complete. Your journey progress is unchanged.' : 'Replay complete. Your journey progress is unchanged.');
+    } else { state.screen = 'reflection'; saveState(); render(); }
+  }
+
   function setMapRouteFocus(source, nodeId) {
     var world = source && source.closest ? source.closest('.rpg-world') : source;
     if (!world) return;
@@ -2149,12 +2178,7 @@
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'team-builder' && activeMiniGame && !activeMiniGame.complete) return;
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'deploy-drag-drop' && activeMiniGame && !activeMiniGame.complete) return;
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'data-chart-match' && activeMiniGame && !activeMiniGame.complete) return;
-      resetActiveMiniGame();
-      if (state.reviewingNodeId) {
-        var replayed = findNode(state.reviewingNodeId);
-        state.reviewingNodeId = null; state.screen = 'map'; saveState(); render();
-        announce(replayed ? replayed.title + ' replay complete. Your journey progress is unchanged.' : 'Replay complete. Your journey progress is unchanged.');
-      } else { state.screen = 'reflection'; saveState(); render(); }
+      finishMiniGame();
       return;
     }
     if (action === 'scratch-add') { addScratchBlock(element.getAttribute('data-scratch-id')); return; }
@@ -2603,6 +2627,8 @@
         else if (action === 'confirm-edit-skills') { editStarterSkills(); closeModal(); }
         else if (action === 'confirm-reject') { rejectNode(element.getAttribute('data-node-id') || state.selectedNodeId); closeModal(); }
         else if (action === 'replay-node') { replayNode(element.getAttribute('data-node-id')); closeModal(); }
+        else if (action === 'wordle-play-again') { wordlePlayAgain(element.getAttribute('data-node-id')); closeModal(); }
+        else if (action === 'wordle-move-on') { closeModal(); finishMiniGame(); }
         else if (action === 'close-modal' && event.target === event.currentTarget) closeModal();
       });
     });
