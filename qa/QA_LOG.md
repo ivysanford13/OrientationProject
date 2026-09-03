@@ -269,3 +269,10 @@ Result: **32/32 PASS**
 - assert: chapter HUD has zero overlap with both active choices at each fork while the skill dock remains in normal flow
 - result: new HUD collision gate plus existing avatar, dock, and camera geometry gates passed 3/3
 - duration: 51512 ms
+
+## 39. Phone travel-banner reading band — PASS
+- inspect: chapter HUD and full-width destination banner during stage-1 and stage-2 travel at 320×568 and 390×844
+- action: make the compact phone HUD yield only during travel and restore it automatically when the challenge opens or the map settles
+- assert: the hidden HUD cannot visually obscure or intercept the banner at either phone width, and the banner remains fully readable
+- result: all four phone travel states passed the dedicated visibility gate
+- duration: 6582 ms

@@ -727,6 +727,48 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(errors)
 
+    def test_phone_chapter_hud_yields_to_travel_banner(self) -> None:
+        """Give the full-width phone destination banner an unobstructed band."""
+
+        failures: list[str] = []
+        all_errors: list[str] = []
+        for width, height in ((320, 568), (390, 844)):
+            page, errors = self.new_page(width, height)
+            all_errors.extend(errors)
+            for stage in (1, 2):
+                state = self.base_state(page, "region-build-create", stage=stage)
+                self.load_state(page, state, ".screen--map")
+                target_id = (
+                    "domain-software-apps"
+                    if stage == 1
+                    else "spec-code-build-uis"
+                )
+                geometry = page.evaluate(
+                    """targetId => {
+                        document.querySelector(`[data-node-id="${targetId}"]`).click();
+                        const hud = document.querySelector('.world-stage-label');
+                        const banner = document.querySelector('.travel-banner');
+                        const style = getComputedStyle(hud);
+                        const a = hud.getBoundingClientRect();
+                        const b = banner.getBoundingClientRect();
+                        return {
+                            hidden: style.visibility === 'hidden' || Number(style.opacity) === 0,
+                            overlap: Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
+                                Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)),
+                        };
+                    }""",
+                    target_id,
+                )
+                # A hidden HUD may retain its layout rectangle, but it cannot
+                # visually obscure or intercept the banner during travel.
+                if not geometry["hidden"]:
+                    failures.append(
+                        f"{width}x{height} stage={stage} hidden={geometry['hidden']} overlap={geometry['overlap']:.1f}px²"
+                    )
+
+        self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(all_errors)
+
     def test_active_route_titles_never_hide_which_choice_they_represent(self) -> None:
         """Require every specialization label to render in full without ellipsis."""
 

@@ -1654,6 +1654,15 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
   }
 }
 
+/* The phone travel banner needs the full sky band for a readable destination.
+   Temporarily yield the chapter meter, then restore it on arrival. */
+@media (max-width: 560px) {
+  .rpg-world.is-traveling .world-stage-label {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
 @media (max-width: 350px) {
   .skill-dock .hex-track,
   .skill-dock.dock--inline .hex-track { width: 263px; height: 116px; }

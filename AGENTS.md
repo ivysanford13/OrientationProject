@@ -67,3 +67,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Each career region is one traversable panorama: advancing a chapter pans the camera deeper into the same world while the cougar travels between route stops; do not revert to static stage backdrops.
 - Chapter changes must read as full scene transitions, not subtle pans: keep the default map camera tightly zoomed and use substantial lateral travel plus a brief push-in before revealing the new fork.
 - On short-landscape maps, the chapter HUD belongs in the upper-left clearing and yields to the travel banner; placing it near the right-side fork obscures route cards.
+- On compact phones, hide the chapter HUD for the brief travel state so the full-width destination banner has one clear reading band; restore the HUD on arrival.
