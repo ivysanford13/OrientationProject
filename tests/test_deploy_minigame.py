@@ -87,9 +87,37 @@ class DeployMiniGameTests(unittest.TestCase):
             host = page.get_by_role("button", name="Host", exact=True)
             host.wait_for()
             self.assertIn("portfolio.html is ready", page.locator(".deploy-status").inner_text())
-            host.click()
+            host.evaluate("element => element.scrollIntoView({block: 'center'})")
+            before = page.evaluate(
+                """() => ({
+                    scrollY,
+                    shell: document.querySelector('.deploy-task-shell').getBoundingClientRect().toJSON(),
+                    workspace: document.querySelector('.deploy-workspace').getBoundingClientRect().toJSON(),
+                    actions: document.querySelector('.deploy-action-row').getBoundingClientRect().toJSON(),
+                })"""
+            )
+            host_box = host.bounding_box()
+            self.assertIsNotNone(host_box)
+            page.mouse.click(
+                host_box["x"] + host_box["width"] / 2,
+                host_box["y"] + host_box["height"] / 2,
+            )
+            after = page.evaluate(
+                """() => ({
+                    scrollY,
+                    shell: document.querySelector('.deploy-task-shell').getBoundingClientRect().toJSON(),
+                    workspace: document.querySelector('.deploy-workspace').getBoundingClientRect().toJSON(),
+                    actions: document.querySelector('.deploy-action-row').getBoundingClientRect().toJSON(),
+                })"""
+            )
 
             self.assertIn("SITE IS LIVE", page.locator(".deploy-live-card").inner_text())
+            self.assertEqual(before["scrollY"], after["scrollY"])
+            for region in ("shell", "workspace", "actions"):
+                for dimension in ("x", "y", "width", "height"):
+                    self.assertAlmostEqual(
+                        before[region][dimension], after[region][dimension], delta=0.5
+                    )
             page.get_by_role("button", name="Continue to trail check").click()
             page.locator(".screen--reflection").wait_for()
             self.assertEqual(errors, [])

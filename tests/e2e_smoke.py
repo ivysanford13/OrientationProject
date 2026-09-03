@@ -67,7 +67,19 @@ class CareerLaunchpadSmokeTests(unittest.TestCase):
 
             page.locator('[data-node-id="domain-software-apps"]').click()
             page.locator(".screen--challenge").wait_for()
-            page.get_by_role("button", name="Skip game for now").click()
+            for command in (
+                "move",
+                "left",
+                "move",
+                "move",
+                "right",
+                "move",
+                "move",
+                "move",
+            ):
+                page.locator(f'[data-scratch-id="{command}"]').click()
+            page.locator('[data-action="scratch-check"]').click()
+            page.get_by_role("button", name="Continue to enjoyment check").click()
             page.get_by_role("button", name="Yes, keep going").click()
             self.assertEqual(page.locator(".hex-item").count(), 6)
 
@@ -189,13 +201,16 @@ class CareerLaunchpadSmokeTests(unittest.TestCase):
 
             self.assertEqual(page.locator(".crew-candidate").count(), 6)
             self.assertEqual(page.locator(".crew-candidate.is-suggested").count(), 3)
+            initial_advice = page.locator(".crew-advice").inner_text()
+            self.assertIn("Nova or Pixel add fresh ideas", initial_advice)
+            self.assertIn("Patch adds hands-on building", initial_advice)
             self.assertTrue(page.get_by_role("button", name="Lock in this crew").is_disabled())
 
             for candidate_id in ("nova", "patch", "orbit"):
                 page.locator(f'[data-candidate-id="{candidate_id}"]').click()
 
             self.assertEqual(page.locator(".crew-slot.is-filled").count(), 3)
-            self.assertIn("Complementary crew assembled", page.locator(".crew-advice").inner_text())
+            self.assertIn("all four strengths covered", page.locator(".crew-advice").inner_text())
             self.assertFalse(page.get_by_role("button", name="Lock in this crew").is_disabled())
 
             page.get_by_role("button", name="Lock in this crew").click()

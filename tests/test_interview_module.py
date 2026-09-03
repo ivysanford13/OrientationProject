@@ -58,12 +58,7 @@ STARTER_LOADOUTS: dict[str, list[str]] = {
     ],
 }
 
-SUPPORTED_CAREERS = {
-    "application-developer",
-    "data-analyst",
-    "cybersecurity-analyst",
-    "product-manager",
-}
+SUPPORTED_CAREERS = set(CAREER_PATHS)
 
 
 class InterviewModuleTests(unittest.TestCase):
@@ -298,6 +293,33 @@ class InterviewModuleTests(unittest.TestCase):
         self.assertEqual(external_requests, [], f"runtime external requests: {external_requests}")
         self.assert_clean(errors)
 
+    def test_career_result_ranks_exactly_ten_roles_with_individual_pay(self) -> None:
+        """The chosen route leads a concise ranking; each role owns its pay data."""
+
+        page, errors, _requests = self.new_page()
+        research = self.research(page)
+        salaries = research["salaryByCareerId"]
+
+        for career_id in ("application-developer", "data-analyst", "product-manager"):
+            self.show_career(page, career_id)
+            cards = page.locator(".career-rank-card")
+            self.assertEqual(cards.count(), 10, career_id)
+            self.assertEqual(
+                cards.first.locator("h2").inner_text().strip().casefold(),
+                salaries[career_id]["title"].casefold(),
+                career_id,
+            )
+            titles = [title.casefold() for title in cards.locator("h2").all_inner_texts()]
+            self.assertEqual(len(titles), len(set(titles)), career_id)
+            for card in cards.all():
+                title = card.locator("h2").inner_text().strip()
+                salary = next(item for item in salaries.values() if item["title"].casefold() == title.casefold())
+                pay_text = card.locator(".career-pay").inner_text()
+                self.assertIn(salary["entryRange"]["label"], pay_text, title)
+                self.assertIn(f"${salary['median']:,}", pay_text, title)
+
+        self.assert_clean(errors)
+
     def test_supported_careers_open_the_correct_three_question_interview(self) -> None:
         page, errors, _requests = self.new_page()
         research = self.research(page)
@@ -356,15 +378,28 @@ class InterviewModuleTests(unittest.TestCase):
 
         self.assert_clean(errors)
 
-    def test_unsupported_career_has_a_clear_coming_next_state(self) -> None:
+    def test_landing_shortcut_lists_all_roles_and_returns_to_picker(self) -> None:
         page, errors, _requests = self.new_page()
-        for career_id in sorted(set(CAREER_PATHS) - SUPPORTED_CAREERS):
-            self.show_career(page, career_id)
-            card = page.locator(".practice-card--soon")
-            self.assertTrue(card.is_visible(), career_id)
-            self.assertIn("coming next.", card.inner_text().casefold(), career_id)
-            self.assertIn("dedicated practice path", card.inner_text().casefold(), career_id)
-            self.assertEqual(page.locator('[data-action="open-interview"]').count(), 0, career_id)
+        page.locator('[data-action="open-interview-picker"]').click()
+        page.locator(".interview-picker").wait_for()
+        self.assertEqual(page.locator(".interview-family").count(), 3)
+        self.assertEqual(page.locator(".interview-role-card").count(), 12)
+        self.assertEqual(
+            set(page.locator(".interview-role-card").evaluate_all(
+                "cards => cards.map(card => card.dataset.careerId)"
+            )),
+            SUPPORTED_CAREERS,
+        )
+
+        page.locator('[data-career-id="systems-engineer"]').click()
+        page.locator(".interview-intro").wait_for()
+        direct_state = page.evaluate("CareerLaunchpadApp.getState().interview")
+        self.assertEqual(direct_state["careerId"], "systems-engineer")
+        self.assertEqual(direct_state["returnScreen"], "interview-picker")
+
+        page.locator('[data-action="interview-back-career"]').click()
+        page.locator(".interview-picker").wait_for()
+        self.assertEqual(page.evaluate("CareerLaunchpadApp.getState().screen"), "interview-picker")
         self.assert_clean(errors)
 
     def test_feedback_edit_next_debrief_and_replay_preserve_route_progress(self) -> None:
@@ -581,7 +616,7 @@ class InterviewModuleTests(unittest.TestCase):
         page.locator('[data-action="interview-save-exit"]').first.click()
         page.locator("#career-title").wait_for()
         self.assertEqual(self.progress_snapshot(page), before)
-        self.assertIn("Continue practice", page.locator('[data-action="open-interview"]').inner_text())
+        self.assertIn("Continue", page.locator('[data-action="open-interview"]').inner_text())
 
         page.locator('[data-action="open-interview"]').click()
         page.locator(".interview-intro").wait_for()

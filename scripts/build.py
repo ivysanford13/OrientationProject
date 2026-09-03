@@ -44,15 +44,25 @@ def minify_css(source: str) -> str:
     return re.sub(r"\s*([{}:;,>])\s*", r"\1", compact).strip()
 
 
+def minify_javascript(source: str) -> str:
+    """Remove comments and indentation without changing statement boundaries."""
+
+    without_blocks = re.sub(r"/\*.*?\*/", "", source, flags=re.DOTALL)
+    without_comment_lines = re.sub(r"^\s*//.*$", "", without_blocks, flags=re.MULTILINE)
+    return "\n".join(
+        line.strip() for line in without_comment_lines.splitlines() if line.strip()
+    )
+
+
 def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
     """Inline the stylesheet and scripts into the standalone deliverable."""
 
     template = read_source("template.html")
     replacements = {
         "__INLINE_CSS__": minify_css(read_source("styles.css")),
-        "__INLINE_DATA__": read_source("data.js"),
-        "__INLINE_RESEARCH__": read_source("research-data.js"),
-        "__INLINE_APP__": read_source("app.js"),
+        "__INLINE_DATA__": minify_javascript(read_source("data.js")),
+        "__INLINE_RESEARCH__": minify_javascript(read_source("research-data.js")),
+        "__INLINE_APP__": minify_javascript(read_source("app.js")),
         "__EXPLORER_AVATAR_DATA_URI__": image_data_uri("byu-cougar-explorer.png"),
         "__JIGSAW_COMPUTER_CORE_DATA_URI__": image_data_uri("jigsaw-computer-core.jpg"),
         "__STARTER_BADGE_CREATIVE_THINKING_DATA_URI__": image_data_uri("starter-badges/creative-thinking.jpg"),

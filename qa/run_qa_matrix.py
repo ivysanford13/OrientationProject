@@ -293,6 +293,39 @@ class QARunner:
         continue_button.click()
 
     @staticmethod
+    def solve_scratch_game(page: Page) -> None:
+        """Guide the cat around the obstacle using the visible command blocks."""
+
+        for command in ("move", "left", "move", "move", "right", "move", "move", "move"):
+            page.locator(f'[data-scratch-id="{command}"]').click()
+        page.locator('[data-action="scratch-check"]').click()
+        continue_button = page.get_by_role(
+            "button", name=re.compile("Continue to enjoyment check")
+        )
+        if continue_button.count() != 1:
+            raise AssertionError("Scratch task did not reveal its continue action")
+        continue_button.click()
+
+    @staticmethod
+    def solve_chart_match_game(page: Page) -> None:
+        """Connect each spreadsheet to its authored chart target."""
+
+        matches = (
+            ("oxygen-trend", "chart-line"),
+            ("room-tasks", "chart-bars"),
+            ("crew-mix", "chart-donut"),
+        )
+        for sheet_id, chart_id in matches:
+            page.locator(f'[data-chart-sheet-id="{sheet_id}"]').click()
+            page.locator(f'[data-chart-id="{chart_id}"]').click()
+        continue_button = page.get_by_role(
+            "button", name=re.compile("Task complete")
+        )
+        if continue_button.count() != 1:
+            raise AssertionError("chart matching did not reveal its continue action")
+        continue_button.click()
+
+    @staticmethod
     def finish_node(page: Page, node_id: str, enjoyed: bool = True) -> None:
         """Complete a mini-game stop or open a terminal career selection."""
 
@@ -319,6 +352,10 @@ class QARunner:
             lock_crew.click()
         elif page.locator(".deploy-game").count():
             QARunner.publish_deploy_game(page)
+        elif page.locator(".scratch-workspace").count():
+            QARunner.solve_scratch_game(page)
+        elif page.locator(".chart-match-game").count():
+            QARunner.solve_chart_match_game(page)
         else:
             if page.locator('[aria-label="Planned mini-game workspace"]').count() != 1:
                 raise AssertionError(f"mini-game workspace missing for {node_id}")
@@ -611,9 +648,23 @@ class QARunner:
                 page.keyboard.press("Enter")
                 page.locator(".screen--challenge").wait_for()
                 page.wait_for_timeout(70)
-                skip = page.get_by_role("button", name="Skip game for now")
-                skip.focus()
-                page.keyboard.press("Enter")
+                if page.locator(".scratch-workspace").count():
+                    for command in ("move", "left", "move", "move", "right", "move", "move", "move"):
+                        block = page.locator(f'[data-scratch-id="{command}"]')
+                        block.focus()
+                        page.keyboard.press("Enter")
+                    run_button = page.locator('[data-action="scratch-check"]')
+                    run_button.focus()
+                    page.keyboard.press("Enter")
+                    continue_button = page.get_by_role(
+                        "button", name=re.compile("Continue to enjoyment check")
+                    )
+                    continue_button.focus()
+                    page.keyboard.press("Enter")
+                else:
+                    skip = page.get_by_role("button", name="Skip game for now")
+                    skip.focus()
+                    page.keyboard.press("Enter")
                 page.locator(".screen--reflection").wait_for()
                 yes = page.get_by_role("button", name=re.compile("Yes, keep going"))
                 yes.focus()

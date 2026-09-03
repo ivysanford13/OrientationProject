@@ -507,6 +507,412 @@ var CAREER_RESEARCH_DATA = {
   ]
 };
 
+/* These eight sets complete interview coverage for every career outcome. They
+ * follow the same experience → scenario → growth pattern as the original four
+ * sets so students can compare roles without facing a harder interview format. */
+CAREER_RESEARCH_DATA.interviews.push(
+  {
+    id: "interview-software-engineer",
+    careerId: "software-engineer",
+    title: "Software Engineer interview practice",
+    intro: "Practice explaining a team build, reasoning through a software problem, and choosing a skill to develop next.",
+    estimatedMinutes: 4,
+    questionIds: ["swe-q1-story", "swe-q2-bug", "swe-q3-next"],
+    sourceRefs: ["src-bls-software-developers", "src-microsoft-interview-tips", "src-microsoft-technical-interview"],
+    attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+    questions: [
+      {
+        id: "swe-q1-story", step: 1, type: "experience",
+        prompt: "Tell us about a software project where you helped make the code more reliable or easier to use.",
+        helper: "A class or personal project is enough. Explain the goal, your part, and what improved.", minWords: 20,
+        criteria: [
+          { id: "context", label: "Explains the project goal", signals: ["project", "goal", "user", "problem", "team"] },
+          { id: "contribution", label: "Names a specific contribution", signals: ["built", "wrote", "implemented", "refactor", "tested", "designed"] },
+          { id: "result", label: "Shows reliability or user impact", signals: ["reliable", "bug", "faster", "improved", "working", "feedback", "result"] }
+        ],
+        guidance: "Keep the story concrete: what the software needed to do, what you personally changed, and how you checked that the change helped.",
+        strongAnswer: "In a team class project, our scheduling tool sometimes saved incomplete records. I traced the problem to missing validation, added checks and tests, and asked a teammate to review the change. The fix stopped the bad records in our test cases and made the error message clearer for users.",
+        sourceRefs: ["src-bls-software-developers", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "swe-q2-bug", step: 2, type: "scenario",
+        prompt: "A teammate's code works on their computer but fails in the shared project. What would you do?",
+        helper: "Show how you investigate the difference and collaborate without blaming the teammate.", minWords: 18,
+        criteria: [
+          { id: "compare", label: "Compares environments and steps", signals: ["reproduce", "version", "environment", "dependency", "steps", "config"] },
+          { id: "evidence", label: "Uses tests or error evidence", signals: ["error", "log", "test", "console", "output", "debug"] },
+          { id: "collaborate", label: "Works with the teammate", signals: ["teammate", "pair", "review", "explain", "share", "document"] }
+        ],
+        guidance: "Compare inputs, versions, dependencies, and configuration; use the actual error to narrow the cause; then solve and document it together.",
+        strongAnswer: "I would reproduce the same steps and compare our language version, dependencies, and configuration. I would read the failing test or error output before changing code. Then I would pair with my teammate on the smallest fix and document any setup change for the rest of the team.",
+        sourceRefs: ["src-microsoft-technical-interview", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "swe-q3-next", step: 3, type: "growth",
+        prompt: "What software engineering skill would you practice next, and how would you show your progress?",
+        helper: "Pick one skill and one small, finishable project or practice routine.", minWords: 12,
+        criteria: [
+          { id: "skill", label: "Names a relevant skill", signals: ["testing", "algorithm", "database", "api", "git", "design", "python", "java", "javascript"] },
+          { id: "plan", label: "Names a concrete practice plan", signals: ["build", "project", "practice", "weekly", "test", "document", "course"] }
+        ],
+        guidance: "Choose a skill you can demonstrate through working code, tests, documentation, or a short explanation of your tradeoffs.",
+        strongAnswer: "I would practice automated testing by adding unit and integration tests to a small API project. Each week I would cover one normal case and one failure case, track the work in Git, and write a short note about what each test protects.",
+        sourceRefs: ["src-microsoft-interview-tips", "src-microsoft-technical-interview"]
+      }
+    ]
+  },
+  {
+    id: "interview-cloud-engineer",
+    careerId: "cloud-engineer",
+    title: "Cloud Engineer interview practice",
+    intro: "Practice explaining a deployment, responding calmly to an outage, and planning safe cloud practice.",
+    estimatedMinutes: 4,
+    questionIds: ["cloud-q1-story", "cloud-q2-outage", "cloud-q3-next"],
+    sourceRefs: ["src-bls-network-architects", "src-microsoft-interview-tips", "src-microsoft-technical-interview"],
+    attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+    questions: [
+      {
+        id: "cloud-q1-story", step: 1, type: "experience",
+        prompt: "Tell us about a time you hosted, deployed, or configured a technical project.",
+        helper: "A guided lab, class website, or personal project counts.", minWords: 18,
+        criteria: [
+          { id: "goal", label: "Explains what needed to run", signals: ["project", "website", "app", "service", "goal", "lab"] },
+          { id: "setup", label: "Describes the setup work", signals: ["deploy", "host", "config", "server", "cloud", "network", "container"] },
+          { id: "verify", label: "Explains how it was checked", signals: ["test", "monitor", "check", "working", "log", "verify"] }
+        ],
+        guidance: "Describe the service, the configuration you handled, and one check that showed the deployment was working.",
+        strongAnswer: "For a class project, I hosted a small web app on a cloud service. I configured the environment variables, connected the database, and documented the deployment steps. I tested the main workflow from a new browser and checked the logs to confirm requests completed without errors.",
+        sourceRefs: ["src-bls-network-architects", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "cloud-q2-outage", step: 2, type: "scenario",
+        prompt: "A small website becomes unavailable right after a deployment. What would you do first?",
+        helper: "Focus on evidence, a safe recovery step, and communication.", minWords: 20,
+        criteria: [
+          { id: "observe", label: "Checks scope and evidence", signals: ["status", "log", "error", "monitor", "health", "scope", "check"] },
+          { id: "stabilize", label: "Chooses a safe recovery step", signals: ["rollback", "restore", "disable", "revert", "backup", "contain"] },
+          { id: "communicate", label: "Communicates and documents", signals: ["user", "team", "update", "document", "incident", "notify"] }
+        ],
+        guidance: "Confirm impact, inspect recent changes and monitoring, restore service with the lowest-risk option, and keep the team informed.",
+        strongAnswer: "I would confirm the outage from monitoring and check the deployment logs and health status to understand the scope. If the new release is the likely cause, I would follow the team's process to roll back to the last working version. I would update the team, document the timeline, and investigate the root cause after service is stable.",
+        sourceRefs: ["src-microsoft-technical-interview", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "cloud-q3-next", step: 3, type: "growth",
+        prompt: "What cloud skill would you practice next, and how would you keep the practice safe and affordable?",
+        helper: "Name a lab-sized skill and how you would control access or cost.", minWords: 14,
+        criteria: [
+          { id: "skill", label: "Names a cloud or infrastructure skill", signals: ["aws", "azure", "cloud", "linux", "network", "docker", "terraform", "monitor"] },
+          { id: "guardrail", label: "Names a safe practice guardrail", signals: ["budget", "alert", "sandbox", "free tier", "delete", "access", "limit", "lab"] }
+        ],
+        guidance: "A good plan combines hands-on practice with a cost limit, isolated account or lab, least-privilege access, and cleanup.",
+        strongAnswer: "I would practice Docker and basic cloud deployment in a sandbox account. I would set a small budget alert, use only sample data, give the service minimal access, and delete the resources after each lab. I would keep the setup steps in a Git repository.",
+        sourceRefs: ["src-microsoft-technical-interview", "src-microsoft-interview-tips"]
+      }
+    ]
+  },
+  {
+    id: "interview-systems-engineer",
+    careerId: "systems-engineer",
+    title: "Systems Engineer interview practice",
+    intro: "Practice telling a troubleshooting story, responding to a shared systems issue, and building hands-on technical range.",
+    estimatedMinutes: 4,
+    questionIds: ["systems-q1-story", "systems-q2-access", "systems-q3-next"],
+    sourceRefs: ["src-bls-systems-administrators", "src-bls-systems-analysts", "src-microsoft-interview-tips", "src-microsoft-technical-interview"],
+    attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+    questions: [
+      {
+        id: "systems-q1-story", step: 1, type: "experience",
+        prompt: "Tell us about a time you troubleshot a device, network, or system that was not working.",
+        helper: "Home, campus, work, and lab examples all count if you explain your reasoning.", minWords: 18,
+        criteria: [
+          { id: "symptom", label: "Describes the symptom and impact", signals: ["failed", "slow", "offline", "error", "issue", "could not", "problem"] },
+          { id: "steps", label: "Explains ordered troubleshooting", signals: ["first", "then", "check", "test", "compare", "isolate", "restart"] },
+          { id: "result", label: "Shares the result or lesson", signals: ["fixed", "restored", "working", "learned", "document", "result"] }
+        ],
+        guidance: "Show a calm sequence: observe the symptom, isolate one cause at a time, verify the result, and record what you learned.",
+        strongAnswer: "A lab computer could reach local devices but not the internet. I first checked the cable and IP settings, then compared its gateway and DNS values with a working machine. Correcting the DNS setting restored access, and I documented the check so my group could repeat it.",
+        sourceRefs: ["src-bls-systems-administrators", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "systems-q2-access", step: 2, type: "scenario",
+        prompt: "Several people suddenly cannot sign in to a shared system. How would you start investigating?",
+        helper: "Explain how you learn the scope, collect evidence, and keep people updated.", minWords: 20,
+        criteria: [
+          { id: "scope", label: "Checks who and what is affected", signals: ["user", "scope", "account", "device", "location", "all", "some"] },
+          { id: "evidence", label: "Checks logs and recent changes", signals: ["log", "error", "change", "status", "test", "monitor", "time"] },
+          { id: "response", label: "Escalates or communicates safely", signals: ["escalate", "team", "update", "ticket", "document", "notify", "workaround"] }
+        ],
+        guidance: "Determine whether the failure is individual or shared, check recent changes and service evidence, avoid risky guesses, and communicate status.",
+        strongAnswer: "I would ask whether all users or only certain accounts and devices are affected and note when the failures began. I would check the identity service status, logs, and recent configuration changes, then test with an approved account. I would open or update the incident ticket and escalate with the evidence if the shared service is failing.",
+        sourceRefs: ["src-bls-systems-administrators", "src-microsoft-technical-interview"]
+      },
+      {
+        id: "systems-q3-next", step: 3, type: "growth",
+        prompt: "What systems skill would you practice next, and what would you document?",
+        helper: "Choose a safe lab and a specific artifact such as a setup guide or troubleshooting log.", minWords: 12,
+        criteria: [
+          { id: "skill", label: "Names a systems skill", signals: ["linux", "windows", "network", "powershell", "python", "monitor", "identity", "hardware"] },
+          { id: "artifact", label: "Names a practice artifact", signals: ["lab", "guide", "document", "diagram", "script", "checklist", "log", "project"] }
+        ],
+        guidance: "Make the learning visible with a repeatable setup guide, script, diagram, or troubleshooting journal.",
+        strongAnswer: "I would practice Linux user and permission management in a local virtual-machine lab. I would create a checklist for adding and removing access, write a small verification script, and document one permission mistake and how I diagnosed it.",
+        sourceRefs: ["src-bls-systems-administrators", "src-microsoft-interview-tips"]
+      }
+    ]
+  },
+  {
+    id: "interview-data-scientist",
+    careerId: "data-scientist",
+    title: "Data Scientist interview practice",
+    intro: "Practice explaining a model simply, questioning a promising result, and choosing a reproducible learning project.",
+    estimatedMinutes: 4,
+    questionIds: ["ds-q1-story", "ds-q2-model", "ds-q3-next"],
+    sourceRefs: ["src-bls-data-scientists", "src-microsoft-data-analyst", "src-microsoft-interview-tips"],
+    attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+    questions: [
+      {
+        id: "ds-q1-story", step: 1, type: "experience",
+        prompt: "Tell us about a class or personal project where you used data to estimate or predict something.",
+        helper: "A simple regression, classification, forecast, or even a careful baseline counts.", minWords: 20,
+        criteria: [
+          { id: "question", label: "Defines the prediction question", signals: ["predict", "estimate", "forecast", "question", "goal", "outcome"] },
+          { id: "method", label: "Explains data and method", signals: ["data", "feature", "model", "regression", "classification", "train", "baseline"] },
+          { id: "evaluate", label: "Evaluates or limits the result", signals: ["test", "accuracy", "error", "compare", "limit", "uncertain", "result"] }
+        ],
+        guidance: "Explain the question, the data and baseline or model, then how you evaluated it and what the result could not prove.",
+        strongAnswer: "In a statistics class, I estimated apartment prices from size and location. I cleaned the sample, compared a simple average baseline with a regression model, and tested both on held-out rows. The model reduced average error, but I explained that our small local dataset would not generalize to every city.",
+        sourceRefs: ["src-bls-data-scientists", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "ds-q2-model", step: 2, type: "scenario",
+        prompt: "A model has high overall accuracy but performs poorly for one group. What would you do next?",
+        helper: "Show how you verify the issue, investigate causes, and explain the risk.", minWords: 20,
+        criteria: [
+          { id: "verify", label: "Checks metrics by group", signals: ["group", "segment", "metric", "error", "compare", "validate", "check"] },
+          { id: "investigate", label: "Investigates data or model causes", signals: ["sample", "bias", "feature", "data", "label", "distribution", "train"] },
+          { id: "communicate", label: "Communicates risk and next step", signals: ["risk", "stakeholder", "explain", "limit", "recommend", "decision", "pause"] }
+        ],
+        guidance: "Do not hide behind one aggregate score. Compare appropriate metrics, inspect representation and labels, and make the limitation visible before use.",
+        strongAnswer: "I would reproduce the group-level result and compare error types and sample sizes, not just overall accuracy. Then I would inspect whether the training data, labels, or features underrepresent that group. I would explain the risk to stakeholders and recommend pausing that use case or testing a safer alternative until performance is acceptable.",
+        sourceRefs: ["src-bls-data-scientists", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "ds-q3-next", step: 3, type: "growth",
+        prompt: "What data science skill would you practice next, and how would you make the work reproducible?",
+        helper: "Pick one skill and a small project another student could rerun.", minWords: 14,
+        criteria: [
+          { id: "skill", label: "Names a data science skill", signals: ["statistics", "python", "machine learning", "model", "sql", "experiment", "visual"] },
+          { id: "reproduce", label: "Plans a reproducible artifact", signals: ["notebook", "git", "readme", "dataset", "environment", "document", "rerun", "project"] }
+        ],
+        guidance: "A strong learning artifact includes the data source, repeatable steps, evaluation, and a short discussion of limitations.",
+        strongAnswer: "I would practice model evaluation with a public dataset in a Python notebook. I would keep the code in Git, include the data source and environment instructions in a README, compare against a baseline, and write down the model's main limitation.",
+        sourceRefs: ["src-bls-data-scientists", "src-microsoft-interview-tips"]
+      }
+    ]
+  },
+  {
+    id: "interview-it-risk-analyst",
+    careerId: "it-risk-analyst",
+    title: "IT Risk Analyst interview practice",
+    intro: "Practice explaining a control concern, turning evidence into a practical recommendation, and improving your risk toolkit.",
+    estimatedMinutes: 4,
+    questionIds: ["risk-q1-story", "risk-q2-access", "risk-q3-next"],
+    sourceRefs: ["src-bls-info-security", "src-nist-nice", "src-microsoft-interview-tips"],
+    attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+    questions: [
+      {
+        id: "risk-q1-story", step: 1, type: "experience",
+        prompt: "Tell us about a time you noticed a process, privacy, or technology risk and suggested an improvement.",
+        helper: "A class process, club workflow, work task, or lab example is enough.", minWords: 20,
+        criteria: [
+          { id: "risk", label: "Explains the risk and impact", signals: ["risk", "privacy", "access", "error", "miss", "impact", "problem"] },
+          { id: "evidence", label: "Uses observations or evidence", signals: ["check", "evidence", "review", "compare", "record", "test", "observed"] },
+          { id: "improve", label: "Suggests a practical improvement", signals: ["recommend", "change", "control", "checklist", "approve", "document", "improve"] }
+        ],
+        guidance: "Explain what could go wrong, what evidence you reviewed, and a proportional improvement rather than claiming zero risk.",
+        strongAnswer: "Our club stored membership files in a folder that every volunteer could edit. I reviewed who actually needed access and found that most people only needed a summary. I recommended limiting edit access to two officers, sharing a separate view-only report, and checking access at the start of each semester.",
+        sourceRefs: ["src-nist-nice", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "risk-q2-access", step: 2, type: "scenario",
+        prompt: "A team cannot show that former employees lost access on time. How would you assess the risk?",
+        helper: "Describe the evidence you need, how you explain impact, and how the team could improve.", minWords: 20,
+        criteria: [
+          { id: "evidence", label: "Requests relevant evidence", signals: ["list", "record", "ticket", "log", "sample", "date", "evidence", "access"] },
+          { id: "risk", label: "Connects the gap to impact", signals: ["unauthorized", "data", "system", "risk", "impact", "account", "exposure"] },
+          { id: "remediate", label: "Proposes ownership and follow-up", signals: ["owner", "deadline", "remove", "review", "control", "automate", "follow", "recommend"] }
+        ],
+        guidance: "Ask for a defined population and dated evidence, describe the plausible impact, and agree on a fix with an owner and verification step.",
+        strongAnswer: "I would compare a dated list of departures with account and access records, then sample exceptions and review tickets or logs. I would explain that delayed removal could allow unauthorized access to company systems or data. I would recommend an owner, deadline, and automated removal or recurring review, then verify the control with a new sample.",
+        sourceRefs: ["src-bls-info-security", "src-nist-nice"]
+      },
+      {
+        id: "risk-q3-next", step: 3, type: "growth",
+        prompt: "What IT risk skill would you practice next, and what artifact would you create?",
+        helper: "Choose one control, framework, or evidence-review skill and make the output inspectable.", minWords: 12,
+        criteria: [
+          { id: "skill", label: "Names a relevant risk skill", signals: ["control", "audit", "risk", "identity", "access", "framework", "evidence", "security"] },
+          { id: "artifact", label: "Names a concrete artifact", signals: ["matrix", "checklist", "memo", "sample", "report", "map", "project", "document"] }
+        ],
+        guidance: "A small control matrix, evidence checklist, or one-page finding is better practice than a vague plan to learn compliance.",
+        strongAnswer: "I would practice access-control testing by mapping one sample process to its risk, control, owner, and evidence. I would create a small control matrix, test a few fictional records, and write a one-page finding with the condition, impact, and recommendation.",
+        sourceRefs: ["src-nist-nice", "src-microsoft-interview-tips"]
+      }
+    ]
+  },
+  {
+    id: "interview-it-project-manager",
+    careerId: "it-project-manager",
+    title: "IT Project Manager interview practice",
+    intro: "Practice organizing a student-sized project story, handling a scope change, and choosing a visible planning skill to build.",
+    estimatedMinutes: 4,
+    questionIds: ["itpm-q1-story", "itpm-q2-scope", "itpm-q3-next"],
+    sourceRefs: ["src-bls-project-management", "src-microsoft-interview-tips"],
+    attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+    questions: [
+      {
+        id: "itpm-q1-story", step: 1, type: "experience",
+        prompt: "Tell us about a team project you helped keep organized and moving forward.",
+        helper: "A class, club, volunteer, internship, or work project counts.", minWords: 20,
+        criteria: [
+          { id: "goal", label: "Sets the project goal", signals: ["project", "goal", "deadline", "deliver", "team"] },
+          { id: "coordinate", label: "Explains how work was coordinated", signals: ["plan", "task", "schedule", "owner", "meeting", "track", "organize"] },
+          { id: "result", label: "Shares an outcome or adjustment", signals: ["finished", "delivered", "result", "changed", "risk", "learned", "on time"] }
+        ],
+        guidance: "Show how you made the goal, owners, timing, or risks clearer—not just that you attended meetings.",
+        strongAnswer: "For a class website project, our four-person team had three weeks to deliver a working prototype. I broke the work into weekly milestones, confirmed owners, and used a short status check to surface blockers. When one feature slipped, we reduced its scope and still delivered the core flow on time.",
+        sourceRefs: ["src-bls-project-management", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "itpm-q2-scope", step: 2, type: "scenario",
+        prompt: "A stakeholder asks for a major new feature one week before launch. How would you respond?",
+        helper: "Make the goal, impact, options, and decision process clear.", minWords: 20,
+        criteria: [
+          { id: "clarify", label: "Clarifies the need and urgency", signals: ["ask", "goal", "need", "user", "why", "urgent", "value"] },
+          { id: "impact", label: "Assesses scope and risk", signals: ["scope", "effort", "timeline", "risk", "capacity", "dependency", "estimate"] },
+          { id: "decision", label: "Offers options and communicates", signals: ["option", "tradeoff", "defer", "choose", "decision", "document", "stakeholder"] }
+        ],
+        guidance: "Do not say yes or no immediately. Clarify value, ask the team for impact, present options, and record the agreed decision.",
+        strongAnswer: "I would ask what user or business problem makes the feature urgent and what minimum outcome is needed. Then I would work with the team to estimate effort, dependencies, test time, and launch risk. I would present options such as a smaller version, moving the launch, or deferring the request, then document the stakeholder's decision and updated plan.",
+        sourceRefs: ["src-bls-project-management", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "itpm-q3-next", step: 3, type: "growth",
+        prompt: "What project-management skill would you practice next, and how would you demonstrate it?",
+        helper: "Choose one planning or communication skill and one small artifact.", minWords: 12,
+        criteria: [
+          { id: "skill", label: "Names a project skill", signals: ["scope", "risk", "schedule", "facilitat", "stakeholder", "agile", "planning", "communication"] },
+          { id: "artifact", label: "Names evidence of practice", signals: ["plan", "timeline", "register", "brief", "retrospective", "project", "report", "meeting"] }
+        ],
+        guidance: "Create evidence a hiring manager can inspect: a timeline, risk register, decision log, or concise status update.",
+        strongAnswer: "I would practice project risk management on my next team assignment. I would create a simple risk register with probability, impact, owner, and response, review it weekly with the team, and include the final lessons in a short retrospective.",
+        sourceRefs: ["src-bls-project-management", "src-microsoft-interview-tips"]
+      }
+    ]
+  },
+  {
+    id: "interview-business-analyst",
+    careerId: "business-analyst",
+    title: "Business Analyst interview practice",
+    intro: "Practice clarifying an unclear process, handling conflicting requirements, and building an evidence-based analysis portfolio.",
+    estimatedMinutes: 4,
+    questionIds: ["ba-q1-story", "ba-q2-requirements", "ba-q3-next"],
+    sourceRefs: ["src-bls-management-analysts", "src-bls-systems-analysts", "src-microsoft-interview-tips"],
+    attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+    questions: [
+      {
+        id: "ba-q1-story", step: 1, type: "experience",
+        prompt: "Tell us about a process you helped make clearer, faster, or less confusing.",
+        helper: "Think about a class team, club, work shift, application, or recurring task.", minWords: 20,
+        criteria: [
+          { id: "problem", label: "Explains the process problem", signals: ["process", "confusing", "delay", "duplicate", "error", "problem", "manual"] },
+          { id: "learn", label: "Explains how needs were understood", signals: ["ask", "interview", "observe", "map", "feedback", "stakeholder", "review"] },
+          { id: "result", label: "Shows the change and result", signals: ["changed", "improved", "reduced", "faster", "clear", "result", "measure"] }
+        ],
+        guidance: "Describe the current process, how you learned what people needed, and the improvement or next measurement.",
+        strongAnswer: "Our club reimbursed expenses through email, and requests were often missing receipts. I asked the treasurer and two members where they got stuck and mapped the current steps. I created one form with required fields and a status column, which reduced follow-up messages and made ownership clearer.",
+        sourceRefs: ["src-bls-management-analysts", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "ba-q2-requirements", step: 2, type: "scenario",
+        prompt: "Two stakeholders give you conflicting requirements for the same workflow. What would you do?",
+        helper: "Show how you uncover the underlying need and validate a shared requirement.", minWords: 20,
+        criteria: [
+          { id: "listen", label: "Clarifies both needs", signals: ["ask", "listen", "need", "goal", "why", "stakeholder", "workflow"] },
+          { id: "compare", label: "Makes the conflict visible", signals: ["compare", "constraint", "tradeoff", "process", "priority", "impact", "rule"] },
+          { id: "validate", label: "Documents and validates agreement", signals: ["document", "requirement", "confirm", "review", "approve", "prototype", "acceptance"] }
+        ],
+        guidance: "Translate positions into underlying goals, surface constraints and tradeoffs, then document a testable decision both stakeholders can review.",
+        strongAnswer: "I would meet with each stakeholder to understand the goal behind the requested workflow and the constraint they are protecting. I would map where the requirements conflict and compare user impact, policy, and effort. Then I would draft a shared requirement with acceptance criteria or a simple prototype and ask both stakeholders to confirm it.",
+        sourceRefs: ["src-bls-management-analysts", "src-bls-systems-analysts", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "ba-q3-next", step: 3, type: "growth",
+        prompt: "What business-analysis skill would you practice next, and what would you add to a portfolio?",
+        helper: "Choose a small artifact that shows how you think, not just a tool badge.", minWords: 12,
+        criteria: [
+          { id: "skill", label: "Names an analysis skill", signals: ["requirements", "process", "sql", "facilitat", "diagram", "analysis", "stakeholder", "data"] },
+          { id: "artifact", label: "Names a portfolio artifact", signals: ["map", "document", "case", "query", "prototype", "portfolio", "project", "before"] }
+        ],
+        guidance: "Good artifacts show the original problem, your questions, the decision, and the improved process or requirement.",
+        strongAnswer: "I would practice process mapping by studying a campus appointment workflow. I would create a before-and-after diagram, list the stakeholder questions and assumptions, and write three testable requirements with acceptance criteria for my portfolio.",
+        sourceRefs: ["src-bls-management-analysts", "src-microsoft-interview-tips"]
+      }
+    ]
+  },
+  {
+    id: "interview-ux-designer",
+    careerId: "ux-designer",
+    title: "UX Designer interview practice",
+    intro: "Practice connecting user evidence to a design change, responding to a usability problem, and planning a portfolio-ready study.",
+    estimatedMinutes: 4,
+    questionIds: ["ux-q1-story", "ux-q2-form", "ux-q3-next"],
+    sourceRefs: ["src-bls-interface-designers", "src-microsoft-interview-tips"],
+    attribution: "Questions and example answers are authored practice content. Sources support role and interview-skill framing; they do not publish these exact questions.",
+    questions: [
+      {
+        id: "ux-q1-story", step: 1, type: "experience",
+        prompt: "Tell us about something you designed or improved after getting feedback from users.",
+        helper: "A slide, form, website, app, event, or service experience can work.", minWords: 20,
+        criteria: [
+          { id: "user", label: "Explains the user and need", signals: ["user", "student", "customer", "audience", "need", "problem"] },
+          { id: "feedback", label: "Uses feedback or observation", signals: ["feedback", "test", "observe", "interview", "confusing", "research"] },
+          { id: "iterate", label: "Explains the design change", signals: ["changed", "redesign", "iterate", "simplif", "prototype", "improved", "result"] }
+        ],
+        guidance: "Connect the user need to what you observed, what you changed, and what you learned after the change.",
+        strongAnswer: "I designed a registration form for a student event. In a quick test, two students missed the deadline field because it looked like helper text. I increased its hierarchy, grouped related fields, and added a clear confirmation step. A second test showed that all participants could complete the form without help.",
+        sourceRefs: ["src-bls-interface-designers", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "ux-q2-form", step: 2, type: "scenario",
+        prompt: "Analytics show that many users leave halfway through an important form. How would you investigate?",
+        helper: "Describe the evidence, the people you would learn from, and a small design test.", minWords: 20,
+        criteria: [
+          { id: "evidence", label: "Reviews behavior and context", signals: ["analytics", "step", "device", "error", "segment", "data", "funnel"] },
+          { id: "research", label: "Learns from users", signals: ["user", "interview", "usability", "observe", "feedback", "test"] },
+          { id: "iterate", label: "Tests an accessible improvement", signals: ["prototype", "change", "accessib", "label", "simplif", "measure", "compare"] }
+        ],
+        guidance: "Use analytics to locate the problem, observe representative users, check accessibility and error states, then test a focused change.",
+        strongAnswer: "I would identify the exact step, devices, and error patterns where people leave. Then I would run a few usability sessions with representative users and check labels, keyboard access, validation, and screen-reader instructions. I would prototype the smallest likely improvement and compare completion and error rates before a full rollout.",
+        sourceRefs: ["src-bls-interface-designers", "src-microsoft-interview-tips"]
+      },
+      {
+        id: "ux-q3-next", step: 3, type: "growth",
+        prompt: "What UX skill would you practice next, and what case-study evidence would you collect?",
+        helper: "Choose a small research or design loop that can fit in a student portfolio.", minWords: 12,
+        criteria: [
+          { id: "skill", label: "Names a UX skill", signals: ["research", "usability", "prototype", "accessib", "interaction", "figma", "design", "information"] },
+          { id: "evidence", label: "Names case-study evidence", signals: ["interview", "test", "finding", "iteration", "metric", "case study", "portfolio", "artifact"] }
+        ],
+        guidance: "Collect evidence across the loop: question, participant or context, observation, design decision, iteration, and limitation.",
+        strongAnswer: "I would practice usability testing with a small campus website prototype. I would write a task, test it with five students, capture anonymized observations, revise one interaction, and show the before-and-after design plus the study limitation in a short case study.",
+        sourceRefs: ["src-bls-interface-designers", "src-microsoft-interview-tips"]
+      }
+    ]
+  }
+);
+
 /* Keep the flat authored fields convenient for content editing while also
  * exposing the rubric shape defined by the interaction spec. */
 CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {

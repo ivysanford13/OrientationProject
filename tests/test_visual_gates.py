@@ -338,12 +338,12 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             self.load_state(page, career, ".screen--career")
             self.assert_zero_overlap(
                 page.locator("#skill-dock"),
-                page.locator(".practice-card"),
-                f"{width}x{height} result dock/practice card",
+                page.locator(".career-result-actions"),
+                f"{width}x{height} result dock/action group",
             )
 
             for label_selector, title_selector, screen_label in (
-                (".career-hero > .eyebrow", "#career-title", "career"),
+                (".career-result-heading > .screen-kicker", "#career-title", "career"),
             ):
                 label_box = page.locator(label_selector).bounding_box()
                 title_box = page.locator(title_selector).bounding_box()

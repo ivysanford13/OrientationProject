@@ -450,19 +450,19 @@ const REGIONS = [
         },
         {
           id: "systems",
-          label: "Making it work",
+          label: "Hands-on building",
           shortLabel: "Build",
           starterSkillIds: ["starter-coding-curiosity", "starter-hands-on-tech"],
         },
         {
           id: "insight",
-          label: "Evidence and risk",
+          label: "Analysis and risk",
           shortLabel: "Insight",
           starterSkillIds: ["starter-numbers-patterns", "starter-problem-solving", "starter-security-mindset"],
         },
         {
           id: "people",
-          label: "People and momentum",
+          label: "Communication and leadership",
           shortLabel: "People",
           starterSkillIds: ["starter-communication", "starter-leadership", "starter-empathy"],
         },

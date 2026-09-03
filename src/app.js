@@ -285,7 +285,7 @@
     result.careerId = authored.careerId;
     result.questionIndex = Math.max(0, Math.min(2, Number(savedInterview.questionIndex) || 0));
     result.status = ['idle', 'in-progress', 'feedback', 'complete'].indexOf(savedInterview.status) === -1 ? 'idle' : savedInterview.status;
-    result.returnScreen = savedInterview.returnScreen === 'career' ? 'career' : 'career';
+    result.returnScreen = savedInterview.returnScreen === 'interview-picker' ? 'interview-picker' : 'career';
     var validQuestionIds = authored.questions.map(function (question) { return question.id; });
     Object.keys(savedInterview.answers || {}).forEach(function (questionId) {
       if (validQuestionIds.indexOf(questionId) !== -1 && typeof savedInterview.answers[questionId] === 'string') result.answers[questionId] = savedInterview.answers[questionId].slice(0, 1000);
@@ -334,7 +334,7 @@
         completed: validNodeIds(saved.completed),
         earned: validEarned(saved.earned),
         rejected: validNodeIds(saved.rejected),
-        screen: ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].indexOf(saved.screen) === -1 ? 'landing' : (saved.screen === 'travel' ? 'map' : saved.screen),
+        screen: ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-picker', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].indexOf(saved.screen) === -1 ? 'landing' : (saved.screen === 'travel' ? 'map' : saved.screen),
         reviewingNodeId: typeof saved.reviewingNodeId === 'string' && findNode(saved.reviewingNodeId) ? saved.reviewingNodeId : null,
         interview: normalizeInterview(saved.interview)
       });
@@ -448,6 +448,7 @@
     if (state.screen === 'mini') return renderMiniGame(findNode(state.selectedNodeId));
     if (state.screen === 'reflection') return renderReflection(findNode(state.selectedNodeId));
     if (state.screen === 'career') return renderCareer(findNode(state.selectedNodeId));
+    if (state.screen === 'interview-picker') return renderInterviewPicker();
     if (state.screen === 'interview-intro') return renderInterviewIntro();
     if (state.screen === 'interview-question') return renderInterviewQuestion();
     if (state.screen === 'interview-feedback') return renderInterviewFeedback();
@@ -460,7 +461,26 @@
       '<div class="landing-sky" aria-hidden="true"><span class="star star--one"></span><span class="star star--two"></span><span class="star star--three"></span><span class="planet"></span></div>' +
       '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS / FIELD GUIDE 02</p><h1 id="welcome-title" class="screen-title" tabindex="-1">Build your skills.<br><em>Find your world.</em></h1><p class="screen-subtitle">Choose the strengths that feel like you, then watch your explorer travel through an IS career world built around them.</p>' +
       '<form id="start-form" class="launch-card start-card"><p class="card-label">Create your explorer</p><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><div class="assigned-explorer"><span class="assigned-status" aria-hidden="true">✓</span><div><small>Your explorer is ready</small><strong>BYU Cougar</strong><p>One guide. Every world. Your skills shape the route.</p></div></div><button class="button button--primary button--wide" type="submit">Choose my starter skills <span aria-hidden="true">→</span></button></form>' +
+      '<div class="landing-fast-track"><span>OR SKIP THE GAME</span><button class="button button-secondary" type="button" data-action="open-interview-picker">Go straight to interview prep <span aria-hidden="true">↗</span></button><small>Choose a field, answer three beginner-friendly questions, and get instant checklist feedback.</small></div>' +
       (state.name && state.starterSkills.length === 4 ? '<button class="text-button" data-action="resume">Resume ' + escapeHtml(state.name) + '’s journey</button>' : '') + '</div><aside class="landing-explorer-stage" aria-label="Your BYU cougar explorer"><div class="explorer-orbit" aria-hidden="true"></div><img class="explorer-avatar explorer-avatar--hero" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt="Pixel-art BYU cougar wearing a blue Y hoodie and backpack"><div class="explorer-id"><span>PLAYER 01</span><strong>COUGAR EXPLORER</strong><small>Ready for launch</small></div></aside><p class="landing-note">Four starter skills · three worlds · one career path</p></section>';
+  }
+
+  function renderInterviewPicker() {
+    var recommendedRegion = state.starterSkills.length === 4 ? recommendRegion(state.starterSkills, []) : null;
+    var groups = model.regions.map(function (region) {
+      var careers = [];
+      (region.children || []).forEach(function (domain) {
+        (domain.children || []).forEach(function (specialization) {
+          if (specialization.career && interviewForCareer(specialization.career.id)) careers.push(specialization.career);
+        });
+      });
+      var recommended = recommendedRegion && recommendedRegion.id === region.id;
+      return '<section class="interview-family" style="--family-color:' + escapeAttr(region.color || '#2770e8') + '"><header><span>' + escapeHtml(region.title) + '</span>' + (recommended ? '<b>Your skill match</b>' : '') + '<p>' + escapeHtml(region.subtitle || region.description) + '</p></header><div class="interview-role-list">' + careers.map(function (career) {
+        var isSaved = state.interview.careerId === career.id && state.interview.status !== 'idle';
+        return '<button class="interview-role-card" type="button" data-action="choose-interview" data-career-id="' + escapeAttr(career.id) + '"><span class="role-card-arrow" aria-hidden="true">↗</span><strong>' + escapeHtml(career.title) + '</strong><small>' + escapeHtml(career.summary) + '</small><em>' + (isSaved ? 'Continue saved practice' : '3 questions · about 4 min') + '</em></button>';
+      }).join('') + '</div></section>';
+    }).join('');
+    return '<section class="screen interview-picker" aria-labelledby="interview-picker-title"><header class="topbar"><button class="button button--quiet" data-action="back-landing">← Back to launchpad</button><span class="progress-chip">12 CAREER PRACTICE SETS</span></header><div class="interview-picker-heading"><p class="screen-kicker">INTERVIEW PREP / PICK A FIELD</p><h1 id="interview-picker-title" tabindex="-1">Practice for the role<br><em>you want to explore.</em></h1><p>You do not need a perfect résumé or a finished game path. Pick the closest role and answer using class, work, club, volunteer, or personal-project examples.</p></div><div class="interview-family-grid">' + groups + '</div><aside class="deterministic-note"><strong>No chatbot. No mystery score.</strong><span>Your answer stays in this browser. Feedback checks for clear, role-specific building blocks and shows exactly what to add next.</span></aside></section>';
   }
 
   function renderSkillSelect() {
@@ -872,7 +892,7 @@
       var isCat = row === scratchPosition.row && col === scratchPosition.col;
       cells.push('<div class="scratch-grid-cell' + (isBush ? ' is-bush' : '') + (isFlag ? ' is-flag' : '') + (isCat ? ' is-cat' : '') + '" aria-label="' + (isBush ? 'Bush obstacle' : isFlag ? 'Goal flag' : isCat ? 'Cat position' : 'Path square') + '">' + (isBush ? '🌿' : isFlag ? '⚑' : isCat ? '🐱' : '') + '</div>');
     }
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SCRATCH PUZZLE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout scratch-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">Guide the cat around the bush and onto the flag by building a Scratch-style command script.</p><div class="scratch-howto"><span class="eyebrow">HOW TO PLAY</span><strong>Click commands in the order the cat should use them.</strong><span>Start facing right. The cat moves one square at a time and turns in place.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="scratch-reset">Reset script</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace" role="region" aria-label="Scratch block path puzzle"><div class="scratch-puzzle-board"><div class="scratch-grid" aria-label="Cat path board">' + cells.join('') + '</div><div class="scratch-board-legend"><span>🐱 Start</span><span>🌿 Bush</span><span>⚑ Goal</span></div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR SCRIPT</span><small>' + scratchDraft.length + ' commands</small></div><ol class="scratch-stack">' + draftMarkup + '</ol><div class="scratch-divider"><span>CLICK TO ADD A COMMAND</span></div><div class="scratch-block-picker">' + availableMarkup + '</div>' + feedbackMarkup + '</div></div></div></section>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SCRATCH PUZZLE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout scratch-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">Guide the cat around the bush and onto the flag by building a Scratch-style command script.</p><div class="scratch-howto"><span class="eyebrow">HOW TO PLAY</span><strong>Click commands in the order the cat should use them.</strong><span>Start facing right. The cat moves one square at a time and turns in place.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="scratch-reset">Reset script</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace" role="region" aria-label="Scratch block path puzzle"><div class="scratch-puzzle-board"><div class="scratch-grid" aria-label="Cat path board">' + cells.join('') + '</div><div class="scratch-board-legend"><span>🐱 Start</span><span>🌿 Bush</span><span>⚑ Goal</span></div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR SCRIPT</span><small>' + scratchDraft.length + ' commands</small></div><ol class="scratch-stack">' + draftMarkup + '</ol><div class="scratch-divider"><span>CLICK TO ADD A COMMAND</span></div><div class="scratch-block-picker">' + availableMarkup + '</div>' + feedbackMarkup + '</div></div></div></section>';
   }
 
   function renderSlideGame(node, skill, mini) {
@@ -1119,7 +1139,7 @@
       var isSuggested = advice.suggestedStrengthIds.indexOf(candidate.strengthId) !== -1;
       var strength = strengths.filter(function (item) { return item.id === candidate.strengthId; })[0] || { label: candidate.strengthId };
       var disabled = !isSelected && selected.length >= teamSize;
-      return '<button class="crew-candidate' + (isSelected ? ' is-selected' : '') + (isSuggested ? ' is-suggested' : '') + '" type="button" data-action="toggle-teammate" data-candidate-id="' + escapeAttr(candidate.id) + '" aria-pressed="' + isSelected + '" ' + (disabled ? 'disabled' : '') + '><span class="crew-card-status">' + (isSelected ? 'On crew' : isSuggested ? 'Suggested fit' : 'Available') + '</span>' + renderCrewFigure(candidate) + '<span class="crew-candidate-copy"><strong>' + escapeHtml(candidate.name) + '</strong><small>' + escapeHtml(candidate.role) + '</small><em>' + escapeHtml(strength.label) + '</em><q>' + escapeHtml(candidate.motto) + '</q></span><span class="crew-pick-mark" aria-hidden="true">' + (isSelected ? '✓' : '+') + '</span></button>';
+      return '<button class="crew-candidate' + (isSelected ? ' is-selected' : '') + (isSuggested ? ' is-suggested' : '') + '" type="button" data-action="toggle-teammate" data-candidate-id="' + escapeAttr(candidate.id) + '" aria-pressed="' + isSelected + '" ' + (disabled ? 'disabled' : '') + '><span class="crew-card-status">' + (isSelected ? 'On crew' : isSuggested ? advice.candidateStatus : 'Available') + '</span>' + renderCrewFigure(candidate) + '<span class="crew-candidate-copy"><strong>' + escapeHtml(candidate.name) + '</strong><small>' + escapeHtml(candidate.role) + '</small><em>' + escapeHtml(strength.label) + '</em><q>' + escapeHtml(candidate.motto) + '</q></span><span class="crew-pick-mark" aria-hidden="true">' + (isSelected ? '✓' : '+') + '</span></button>';
     }).join('');
     var slots = Array.from({ length: teamSize }, function (_, index) {
       var member = selectedMembers[index];
@@ -1127,7 +1147,7 @@
         ? '<li class="crew-slot is-filled"><span class="crew-slot-figure">' + renderCrewFigure(member) + '</span><span><strong>' + escapeHtml(member.name) + '</strong><small>' + escapeHtml(member.role) + '</small></span></li>'
         : '<li class="crew-slot"><span class="crew-slot-number" aria-hidden="true">0' + (index + 1) + '</span><span><strong>Open seat</strong><small>Choose a teammate</small></span></li>';
     }).join('');
-    return '<div class="team-builder-game" data-team-game><div class="team-builder-intro"><div><p class="eyebrow">PEOPLE + LEAD / ORBITAL CREW DRAFT</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept) + '</p></div><div class="player-loadout"><span>Your starting strengths</span><div>' + selectedSkills.map(function (skill) { return '<b>' + escapeHtml(skill.shortName || skill.name) + '</b>'; }).join('') + '</div><small>You are part of this team too.</small></div></div><div class="team-console"><div class="crew-draft-bar"><div><span>MISSION 01 / CAMPUS LAUNCH</span><strong>Draft ' + teamSize + ' teammates</strong></div><div class="crew-count" aria-label="' + selected.length + ' of ' + teamSize + ' teammates selected"><strong>' + selected.length + '</strong><span>/ ' + teamSize + '</span></div></div><div class="crew-advice" role="status" aria-live="polite"><span class="crew-advice-icon" aria-hidden="true">⌁</span><div><small>CREW COMPUTER</small><strong>' + escapeHtml(advice.title) + '</strong><p>' + escapeHtml(advice.copy) + '</p></div></div><div class="crew-draft-layout"><div class="crew-roster-wrap"><span class="crew-section-label">AVAILABLE EXPLORERS</span><div class="crew-roster" role="group" aria-label="Choose three teammates">' + roster + '</div></div><aside class="crew-summary" aria-label="Current team balance"><span class="crew-section-label">YOUR DREAM CREW</span><ol class="crew-slots">' + slots + '</ol>' + renderTeamBalance(mini, selected) + '</aside></div><div class="crew-draft-actions"><p>' + (selected.length >= teamSize ? (advice.isBalanced ? 'Every mission need has someone ready to help.' : 'A focused crew can still be a great crew. You can swap a teammate or keep this lineup.') : 'Pick the personalities that feel right. Suggestions are optional.') + '</p><button class="button button--primary" data-action="finish-game" ' + (selected.length < teamSize ? 'disabled' : '') + '>Lock in this crew <span aria-hidden="true">→</span></button></div></div></div>';
+    return '<div class="team-builder-game" data-team-game><div class="team-builder-intro"><div><p class="eyebrow">PEOPLE + LEAD / ORBITAL CREW DRAFT</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept) + '</p></div><div class="player-loadout"><span>Your starting strengths</span><div>' + selectedSkills.map(function (skill) { return '<b>' + escapeHtml(skill.shortName || skill.name) + '</b>'; }).join('') + '</div><small>You are part of this team too.</small></div></div><div class="team-console"><div class="crew-draft-bar"><div><span>MISSION 01 / CAMPUS LAUNCH</span><strong>Draft ' + teamSize + ' teammates</strong></div><div class="crew-count" aria-label="' + selected.length + ' of ' + teamSize + ' teammates selected"><strong>' + selected.length + '</strong><span>/ ' + teamSize + '</span></div></div><div class="crew-advice" role="status" aria-live="polite"><span class="crew-advice-icon" aria-hidden="true">⌁</span><div class="crew-advice-content"><small>TEAM COACH</small><strong>' + escapeHtml(advice.title) + '</strong><p>' + escapeHtml(advice.copy) + '</p><div class="crew-advice-breakdown"><span><small>' + escapeHtml(advice.coveredTitle) + '</small><b>' + escapeHtml(advice.coveredLabel) + '</b></span><span class="' + (advice.isBalanced ? 'is-covered' : 'is-gap') + '"><small>' + escapeHtml(advice.gapTitle) + '</small><b>' + escapeHtml(advice.gapLabel) + '</b></span></div></div></div><div class="crew-draft-layout"><div class="crew-roster-wrap"><span class="crew-section-label">AVAILABLE EXPLORERS</span><div class="crew-roster" role="group" aria-label="Choose three teammates">' + roster + '</div></div><aside class="crew-summary" aria-label="Current team balance"><span class="crew-section-label">YOUR DREAM CREW</span><ol class="crew-slots">' + slots + '</ol>' + renderTeamBalance(mini, selected) + '</aside></div><div class="crew-draft-actions"><p>' + escapeHtml(advice.footer) + '</p><button class="button button--primary" data-action="finish-game" ' + (selected.length < teamSize ? 'disabled' : '') + '>Lock in this crew <span aria-hidden="true">→</span></button></div></div></div>';
   }
 
   function renderCrewFigure(candidate) {
@@ -1148,30 +1168,75 @@
   function teamBuilderAdvice(mini, selected) {
     var counts = teamBuilderCounts(mini, selected);
     var playerStrengths = counts.filter(function (item) { return item.playerCount > 0; }).sort(function (a, b) { return b.playerCount - a.playerCount; });
+    var covered = counts.filter(function (item) { return item.total > 0; });
     var missing = counts.filter(function (item) { return item.total === 0; });
     var lowestTotal = counts.length ? Math.min.apply(null, counts.map(function (item) { return item.total; })) : 0;
-    var suggestions = (missing.length ? missing : counts.filter(function (item) { return item.total === lowestTotal; })).map(function (item) { return item.strength.id; });
     var teamSize = Number(mini.teamSize) || 3;
-    var playerLabel = playerStrengths.slice(0, 2).map(function (item) { return item.strength.shortLabel; }).join(' + ') || 'a flexible mix';
-    var suggestionLabel = (missing.length ? missing : counts.filter(function (item) { return item.total === lowestTotal; })).slice(0, 2).map(function (item) { return item.strength.shortLabel.toLowerCase(); }).join(' or ');
+    var targets = missing.length ? missing : counts.filter(function (item) { return item.total === lowestTotal; });
+    var suggestions = selected.length >= teamSize && !missing.length ? [] : targets.map(function (item) { return item.strength.id; });
+    var playerLabel = strengthLabel(playerStrengths, ' + ') || 'a flexible mix';
+    var coveredLabel = strengthLabel(covered, ' · ') || 'None yet';
+    var gapLabel = strengthLabel(missing, ' · ') || 'No gaps';
+    var targetLabel = targets.map(function (item) { return item.strength.label.toLowerCase(); }).join(' or ');
+    var recommendation = teammateRecommendation(mini, selected, targets);
     if (!selected.length) return {
-      title: 'You already bring ' + playerLabel + '.',
-      copy: 'For more range, look for a teammate strong in ' + suggestionLabel + '. Suggested fits are marked, but every explorer is available.',
+      title: 'Add ' + targetLabel + '.',
+      copy: 'Your starter skills already cover ' + playerLabel.toLowerCase() + '. ' + recommendation,
       suggestedStrengthIds: suggestions,
-      isBalanced: missing.length === 0
+      candidateStatus: 'Fills a gap',
+      coveredTitle: 'You bring',
+      coveredLabel: playerLabel,
+      gapTitle: 'Best complement',
+      gapLabel: gapLabel,
+      footer: 'Start with a teal-outlined candidate to add range, or choose anyone to double down on a strength.',
+      isBalanced: false
     };
     if (selected.length < teamSize) return {
-      title: selected.length + (selected.length === 1 ? ' seat filled. Keep shaping the mix.' : ' seats filled. One more perspective.'),
-      copy: missing.length ? 'Your team could still use ' + suggestionLabel + '. Or double down on what matters most to you.' : 'You have every mission need covered. Choose the final personality that feels right.',
+      title: missing.length ? 'Next, add ' + targetLabel + '.' : 'Every need is covered. Choose who adds depth.',
+      copy: missing.length ? recommendation : 'There is no gap to fill now. Choose the personality or strength you want more of.',
       suggestedStrengthIds: suggestions,
+      candidateStatus: missing.length ? 'Fills a gap' : 'Adds balance',
+      coveredTitle: 'You + crew cover',
+      coveredLabel: coveredLabel,
+      gapTitle: missing.length ? 'Still missing' : 'Coverage',
+      gapLabel: gapLabel,
+      footer: 'Teal outlines update after each pick. They show useful complements, not required choices.',
       isBalanced: missing.length === 0
     };
     return {
-      title: missing.length ? 'Focused crew assembled.' : 'Complementary crew assembled.',
-      copy: missing.length ? 'This lineup leans into shared strengths. For wider coverage, you could swap in ' + suggestionLabel + '—but there is no wrong crew.' : 'Your choices add range to your own strengths. Everyone brings a different way to help the mission.',
+      title: missing.length ? 'Crew gap: no ' + targetLabel + ' specialist.' : 'Complementary crew: all four strengths covered.',
+      copy: missing.length ? 'For more range, ' + recommendation + ' Or keep this focused lineup if those shared strengths fit you.' : 'Your starter skills and teammate choices now cover ideas, hands-on building, analysis, and people leadership.',
       suggestedStrengthIds: suggestions,
+      candidateStatus: 'Swap option',
+      coveredTitle: 'Crew covers',
+      coveredLabel: coveredLabel,
+      gapTitle: missing.length ? 'Not represented' : 'Coverage',
+      gapLabel: gapLabel,
+      footer: missing.length ? 'You can swap a teammate to fill the gap, or lock in this valid specialist crew.' : 'Your crew is balanced. You can still swap anyone based on personality.',
       isBalanced: missing.length === 0
     };
+  }
+
+  function strengthLabel(items, separator) {
+    return items.map(function (item) { return item.strength.shortLabel; }).join(separator);
+  }
+
+  function teammateRecommendation(mini, selected, targets) {
+    var candidates = Array.isArray(mini.candidates) ? mini.candidates : [];
+    var groups = targets.map(function (item) {
+      var names = candidates.filter(function (candidate) {
+        return candidate.strengthId === item.strength.id && selected.indexOf(candidate.id) === -1;
+      }).map(function (candidate) { return candidate.name; });
+      if (!names.length) return '';
+      return naturalChoice(names) + (names.length === 1 ? ' adds ' : ' add ') + item.strength.label.toLowerCase();
+    }).filter(Boolean);
+    return groups.length ? groups.join('; ') + '.' : 'Choose the personality that feels most useful to you.';
+  }
+
+  function naturalChoice(items) {
+    if (items.length < 2) return items[0] || '';
+    if (items.length === 2) return items[0] + ' or ' + items[1];
+    return items.slice(0, -1).join(', ') + ', or ' + items[items.length - 1];
   }
 
   function renderTeamBalance(mini, selected) {
@@ -1199,6 +1264,16 @@
     return activeMiniGame;
   }
 
+  function renderDeployActionMarkup(game, publishedUrl) {
+    if (game.complete) {
+      return '<div class="deploy-live-card" role="status"><span class="deploy-live-pip" aria-hidden="true"></span><div><small>DEPLOYMENT COMPLETE</small><strong>Site is live</strong><span>' + escapeHtml(publishedUrl) + '</span></div></div><button class="button button--primary" data-action="finish-game">Continue to trail check <span aria-hidden="true">→</span></button>';
+    }
+    if (game.fileStaged) {
+      return '<button class="button deploy-host-button" data-action="host-site"><span aria-hidden="true">⌁</span> Host</button><small>Your file is ready for the uplink.</small>';
+    }
+    return '<div class="deploy-locked-action" aria-disabled="true"><span aria-hidden="true">⌁</span><div><strong>Host</strong><small>Add a file to unlock</small></div></div>';
+  }
+
   function renderDeployBody(node) {
     var mini = node.miniGame;
     var game = ensureDeployGame(node);
@@ -1216,12 +1291,8 @@
     var folderContents = game.fileStaged || game.complete
       ? '<span class="deploy-folder-file" aria-hidden="true"><i>&lt;/&gt;</i><b>' + escapeHtml(fileName) + '</b></span>'
       : '<span class="deploy-folder-empty" aria-hidden="true">DROP FILE HERE</span>';
-    var actionMarkup = game.complete
-      ? '<div class="deploy-live-card" role="status"><span class="deploy-live-pip" aria-hidden="true"></span><div><small>DEPLOYMENT COMPLETE</small><strong>Site is live</strong><span>' + escapeHtml(publishedUrl) + '</span></div></div><button class="button button--primary" data-action="finish-game">Continue to trail check <span aria-hidden="true">→</span></button>'
-      : game.fileStaged
-        ? '<button class="button deploy-host-button" data-action="host-site"><span aria-hidden="true">⌁</span> Host</button><small>Your file is ready for the uplink.</small>'
-        : '<div class="deploy-locked-action" aria-disabled="true"><span aria-hidden="true">⌁</span><div><strong>Host</strong><small>Add a file to unlock</small></div></div>';
-    return '<div class="deploy-game" data-deploy-game><div class="deploy-intro"><p class="eyebrow">USERS + PRODUCT / SHIPBOARD TASK</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">A website only becomes useful when people can reach it. Stage the finished file, then host it.</p></div><div class="deploy-task-shell"><div class="deploy-task-rivets" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="deploy-task-heading"><span class="deploy-task-light" aria-hidden="true"></span><div><small>TASK 06 / WEB UPLINK</small><strong>Publish one-page site</strong></div><span class="deploy-task-state">' + (game.complete ? 'COMPLETE' : game.fileStaged ? 'READY' : '1 FILE') + '</span></div><div class="deploy-installer-window"><div class="deploy-window-bar"><span aria-hidden="true"><i></i><i></i><i></i></span><strong>Website Hosting Utility</strong><em>LOCAL</em></div><div class="deploy-status" role="status" aria-live="polite" data-deploy-status>' + escapeHtml(status) + '</div><div class="deploy-workspace' + (game.fileStaged ? ' is-staged' : '') + (game.complete ? ' is-complete' : '') + '"><div class="deploy-source"><span class="deploy-zone-label">YOUR DESKTOP</span><button class="deploy-file' + (game.fileSelected ? ' is-selected' : '') + '" type="button" draggable="' + (!game.fileStaged && !game.complete) + '" data-action="select-deploy-file" aria-pressed="' + game.fileSelected + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '>' + fileMarkup + '</button><small>' + (game.fileStaged || game.complete ? 'Moved to repository ✓' : game.fileSelected ? 'Selected — choose the folder' : 'Drag me →') + '</small></div><div class="deploy-transfer-arrow" aria-hidden="true"><span></span><i>→</i></div><div class="deploy-destination"><span class="deploy-zone-label">LOCAL REPOSITORY</span><button class="deploy-folder" type="button" data-action="stage-deploy-file" aria-label="GitHub Local folder, ' + escapeAttr(repositoryName) + (game.fileStaged ? ', contains ' + fileName : ', empty') + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '><span class="deploy-folder-tab" aria-hidden="true"></span><span class="deploy-folder-brand"><i aria-hidden="true">GH</i><span><strong>GitHub Local</strong><small>' + escapeHtml(repositoryName) + '</small></span></span>' + folderContents + '</button><small>' + (game.fileStaged || game.complete ? '1 file staged' : 'Repository folder') + '</small></div></div><div class="deploy-action-row">' + actionMarkup + '</div></div></div><div class="deploy-brief"><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skillFor(node)) + '" aria-hidden="true">' + renderBadgeArtwork(skillFor(node)) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skillFor(node).name) + '</strong><p>Host the page, then decide whether this kind of work energized you.</p></div></div><p><strong>How to play:</strong> ' + escapeHtml(mini.instructions) + '</p></div></div>';
+    var actionMarkup = renderDeployActionMarkup(game, publishedUrl);
+    return '<div class="deploy-game" data-deploy-game><div class="deploy-intro"><p class="eyebrow">USERS + PRODUCT / SHIPBOARD TASK</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">A website only becomes useful when people can reach it. Stage the finished file, then host it.</p></div><div class="deploy-task-shell"><div class="deploy-task-rivets" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="deploy-task-heading"><span class="deploy-task-light" aria-hidden="true"></span><div><small>TASK 06 / WEB UPLINK</small><strong>Publish one-page site</strong></div><span class="deploy-task-state">' + (game.complete ? 'COMPLETE' : game.fileStaged ? 'READY' : '1 FILE') + '</span></div><div class="deploy-installer-window"><div class="deploy-window-bar"><span aria-hidden="true"><i></i><i></i><i></i></span><strong>Website Hosting Utility</strong><em>LOCAL</em></div><div class="deploy-status" role="status" aria-live="polite" data-deploy-status>' + escapeHtml(status) + '</div><div class="deploy-workspace' + (game.fileStaged ? ' is-staged' : '') + (game.complete ? ' is-complete' : '') + '"><div class="deploy-source"><span class="deploy-zone-label">YOUR DESKTOP</span><button class="deploy-file' + (game.fileSelected ? ' is-selected' : '') + '" type="button" draggable="' + (!game.fileStaged && !game.complete) + '" data-action="select-deploy-file" aria-pressed="' + game.fileSelected + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '>' + fileMarkup + '</button><small>' + (game.fileStaged || game.complete ? 'Moved to repository ✓' : game.fileSelected ? 'Selected — choose the folder' : 'Drag me →') + '</small></div><div class="deploy-transfer-arrow" aria-hidden="true"><span></span><i>→</i></div><div class="deploy-destination"><span class="deploy-zone-label">LOCAL REPOSITORY</span><button class="deploy-folder" type="button" data-action="stage-deploy-file" aria-label="GitHub Local folder, ' + escapeAttr(repositoryName) + (game.fileStaged ? ', contains ' + fileName : ', empty') + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '><span class="deploy-folder-brand"><i aria-hidden="true">GH</i><span><strong>GitHub Local</strong><small>' + escapeHtml(repositoryName) + '</small></span></span>' + folderContents + '</button><small>' + (game.fileStaged || game.complete ? '1 file staged' : 'Repository folder') + '</small></div></div><div class="deploy-action-row">' + actionMarkup + '</div></div></div><div class="deploy-brief"><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skillFor(node)) + '" aria-hidden="true">' + renderBadgeArtwork(skillFor(node)) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skillFor(node).name) + '</strong><p>Host the page, then decide whether this kind of work energized you.</p></div></div><p><strong>How to play:</strong> ' + escapeHtml(mini.instructions) + '</p></div></div>';
   }
 
   function formatGameTime(seconds) {
@@ -1235,22 +1306,83 @@
     return '<section class="screen screen--reflection" aria-labelledby="reflection-title"><div class="reflection-scene"><div class="reflection-avatar avatar-cougar" aria-hidden="true"><img class="explorer-avatar explorer-avatar--reflection" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></div><div class="reflection-card"><p class="screen-kicker">TRAIL CHECKPOINT</p><h1 id="reflection-title" tabindex="-1">Did you enjoy that kind of activity?</h1><p>Your answer changes the map. There is no wrong response—this is about noticing what gives you energy.</p><div class="reflection-choice-grid"><button class="reflection-choice reflection-choice--yes" data-action="enjoy-yes"><span aria-hidden="true">✓</span><strong>Yes, keep going</strong><small>Add <b>' + escapeHtml(skill.name) + '</b> and reveal the next stage.</small></button><button class="reflection-choice reflection-choice--maybe" data-action="enjoy-maybe"><span aria-hidden="true">?</span><strong>Maybe, show me more</strong><small>Keep this trail open without changing your progress.</small></button><button class="reflection-choice reflection-choice--no" data-action="enjoy-no"><span aria-hidden="true">↶</span><strong>No, try another trail</strong><small>' + escapeHtml(alternative ? 'Not for me? Confirm to try ' + alternative.title + '.' : 'Not for me? Confirm to reopen your closest matches.') + '</small></button></div><button class="text-button" data-action="back-map">I’m not sure yet — return to map</button></div></div></section>';
   }
 
+  /** Return the map context for a career so rankings can follow the user's route. */
+  function careerRouteFor(careerId) {
+    for (var regionIndex = 0; regionIndex < model.regions.length; regionIndex += 1) {
+      var region = model.regions[regionIndex];
+      for (var domainIndex = 0; domainIndex < (region.children || []).length; domainIndex += 1) {
+        var domain = region.children[domainIndex];
+        for (var specIndex = 0; specIndex < (domain.children || []).length; specIndex += 1) {
+          var specialization = domain.children[specIndex];
+          if (specialization.career && specialization.career.id === careerId) {
+            return { region: region, domain: domain, specialization: specialization };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /** Rank ten roles by the completed path first, then the starter-skill compass. */
+  function rankedCareerSuggestions(node) {
+    var selectedCareerId = node && node.career && node.career.id;
+    var selectedRoute = careerRouteFor(selectedCareerId);
+    var regionScores = scoreRegions(state.starterSkills);
+    return Object.keys(model.careers).map(function (careerId, sourceIndex) {
+      var career = model.careers[careerId];
+      var route = careerRouteFor(careerId);
+      var score = route ? Number(regionScores[route.region.id] || 0) * 10 : 0;
+      var reason = 'Fits your starter skills';
+      if (selectedRoute && route && route.region.id === selectedRoute.region.id) {
+        score += 100;
+        reason = 'Same career world';
+      }
+      if (selectedRoute && route && route.domain.id === selectedRoute.domain.id) {
+        score += 300;
+        reason = 'Same focus area';
+      }
+      if (careerId === selectedCareerId) {
+        score += 1000;
+        reason = 'Your chosen path';
+      }
+      return { career: career, route: route, score: score, reason: reason, sourceIndex: sourceIndex };
+    }).sort(function (a, b) {
+      return b.score - a.score || a.sourceIndex - b.sourceIndex;
+    }).slice(0, 10);
+  }
+
+  function formatCurrency(value) {
+    var amount = Number(value);
+    return Number.isFinite(amount) ? '$' + amount.toLocaleString('en-US') : 'Not available';
+  }
+
+  function renderCareerSuggestion(suggestion, index) {
+    var salary = research.salaryByCareerId[suggestion.career.id];
+    var isBestMatch = index === 0;
+    var routeLabel = suggestion.route ? suggestion.route.region.title + ' · ' + suggestion.route.domain.title : 'Information Systems';
+    return '<li class="career-rank-card' + (isBestMatch ? ' is-best-match' : '') + '">' +
+      '<span class="career-rank-number" aria-hidden="true">' + String(index + 1).padStart(2, '0') + '</span>' +
+      '<div class="career-rank-copy"><div class="career-rank-title"><h2>' + escapeHtml(suggestion.career.title) + '</h2><span>' + escapeHtml(isBestMatch ? 'Best match · ' + suggestion.reason : suggestion.reason) + '</span></div><p>' + escapeHtml(suggestion.career.summary) + '</p><small>' + escapeHtml(routeLabel) + '</small></div>' +
+      '<dl class="career-pay' + (isBestMatch ? ' career-stat' : '') + '" aria-label="Pay for ' + escapeAttr(suggestion.career.title) + '"><div><dt>' + (isBestMatch ? 'ENTRY RANGE · NATIONAL PROXY' : 'ENTRY PAY') + '</dt><dd>' + escapeHtml(salary && salary.entryRange ? salary.entryRange.label : formatSalary(suggestion.career.salary)) + '</dd></div><div><dt>MEDIAN PAY</dt><dd>' + escapeHtml(salary ? formatCurrency(salary.median) : 'Not available') + '</dd></div><div class="career-pay-source"><small>' + (salary ? 'BLS OEWS May 2023 · 10th–25th percentile · SOC ' + escapeHtml(salary.soc) : 'Salary context is being prepared.') + '</small></div></dl>' +
+      '</li>';
+  }
+
   function renderCareer(node) {
-    var career = node && node.career || { title: 'Career match', summary: 'A career path is ready to explore.' };
-    var candidate = career.strongCandidate || career.candidate;
-    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) candidate = (candidate.skills || []).concat(candidate.experience || [], candidate.projects || [], candidate.certifications || []);
-    var lists = [
-      ['Day to day', career.dayToDay || career.responsibilities], ['Typical projects', career.typicalProjects || career.projects],
-      ['Where they work', career.workSettings || career.workplace], ['Industries', career.industries], ['Company types', career.companyTypes || career.companies],
-      ['Technical skills', career.technicalSkills || career.skills], ['Tools & technology', career.toolsAndTechnologies || career.tools],
-      ['Entry-level needs', career.entryLevelNeeds || career.entryLevel], ['Strong candidate', candidate]
-    ];
+    var career = node && node.career || { id: '', title: 'Career match', summary: 'A career path is ready to explore.' };
     var salaryResearch = research.salaryByCareerId[career.id];
     var interview = interviewForCareer(career.id);
+    var route = careerRouteFor(career.id);
+    var suggestions = rankedCareerSuggestions(node);
     var practiceMarkup = interview
-      ? '<div class="practice-card"><span class="eyebrow">INTERVIEW PRACTICE</span><strong>Make the role feel real.</strong><p>Three short prompts on experience, judgment, and your next step.</p><button class="button button-coral button--wide" data-action="open-interview" data-career-id="' + escapeAttr(career.id) + '">' + (state.interview.careerId === career.id && state.interview.status !== 'idle' ? 'Continue practice' : 'Practice a mock interview') + ' <span aria-hidden="true">↗</span></button></div>'
-      : '<div class="practice-card practice-card--soon"><span class="eyebrow">INTERVIEW PRACTICE</span><strong>Coming next.</strong><p>We are authoring a dedicated practice path for this role. Explore the field notes above in the meantime.</p></div>';
-    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="button button--quiet" data-action="restart">Restart</button></header><div class="career-hero"><p class="eyebrow">' + escapeHtml(node.id) + ' / CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p class="lede">' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-hero-meta"><span>Starter skills: <strong>4</strong></span><span>Journey skills: <strong>' + state.earned.length + '</strong></span><span>Path complete ✓</span></div></div><div class="career-grid"><div class="career-facts">' + lists.map(function (pair) { return '<section class="fact"><h2>' + escapeHtml(pair[0]) + '</h2>' + renderFactList(pair[1]) + '</section>'; }).join('') + '</div><aside class="career-sidebar"><div class="career-stat"><span class="eyebrow">ENTRY RANGE · NATIONAL PROXY</span><strong>' + escapeHtml(salaryResearch ? salaryResearch.entryRange.label : formatSalary(career.salary)) + '</strong><small>' + escapeHtml(salaryResearch ? 'BLS OEWS May 2023 · 10th–25th percentile · SOC ' + salaryResearch.soc : 'Salary context is being prepared.') + '</small></div><div class="career-stat"><span class="eyebrow">GROWTH</span><p>' + escapeHtml(formatList(career.careerGrowth || career.growth)) + '</p></div>' + practiceMarkup + '<button class="button button-coral button--wide" data-action="new-path">Start another path ↗</button><button class="text-button" data-action="back-map">View this world</button></aside></div>' + (salaryResearch ? '<details class="career-sources"><summary>Sources &amp; salary methodology</summary><div class="source-disclosure"><p><strong>How to read this:</strong> The range is a national occupational benchmark, not a guaranteed offer. The role is mapped to <em>' + escapeHtml(salaryResearch.occupation) + '</em> (' + escapeHtml(salaryResearch.soc) + ') because student-facing titles do not always have one federal occupation code.</p><p>' + escapeHtml(salaryResearch.mapping) + ' ' + escapeHtml(salaryResearch.proxyLimitations) + '</p>' + renderSourceList((salaryResearch.sourceRefs || []).concat(['src-bls-oews-methods'])) + '</div></details>' : '') + '</section>';
+      ? '<button class="button button--primary" data-action="open-interview" data-career-id="' + escapeAttr(career.id) + '">' + (state.interview.careerId === career.id && state.interview.status !== 'idle' ? 'Continue practice' : 'Practice a mock interview') + ' <span aria-hidden="true">↗</span></button>'
+      : '';
+    var pathLabel = route ? route.region.title + ' / ' + route.domain.title : 'Information Systems';
+    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="button button--quiet" data-action="restart">Restart</button></header>' +
+      '<header class="career-result-heading"><p class="screen-kicker">YOUR TOP CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p>' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-path-line"><span>YOUR DIRECTION</span><strong>' + escapeHtml(pathLabel) + '</strong></div></header>' +
+      '<div class="career-ranking-heading"><div><span class="eyebrow">PERSONALIZED SHORTLIST</span><h2>10 roles worth exploring</h2></div><p>Ranked from your starter skills and the path you chose. Each role shows its own national pay data—nothing is averaged together.</p></div>' +
+      '<ol class="career-ranking">' + suggestions.map(renderCareerSuggestion).join('') + '</ol>' +
+      '<div class="career-result-actions">' + practiceMarkup + '<button class="button button-secondary" data-action="new-path">Start another path</button><button class="text-button" data-action="back-map">View this world</button></div>' +
+      (salaryResearch ? '<details class="career-sources"><summary>Sources &amp; salary methodology</summary><div class="source-disclosure"><p><strong>How to read this:</strong> Every role above has its own entry range and median. These are national occupational benchmarks, not guaranteed offers. Your top role is mapped to <em>' + escapeHtml(salaryResearch.occupation) + '</em> (' + escapeHtml(salaryResearch.soc) + ').</p><p>' + escapeHtml(salaryResearch.mapping) + ' ' + escapeHtml(salaryResearch.proxyLimitations) + '</p>' + renderSourceList((salaryResearch.sourceRefs || []).concat(['src-bls-oews-methods'])) + '</div></details>' : '') + '</section>';
   }
 
   function currentInterview() {
@@ -1282,7 +1414,8 @@
     var career = modelCareer(state.interview.careerId);
     if (!interview || !career) return renderCareer(findNode(state.selectedNodeId));
     var inProgress = state.interview.status !== 'idle';
-    return '<section class="screen interview-screen interview-intro" aria-labelledby="interview-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← Back to career</button><span class="progress-chip">3 QUESTIONS / ~4 MIN</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-intro-grid"><div><p class="screen-kicker">FIELD PRACTICE / ROLE REHEARSAL</p><h1 id="interview-title" tabindex="-1">' + escapeHtml(career.title) + '<br><em>in your own words.</em></h1><p class="interview-lede">' + escapeHtml(interview.intro) + '</p><div class="interview-expectations"><span><b>01</b> Your experience</span><span><b>02</b> Role scenario</span><span><b>03</b> Your next step</span></div></div><aside class="interview-welcome-card"><span class="eyebrow">A QUICK REHEARSAL</span><strong>This is practice, not a grade.</strong><p>Write what you would really say. The feedback is a transparent checklist based on words you chose.</p><button class="button button--primary button--wide" data-action="interview-start">' + (inProgress ? 'Continue practice' : 'Start practice') + ' <span aria-hidden="true">→</span></button>' + (inProgress ? '<button class="text-button" data-action="interview-replay">Start this interview again</button>' : '') + '</aside></div>' + renderInterviewSources(interview) + '</section>';
+    var backLabel = state.interview.returnScreen === 'interview-picker' ? '← Back to roles' : '← Back to career';
+    return '<section class="screen interview-screen interview-intro" aria-labelledby="interview-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">' + backLabel + '</button><span class="progress-chip">3 QUESTIONS / ~4 MIN</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-intro-grid"><div><p class="screen-kicker">FIELD PRACTICE / ROLE REHEARSAL</p><h1 id="interview-title" tabindex="-1">' + escapeHtml(career.title) + '<br><em>in your own words.</em></h1><p class="interview-lede">' + escapeHtml(interview.intro) + '</p><div class="interview-expectations"><span><b>01</b> Your experience</span><span><b>02</b> Role scenario</span><span><b>03</b> Your next step</span></div></div><aside class="interview-welcome-card"><span class="eyebrow">A QUICK REHEARSAL</span><strong>This is practice, not a grade.</strong><p>Write what you would really say. The feedback is a transparent checklist based on words you chose.</p><button class="button button--primary button--wide" data-action="interview-start">' + (inProgress ? 'Continue practice' : 'Start practice') + ' <span aria-hidden="true">→</span></button>' + (inProgress ? '<button class="text-button" data-action="interview-replay">Start this interview again</button>' : '') + '</aside></div>' + renderInterviewSources(interview) + '</section>';
   }
 
   function renderInterviewQuestion() {
@@ -1314,7 +1447,8 @@
       return '<li><span>' + String(index + 1).padStart(2, '0') + '</span><strong>' + escapeHtml(question.type === 'experience' ? 'Experience' : question.type === 'growth' ? 'Growth plan' : 'Role scenario') + '</strong><em>' + escapeHtml(feedback ? (feedback.level === 'strong' ? 'Strong foundation' : feedback.level === 'developing' ? 'Developing answer' : 'Good starting point') : 'Not answered') + '</em></li>';
     }).join('');
     var strongest = strongestCriterion(interview);
-    return '<section class="screen interview-screen interview-debrief" aria-labelledby="debrief-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← Back to career</button><span class="progress-chip">PRACTICE COMPLETE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="debrief-card"><p class="screen-kicker">FIELD NOTES SAVED</p><h1 id="debrief-title" tabindex="-1">You made the role<br><em>more concrete.</em></h1><p class="interview-lede">Your answers stay in this browser so you can return, revise, and build a clearer story over time.</p><div class="debrief-grid"><section><span class="eyebrow">YOUR THREE ANSWERS</span><ol class="debrief-list">' + summaries + '</ol></section><aside class="debrief-next"><span class="eyebrow">A NEXT PRACTICE MOVE</span><strong>' + escapeHtml(strongest ? 'Keep developing ' + strongest.label.toLowerCase() + '.' : 'Keep collecting specific examples.') + '</strong><p>Use one class, work, club, or personal project this week to make that idea more specific.</p></aside></div><div class="debrief-actions"><button class="button button--primary" data-action="interview-replay">Practice again</button><button class="button button--secondary" data-action="interview-back-career">Return to career</button></div></div>' + renderInterviewSources(interview) + '</section>';
+    var returnLabel = state.interview.returnScreen === 'interview-picker' ? 'Choose another role' : 'Return to career';
+    return '<section class="screen interview-screen interview-debrief" aria-labelledby="debrief-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← ' + returnLabel + '</button><span class="progress-chip">PRACTICE COMPLETE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="debrief-card"><p class="screen-kicker">FIELD NOTES SAVED</p><h1 id="debrief-title" tabindex="-1">You made the role<br><em>more concrete.</em></h1><p class="interview-lede">Your answers stay in this browser so you can return, revise, and build a clearer story over time.</p><div class="debrief-grid"><section><span class="eyebrow">YOUR THREE ANSWERS</span><ol class="debrief-list">' + summaries + '</ol></section><aside class="debrief-next"><span class="eyebrow">A NEXT PRACTICE MOVE</span><strong>' + escapeHtml(strongest ? 'Keep developing ' + strongest.label.toLowerCase() + '.' : 'Keep collecting specific examples.') + '</strong><p>Use one class, work, club, or personal project this week to make that idea more specific.</p></aside></div><div class="debrief-actions"><button class="button button--primary" data-action="interview-replay">Practice again</button><button class="button button--secondary" data-action="interview-back-career">' + returnLabel + '</button></div></div>' + renderInterviewSources(interview) + '</section>';
   }
 
   function renderInterviewSources(interview) {
@@ -1328,13 +1462,21 @@
   function wordCount(value) { return (String(value || '').match(/[a-z0-9']+/gi) || []).length; }
 
   function evaluateInterviewAnswer(answer, question) {
-    var normalized = String(answer || '').toLowerCase();
     var words = wordCount(answer);
     var criteria = question.criteria || (question.rubric && question.rubric.criteria) || [];
-    var matched = criteria.filter(function (criterion) { return (criterion.signals || []).some(function (signal) { return normalized.indexOf(String(signal).toLowerCase()) !== -1; }); });
+    var matched = criteria.filter(function (criterion) { return (criterion.signals || []).some(function (signal) { return answerHasSignal(answer, signal); }); });
     var ratio = criteria.length ? matched.length / criteria.length : 0;
     var level = words >= question.minWords && ratio >= 0.67 ? 'strong' : words >= Math.max(8, Math.floor(question.minWords / 2)) && ratio >= 0.34 ? 'developing' : 'starting';
     return { level: level, wordCount: words, matchedCriterionIds: matched.map(function (criterion) { return criterion.id; }), missingCriterionIds: criteria.filter(function (criterion) { return matched.indexOf(criterion) === -1; }).map(function (criterion) { return criterion.id; }) };
+  }
+
+  /** Match authored words and word stems without accidental substring hits. */
+  function answerHasSignal(answer, signal) {
+    var normalizedAnswer = String(answer || '').toLowerCase().replace(/[^a-z0-9+#.]+/g, ' ').trim();
+    var normalizedSignal = String(signal || '').toLowerCase().replace(/[^a-z0-9+#.]+/g, ' ').trim();
+    if (!normalizedSignal) return false;
+    if (normalizedSignal.indexOf(' ') !== -1) return (' ' + normalizedAnswer + ' ').indexOf(' ' + normalizedSignal + ' ') !== -1;
+    return normalizedAnswer.split(/\s+/).some(function (token) { return token === normalizedSignal || (normalizedSignal.length >= 4 && token.indexOf(normalizedSignal) === 0); });
   }
 
   function strongestCriterion(interview) {
@@ -1425,7 +1567,7 @@
     var interviewScreen = /^interview-/.test(state.screen || '');
     var inlineDock = state.screen === 'career' || state.screen === 'mini' || interviewScreen || window.innerWidth <= 560 || shortLandscape;
     var screenClass = 'dock--screen-' + slug(state.screen || 'landing');
-    ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].forEach(function (screen) {
+    ['landing', 'skill-select', 'map', 'travel', 'mini', 'reflection', 'career', 'interview-picker', 'interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].forEach(function (screen) {
       dock.classList.remove('dock--screen-' + slug(screen));
     });
     dock.classList.add(screenClass);
@@ -1444,6 +1586,7 @@
   function updateHeader() {
     if (!headerStatus) return;
     if (state.screen === 'skill-select') headerStatus.textContent = state.starterSkills.length + ' OF 4 SKILLS';
+    else if (/^interview-/.test(state.screen || '')) headerStatus.textContent = 'INTERVIEW PRACTICE';
     else if (state.starterSkills.length === 4) headerStatus.textContent = (state.earned.length + 4) + ' SKILLS · WORLD ACTIVE';
     else headerStatus.textContent = 'READY TO EXPLORE';
   }
@@ -1763,8 +1906,24 @@
 
   function hostDeploySite() {
     if (!activeMiniGame || !activeMiniGame.fileStaged || activeMiniGame.complete) return;
+    var scrollYBeforeHost = window.scrollY;
     activeMiniGame.complete = true;
-    refreshDeployGame('[data-action="finish-game"]');
+    var node = findNode(activeMiniGame.nodeId);
+    var status = root.querySelector('[data-deploy-status]');
+    var taskState = root.querySelector('.deploy-task-state');
+    var workspace = root.querySelector('.deploy-workspace');
+    var actionRow = root.querySelector('.deploy-action-row');
+    if (!node || !status || !actionRow) return;
+    status.textContent = 'Website online. The local repository is now serving your page.';
+    if (taskState) taskState.textContent = 'COMPLETE';
+    if (workspace) workspace.classList.add('is-complete');
+    actionRow.innerHTML = renderDeployActionMarkup(activeMiniGame, node.miniGame.publishedUrl || 'website.github.local');
+    actionRow.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    var nextButton = actionRow.querySelector('[data-action="finish-game"]');
+    if (nextButton && nextButton.focus) {
+      try { nextButton.focus({ preventScroll: true }); } catch (error) { nextButton.focus(); }
+    }
+    window.scrollTo(0, scrollYBeforeHost);
     announce('Website hosted successfully. Continue to the trail check.');
   }
 
@@ -1976,6 +2135,8 @@
     if (action === 'toggle-starter') { toggleStarterSkill(element.getAttribute('data-skill-id')); return; }
     if (action === 'confirm-skills') { confirmStarterSkills(); return; }
     if (action === 'back-landing') { state.screen = 'landing'; saveState(); render(); return; }
+    if (action === 'open-interview-picker') { state.screen = 'interview-picker'; saveState(); render(); return; }
+    if (action === 'choose-interview') { openInterview(element.getAttribute('data-career-id'), 'interview-picker'); return; }
     if (action === 'resume') {
       if (state.starterSkills.length === 4 && !findNode(state.activeRegionId)) state.activeRegionId = recommendRegion(state.starterSkills, state.rejected).id;
       state.screen = state.starterSkills.length === 4 ? 'map' : 'skill-select'; saveState(); render(); return;
@@ -2025,7 +2186,7 @@
     if (action === 'enjoy-no') { requestRejectNode(element); return; }
     if (action === 'back-map') { resetActiveMiniGame(); state.screen = 'map'; state.travelTargetId = null; saveState(); render(); return; }
     if (action === 'new-path') { startAnotherPath(); return; }
-    if (action === 'open-interview') { openInterview(element.getAttribute('data-career-id')); return; }
+    if (action === 'open-interview') { openInterview(element.getAttribute('data-career-id'), 'career'); return; }
     if (action === 'interview-start') { startInterview(); return; }
     if (action === 'interview-next') { nextInterviewQuestion(); return; }
     if (action === 'interview-edit') { editInterviewAnswer(); return; }
@@ -2272,11 +2433,11 @@
     saveState(); render();
   }
 
-  function openInterview(careerId) {
+  function openInterview(careerId, returnScreen) {
     var career = modelCareer(careerId);
     if (!career || !interviewForCareer(careerId)) return;
     if (state.interview.careerId !== careerId) state.interview = Object.assign(defaultInterviewState(), { careerId: careerId });
-    state.interview.returnScreen = 'career'; state.screen = 'interview-intro'; saveState(); render();
+    state.interview.returnScreen = returnScreen === 'interview-picker' ? 'interview-picker' : 'career'; state.screen = 'interview-intro'; saveState(); render();
   }
 
   function startInterview() {
@@ -2310,7 +2471,7 @@
   }
 
   function exitInterview() {
-    state.screen = 'career'; saveState(); render();
+    state.screen = state.interview.returnScreen === 'interview-picker' ? 'interview-picker' : 'career'; saveState(); render();
   }
 
   function handleInterviewCheck(event) {

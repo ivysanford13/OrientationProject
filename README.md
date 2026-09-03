@@ -31,7 +31,7 @@ python3 qa/run_qa_matrix.py
 
 ## Mini-games
 
-The Analyze and Solve region includes a playable six-panel scanner jigsaw designed for a sub-60-second session. It supports drag-and-drop plus click, touch, and keyboard placement; completing it reaches the same enjoyment checkpoint used by the journey. The People and Lead region also includes its playable crew draft. Remaining activities stay editable 60-second placeholders with **Skip game for now** controls.
+The Analyze and Solve region includes two playable tasks: a six-panel scanner jigsaw and a three-sheet chart-matching game with live relationship cables. Both support drag, touch, click, and keyboard-equivalent controls; completing either reaches the same enjoyment checkpoint used by the journey. The People and Lead region also includes its playable crew draft. Remaining activities stay editable 60-second placeholders with **Skip game for now** controls.
 
 Choosing **Yes, keep going** after any activity awards that node's skill and advances the map; choosing **No, try another trail** locks that branch and sends the player back to the sibling choice. The final specialization selection has no mini-game, awards its career skill immediately, and opens its career result directly.
 
@@ -39,7 +39,7 @@ Each career world uses its own cinematic atlas image as non-interactive scenery.
 
 ## Research and interview practice
 
-Career results include a national BLS OEWS May 2023 10th–25th percentile entry proxy, its federal SOC mapping, and a Sources disclosure explaining limitations. Application Developer, Data Analyst, Cybersecurity Analyst, and Product Manager also include three-question offline practice interviews with transparent keyword-based rubric feedback; answers are stored only in local browser storage and never affect route progress. See [`docs/RESEARCH_NOTES.md`](docs/RESEARCH_NOTES.md) for attribution and methodology.
+Career results show a personalized shortlist of exactly ten roles. Every role lists its own national BLS OEWS May 2023 10th–25th percentile entry proxy and median wage; the interface never averages pay across roles. The completed route ranks first, followed by roles in the same focus area, the same career world, and then the student's next-strongest starter-skill matches. A Sources disclosure explains the selected role's federal SOC mapping and limitations. Application Developer, Data Analyst, Cybersecurity Analyst, and Product Manager also include three-question offline practice interviews with transparent keyword-based rubric feedback; answers are stored only in local browser storage and never affect route progress. See [`docs/RESEARCH_NOTES.md`](docs/RESEARCH_NOTES.md) for attribution and methodology.
 
 ## Current journey
 
