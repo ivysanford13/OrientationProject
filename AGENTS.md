@@ -57,3 +57,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Any map-card typography or size change requires collision checks against the avatar and floating skill dock at phone, short-landscape, and desktop viewports.
 - Rejecting the last open sibling must climb to the nearest viable branch—or another ranked world—while preserving earned skills; never render a zero-route map.
 - Playwright journey setup must synchronize on persisted state after each rerendering selection; visually timed click sequences can produce flaky release evidence under sustained load.
+- The loadout action bar belongs in document flow; a sticky footer can obscure the selection meter and skill cards, especially before any compact-screen scrolling.

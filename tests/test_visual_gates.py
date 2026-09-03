@@ -394,6 +394,40 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(errors)
 
+    def test_skill_selection_action_bar_never_obscures_progress_or_choices(self) -> None:
+        """Keep loadout progress and every skill card clear of the action bar."""
+
+        failures: list[str] = []
+        all_errors: list[str] = []
+        for width, height in ((320, 568), (390, 844), (844, 390), (1440, 900)):
+            page, errors = self.new_page(width, height)
+            all_errors.extend(errors)
+            skills = self.state_for_screen(page, "skill-select")
+            self.load_state(page, skills, ".screen--skills")
+
+            footer = page.locator(".skills-footer")
+            progress = page.locator(".selection-meter")
+            progress_overlap = self.overlap_area(footer, progress)
+            if progress_overlap > 0.5:
+                failures.append(
+                    f"{width}x{height} footer/progress overlap={progress_overlap:.1f}px²"
+                )
+
+            cards = page.locator(".starter-skill")
+            for index in range(cards.count()):
+                overlap = self.overlap_area(footer, cards.nth(index))
+                if overlap > 0.5:
+                    failures.append(
+                        f"{width}x{height} footer/skill {index + 1} overlap={overlap:.1f}px²"
+                    )
+
+            confirm = footer.locator('[data-action="confirm-skills"]')
+            confirm.scroll_into_view_if_needed()
+            self.assertTrue(confirm.is_visible())
+
+        self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(all_errors)
+
     def test_mobile_feedback_focus_order_matches_visual_order(self) -> None:
         """Keep keyboard navigation moving forward through the stacked feedback cards."""
 
