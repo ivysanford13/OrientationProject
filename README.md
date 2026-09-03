@@ -12,6 +12,7 @@ Open `index.html` directly in a browser. It is a self-contained offline build wi
 - `src/app.js` contains progression and persistence logic.
 - `src/research-data.js` contains the verified salary ledger and authored interview-practice content; the build inlines it for offline use.
 - `src/styles.css` contains the visual system and animation.
+- `src/assets/career-world-*-v2.jpg` contains the three original floating-island scenes used behind the semantic map controls; the build embeds each scene once for offline use.
 - `src/template.html` contains the document shell.
 
 After editing, rebuild the deliverable:
@@ -31,6 +32,8 @@ python3 qa/run_qa_matrix.py
 ## Version-one mini-games
 
 The first version reserves an editable 60-second scene for every map point. Selecting **Skip game for now** reaches the enjoyment checkpoint. Choosing **Yes, keep going** awards that node's skill and advances the map; choosing **No, try another trail** locks that branch and sends the player back to the sibling choice. Full gameplay can replace any placeholder later without changing this progression contract.
+
+Each career world uses its own cinematic atlas image as non-interactive scenery. Route telemetry, destination cards, chapter labels, and the cougar are separate DOM layers, so the journey remains keyboard-accessible and any region's art can be replaced without rewriting progression logic.
 
 ## Research and interview practice
 

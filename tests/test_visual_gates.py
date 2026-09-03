@@ -595,7 +595,7 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
 
         for region_id in REGION_PATHS:
             self.load_state(page, self.base_state(page, region_id, stage=2), ".screen--map")
-            route_paths[region_id] = page.locator(".quest-path path").get_attribute("d") or ""
+            route_paths[region_id] = page.locator(".quest-path .route-line").get_attribute("d") or ""
             markers[region_id] = tuple(
                 page.evaluate(
                     """() => {

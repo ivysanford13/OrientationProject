@@ -22,13 +22,17 @@ def read_source(filename: str) -> str:
 
 
 def image_data_uri(filename: str) -> str:
-    """Return a PNG asset as an offline-safe data URI."""
+    """Return a supported image asset as an offline-safe data URI."""
 
     path = SOURCE_DIR / "assets" / filename
     if not path.is_file():
         raise FileNotFoundError(f"Required image asset is missing: {path}")
+    mime_by_suffix = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
+    mime_type = mime_by_suffix.get(path.suffix.lower())
+    if mime_type is None:
+        raise ValueError(f"Unsupported image format: {path.suffix}")
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f"data:image/png;base64,{encoded}"
+    return f"data:{mime_type};base64,{encoded}"
 
 
 def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
@@ -41,6 +45,9 @@ def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
         "__INLINE_RESEARCH__": read_source("research-data.js"),
         "__INLINE_APP__": read_source("app.js"),
         "__EXPLORER_AVATAR_DATA_URI__": image_data_uri("byu-cougar-explorer.png"),
+        "__WORLD_BUILD_ATLAS_DATA_URI__": image_data_uri("career-world-build-v2.jpg"),
+        "__WORLD_ANALYZE_ATLAS_DATA_URI__": image_data_uri("career-world-analyze-v2.jpg"),
+        "__WORLD_PEOPLE_ATLAS_DATA_URI__": image_data_uri("career-world-people-v2.jpg"),
     }
 
     document = template

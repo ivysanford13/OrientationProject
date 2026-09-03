@@ -60,3 +60,6 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Rejecting the last open sibling must climb to the nearest viable branch—or another ranked world—while preserving earned skills; never render a zero-route map.
 - Playwright journey setup must synchronize on persisted state after each rerendering selection; visually timed click sequences can produce flaky release evidence under sustained load.
 - The loadout action bar belongs in document flow; a sticky footer can obscure the selection meter and skill cards, especially before any compact-screen scrolling.
+- High-detail world art remains a decorative layer beneath semantic route controls; never bake destinations, labels, or the cougar into the map image.
+- Travel animation must park the cougar beside its destination card, not on top of it, and the visible route must terminate at the active stop.
+- Programmatically focused screen headings should announce context without rendering a control-style focus rectangle; reserve visible rings for interactive elements.
