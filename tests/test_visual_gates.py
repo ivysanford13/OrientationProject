@@ -627,6 +627,43 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(errors)
 
+    def test_world_camera_advances_through_three_spatial_checkpoints(self) -> None:
+        """Require one persistent panorama to pan as the route goes deeper."""
+
+        page, errors = self.new_page(1440, 900)
+        transforms: list[str] = []
+        for stage in (0, 1, 2):
+            state = self.base_state(page, "region-build-create", stage=stage)
+            self.load_state(page, state, ".screen--map")
+            panorama = page.locator(".world-panorama")
+            self.assertEqual(panorama.count(), 1)
+            transforms.append(
+                panorama.evaluate("element => getComputedStyle(element).transform")
+            )
+
+            meter = page.locator(".journey-meter li")
+            self.assertEqual(meter.count(), 3)
+            self.assertEqual(page.locator(".journey-meter li.is-current").count(), 1)
+            self.assertIn("is-current", meter.nth(stage).get_attribute("class") or "")
+            self.assertEqual(page.locator(".journey-meter li.is-complete").count(), stage)
+
+        self.assertEqual(len(set(transforms)), 3, transforms)
+
+        travel_state = self.base_state(page, "region-build-create", stage=1)
+        self.load_state(page, travel_state, ".screen--map")
+        traveling = page.evaluate(
+            """() => {
+                document.querySelector('[data-node-id="domain-software-apps"]').click();
+                return {
+                    world: Boolean(document.querySelector('.rpg-world.is-traveling')),
+                    avatar: Boolean(document.querySelector('.map-avatar.is-traveling')),
+                    destination: Boolean(document.querySelector('.world-stop.is-destination')),
+                };
+            }"""
+        )
+        self.assertEqual(traveling, {"world": True, "avatar": True, "destination": True})
+        self.assert_clean(errors)
+
     def test_avatar_and_skill_dock_never_cover_visible_map_decisions(self) -> None:
         """Protect route cards across phone, short-landscape, and desktop maps."""
 

@@ -1674,6 +1674,193 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
 @media (prefers-reduced-motion: reduce) {
   .skill-dock .hex-item { transition: none; }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Traversable world camera                                                   */
+/* One landscape persists across all three chapters. The camera pans deeper  */
+/* into it while the semantic route cards and cougar remain crisp controls.  */
+/* -------------------------------------------------------------------------- */
+.rpg-world { --camera-x: 4%; }
+.rpg-world.stage-1 { --camera-x: 0%; }
+.rpg-world.stage-2 { --camera-x: -4%; }
+
+.world-panorama {
+  position: absolute;
+  z-index: 0;
+  inset: -4%;
+  overflow: visible;
+  pointer-events: none;
+  transform: translate3d(var(--camera-x), 0, 0) scale(1.08);
+  transform-origin: 50% 58%;
+  will-change: transform;
+}
+
+.world-panorama::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  opacity: .38;
+  background:
+    radial-gradient(circle at 14% 72%, rgba(255,255,255,.72) 0 1px, transparent 2px),
+    radial-gradient(circle at 36% 65%, rgba(255,255,255,.5) 0 1px, transparent 2px),
+    radial-gradient(circle at 63% 78%, rgba(255,255,255,.62) 0 1px, transparent 2px),
+    radial-gradient(circle at 84% 59%, rgba(255,255,255,.48) 0 1px, transparent 2px);
+  background-size: 118px 86px, 146px 112px, 173px 126px, 132px 104px;
+  content: "";
+  mix-blend-mode: screen;
+  animation: world-motes 9s linear infinite;
+}
+
+.world-panorama > .world-atlas,
+.world-panorama > .world-sky { inset: 0; }
+
+.rpg-world.stage-1.is-shifting .world-panorama {
+  animation: camera-advance-one 1.35s cubic-bezier(.2,.76,.18,1) both;
+}
+
+.rpg-world.stage-2.is-shifting .world-panorama {
+  animation: camera-advance-two 1.35s cubic-bezier(.2,.76,.18,1) both;
+}
+
+.rpg-world.is-traveling .world-panorama {
+  animation: camera-follow 1.55s cubic-bezier(.22,.68,.2,1) both;
+}
+
+.map-avatar.is-traveling { animation-duration: 1.55s; }
+.map-avatar.is-traveling::before { animation-duration: 1.55s; }
+.map-avatar.is-traveling .avatar-shell { animation: explorer-lean 1.55s cubic-bezier(.22,.68,.2,1) both; }
+.travel-banner i { animation-duration: 1.55s; }
+
+.journey-meter {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0;
+  min-width: 236px;
+  margin: 9px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px solid rgba(177,220,241,.25);
+  list-style: none;
+}
+
+.journey-meter li {
+  position: relative;
+  display: grid;
+  flex: 1 1 0;
+  justify-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.journey-meter li:not(:last-child)::after {
+  position: absolute;
+  z-index: -1;
+  top: 8px;
+  left: 58%;
+  width: 84%;
+  height: 2px;
+  background: #536981;
+  content: "";
+}
+
+.journey-meter li.is-complete:not(:last-child)::after,
+.journey-meter li.is-current:not(:last-child)::after {
+  background: linear-gradient(90deg, var(--cyan), var(--scene-sun));
+  box-shadow: 0 0 7px color-mix(in srgb, var(--scene-sun) 62%, transparent);
+}
+
+.journey-meter i {
+  display: grid;
+  z-index: 1;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #7188a3;
+  border-radius: 50%;
+  color: #9db1c7;
+  background: #10253a;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.journey-meter .is-complete i {
+  border-color: var(--cyan);
+  color: #062032;
+  background: var(--cyan);
+}
+
+.journey-meter .is-current i {
+  border-color: var(--scene-sun);
+  color: #07192a;
+  background: var(--scene-sun);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--scene-sun) 20%, transparent), 0 0 13px var(--scene-sun);
+}
+
+.journey-meter small {
+  overflow: hidden;
+  width: 100%;
+  color: #8fa6bd;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.journey-meter .is-complete small,
+.journey-meter .is-current small { color: #eefaff; }
+
+@keyframes camera-advance-one {
+  from { transform: translate3d(4%, 0, 0) scale(1.08); }
+  42% { transform: translate3d(1.5%, -.8%, 0) scale(1.14); filter: saturate(1.12) brightness(.9); }
+  to { transform: translate3d(0, 0, 0) scale(1.08); }
+}
+
+@keyframes camera-advance-two {
+  from { transform: translate3d(0, 0, 0) scale(1.08); }
+  42% { transform: translate3d(-2%, -.8%, 0) scale(1.14); filter: saturate(1.12) brightness(.9); }
+  to { transform: translate3d(-4%, 0, 0) scale(1.08); }
+}
+
+@keyframes camera-follow {
+  from { transform: translate3d(var(--camera-x), 0, 0) scale(1.08); }
+  48% { transform: translate3d(calc(var(--camera-x) - 1.8%), -.7%, 0) scale(1.145); filter: saturate(1.15) brightness(.86); }
+  to { transform: translate3d(var(--camera-x), 0, 0) scale(1.08); }
+}
+
+@keyframes explorer-lean {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  22% { transform: rotate(5deg) scale(.98); }
+  72% { transform: rotate(-3deg) scale(1.02); }
+}
+
+@keyframes world-motes {
+  from { transform: translate3d(0, 8px, 0); }
+  to { transform: translate3d(-28px, -16px, 0); }
+}
+
+@media (max-width: 430px) {
+  .world-stage-label { min-width: 172px; }
+  .journey-meter { min-width: 154px; }
+  .journey-meter small { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world-panorama,
+  .rpg-world.stage-1.is-shifting .world-panorama,
+  .rpg-world.stage-2.is-shifting .world-panorama,
+  .rpg-world.is-traveling .world-panorama {
+    animation: none;
+    transform: translate3d(var(--camera-x), 0, 0) scale(1.08);
+  }
+  .world-panorama::after,
+  .map-avatar.is-traveling .avatar-shell { animation: none; }
+}
 </style>
   </head>
   <body>
@@ -3632,7 +3819,26 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
     var travelBanner = state.screen === 'travel' && travelTarget
       ? '<div class="travel-banner" aria-live="polite"><span>EXPLORER MOVING</span><strong>' + escapeHtml(travelTarget.node.title) + '</strong><i aria-hidden="true"></i></div>'
       : '';
-    return '<section class="screen screen--map world-screen" aria-labelledby="map-title"><header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + (stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.') + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header><section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + travelClass + shiftClass + '" style="' + sceneStyle + '" aria-label="Interactive journey map"><div class="world-atlas" aria-hidden="true"><span class="atlas-art"></span><span class="atlas-color-grade"></span><span class="atlas-contours"></span><span class="atlas-vignette"></span></div><div class="world-sky" aria-hidden="true"><span class="world-haze"></span>' + renderWorldLandmarks(scene.landmarks) + '</div><svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path class="route-shadow" d="' + escapeAttr(routePath) + '"></path><path class="route-line" d="' + escapeAttr(routePath) + '"></path><path class="route-pulse" d="' + escapeAttr(routePath) + '"></path></svg><div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + '<div class="map-avatar avatar-cougar' + travelClass + (state.lastAward ? ' is-arrived' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span class="avatar-shell" aria-hidden="true"><img class="explorer-avatar explorer-avatar--map" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></span><small>' + escapeHtml(state.name || 'YOU') + '</small></div>' + travelBanner + '<div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style') + '</strong></div></section><div class="map-action-row"><p><strong>' + openRouteCount + '</strong> forward route' + (openRouteCount === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+    var panorama = '<div class="world-panorama" aria-hidden="true"><div class="world-atlas"><span class="atlas-art"></span><span class="atlas-color-grade"></span><span class="atlas-contours"></span><span class="atlas-vignette"></span></div><div class="world-sky"><span class="world-haze"></span>' + renderWorldLandmarks(scene.landmarks) + '</div></div>';
+    var avatar = '<div class="map-avatar avatar-cougar' + travelClass + (state.lastAward ? ' is-arrived' : '') + '" style="--from-x:' + fromPosition.x + '%;--from-y:' + fromPosition.y + '%;--to-x:' + targetPosition.x + '%;--to-y:' + targetPosition.y + '%" aria-label="' + escapeAttr((state.name || 'Your explorer') + (state.screen === 'travel' ? ' traveling to ' + (travelTarget ? travelTarget.node.title : 'the next stop') : ' current map position')) + '"><span class="avatar-shell" aria-hidden="true"><img class="explorer-avatar explorer-avatar--map" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></span><small>' + escapeHtml(state.name || 'YOU') + '</small></div>';
+    var mapTitle = stage === 0 ? 'What gives you energy?' : stage === 1 ? 'Choose your next trail.' : 'One last fork in the road.';
+    var chapterTitle = stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style';
+
+    return '<section class="screen screen--map world-screen" aria-labelledby="map-title">' +
+      '<header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + mapTitle + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header>' +
+      '<section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + travelClass + shiftClass + '" style="' + sceneStyle + '" aria-label="Interactive journey map">' + panorama +
+      '<svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path class="route-shadow" d="' + escapeAttr(routePath) + '"></path><path class="route-line" d="' + escapeAttr(routePath) + '"></path><path class="route-pulse" d="' + escapeAttr(routePath) + '"></path></svg>' +
+      '<div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + avatar + travelBanner +
+      '<div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(chapterTitle) + '</strong>' + renderJourneyMeter(stage) + '</div></section>' +
+      '<div class="map-action-row"><p><strong>' + openRouteCount + '</strong> forward route' + (openRouteCount === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+  }
+
+  function renderJourneyMeter(stage) {
+    var labels = ['Arrival', 'Crossroads', 'Career'];
+    return '<ol class="journey-meter" aria-label="Journey progress">' + labels.map(function (label, index) {
+      var status = index < stage ? ' is-complete' : index === stage ? ' is-current' : '';
+      return '<li class="' + status + '"><i aria-hidden="true">' + (index < stage ? '✓' : index + 1) + '</i><small>' + label + '</small></li>';
+    }).join('') + '</ol>';
   }
 
   function renderWorldLandmarks(landmarks) {
@@ -4018,7 +4224,7 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
     travelTimer = window.setTimeout(function () {
       state.screen = 'mini'; state.travelTargetId = null; state.travelFromId = null; saveState(); render();
       announce(node.title + ' challenge opened.');
-    }, prefersReducedMotion ? 70 : 1250);
+    }, prefersReducedMotion ? 70 : 1580);
   }
 
   function completeNode(id) {

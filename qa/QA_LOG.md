@@ -248,3 +248,10 @@ Result: **32/32 PASS**
 - assert: portrait badge ratio stays 66:76; rows use a stable half-tile stagger; the map tray remains bottom-right and never covers a route choice
 - result: honeycomb geometry and collision gates passed; full automated suite passed 42/42
 - duration: 241476 ms
+
+## 36. Traversable world camera — PASS
+- inspect: the persistent panorama, cougar travel state, destination state, and Arrival/Crossroads/Career meter across all three chapters
+- action: advance the same world through each chapter and compare its computed camera transform before exercising a route transition
+- assert: every chapter has a distinct spatial camera position; travel moves the cougar toward one highlighted destination without disturbing route or HUD geometry
+- result: three distinct camera positions and the complete travel state passed; full automated suite passed 43/43
+- duration: 262442 ms

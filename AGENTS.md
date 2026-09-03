@@ -64,3 +64,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Travel animation must park the cougar beside its destination card, not on top of it, and the visible route must terminate at the active stop.
 - Programmatically focused screen headings should announce context without rendering a control-style focus rectangle; reserve visible rings for interactive elements.
 - The skill HUD is a true two-row honeycomb, not a horizontal carousel: preserve the supplied tall hex proportions and stable cell positions as rewards are added.
+- Each career region is one traversable panorama: advancing a chapter pans the camera deeper into the same world while the cougar travels between route stops; do not revert to static stage backdrops.
