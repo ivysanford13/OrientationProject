@@ -65,6 +65,7 @@ def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
         "__INLINE_APP__": minify_javascript(read_source("app.js")),
         "__EXPLORER_AVATAR_DATA_URI__": image_data_uri("byu-cougar-explorer.png"),
         "__JIGSAW_COMPUTER_CORE_DATA_URI__": image_data_uri("jigsaw-computer-core.jpg"),
+        "__COMPUTER_INTERIOR_DATA_URI__": image_data_uri("computer-interior-v2.jpg"),
         "__STARTER_BADGE_CREATIVE_THINKING_DATA_URI__": image_data_uri("starter-badges/creative-thinking.jpg"),
         "__STARTER_BADGE_CODING_CURIOSITY_DATA_URI__": image_data_uri("starter-badges/coding-curiosity.jpg"),
         "__STARTER_BADGE_HANDS_ON_TECH_DATA_URI__": image_data_uri("starter-badges/hands-on-tech.jpg"),

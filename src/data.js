@@ -518,9 +518,9 @@ const DOMAINS = [
     miniGame: makeMiniGame(
       "minigame-systems-cpu",
       "Find the CPU",
-      "Identify the CPU in a labeled cross-section of a computer.",
-      "computer-cross-section",
-      "Planned placeholder: inspect the computer and click the processor."
+      "Identify the CPU in a simple computer cross-section.",
+      "cpu-recaptcha",
+      "Complete the crew verification by clicking the CPU—the part that processes instructions."
     ),
   }),
   makeNode({

@@ -10,7 +10,9 @@
 
   var STORAGE_KEY = 'is-career-launchpad:v2';
   var EXPLORER_AVATAR_SRC = '__EXPLORER_AVATAR_DATA_URI__';
+  var SLIDE_ILLUSTRATION_SRC = EXPLORER_AVATAR_SRC;
   var JIGSAW_COMPUTER_CORE_SRC = '__JIGSAW_COMPUTER_CORE_DATA_URI__';
+  var COMPUTER_INTERIOR_SRC = '__COMPUTER_INTERIOR_DATA_URI__';
   var STARTER_BADGE_SOURCES = {
     'creative-thinking': '__STARTER_BADGE_CREATIVE_THINKING_DATA_URI__',
     'coding-curiosity': '__STARTER_BADGE_CODING_CURIOSITY_DATA_URI__',
@@ -78,6 +80,11 @@
   var slideQnaIndex = -1;
   var slideQnaScore = 0;
   var slideQnaFeedback = '';
+  var cpuNodeId = null;
+  var cpuSolved = false;
+  var cpuFeedback = '';
+  var cpuGridSelected = {};
+  var CPU_GRID_TARGETS = [1, 4];
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -249,6 +256,23 @@
         recommendedRegionId: 'region-build-create',
         activeRegionId: 'region-build-create',
         selectedNodeId: 'region-build-create'
+      });
+    }
+    if (window.location.hash === '#cpu') {
+      return Object.assign(defaultState(), {
+        screen: 'mini',
+        name: currentState.name || 'Explorer',
+        starterSkills: currentState.starterSkills.length === 4 ? currentState.starterSkills.slice() : [
+          'starter-hands-on-tech',
+          'starter-coding-curiosity',
+          'starter-problem-solving',
+          'starter-creative-thinking'
+        ],
+        recommendedRegionId: 'region-build-create',
+        activeRegionId: 'region-build-create',
+        activeDomainId: 'domain-systems-tech',
+        completed: ['region-build-create'],
+        selectedNodeId: 'domain-systems-tech'
       });
     }
     if (window.location.hash === '#chart-match') {
@@ -899,6 +923,7 @@
     var mini = node.miniGame || {};
     if (node.id === 'domain-software-apps') return renderScratchGame(node, skill, mini);
     if (node.id === 'domain-projects-delivery') return renderSlideGame(node, skill, mini);
+    if (node.miniGame.visualType === 'cpu-recaptcha') return renderCpuGame(node, skill, mini);
     var session = mini.visualType === 'wordle-password' && mini.puzzle ? getWordleSession(node) : null;
     var stageMarkup = session ? renderWordleStage(node, mini, session) : renderPlaceholderStage(mini);
     var statusChip = mini.status === 'ready' ? '~60 SEC' : '~60 SEC / PLANNED';
@@ -1001,6 +1026,17 @@
       cells.push('<div class="scratch-grid-cell' + (isBush ? ' is-bush' : '') + (isFlag ? ' is-flag' : '') + (isCat ? ' is-cat' : '') + '" aria-label="' + (isBush ? 'Bush obstacle' : isFlag ? 'Goal flag' : isCat ? 'Cat position' : 'Path square') + '">' + (isBush ? '🌿' : isFlag ? '⚑' : isCat ? '🐱' : '') + '</div>');
     }
     return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SCRATCH PUZZLE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout scratch-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">Guide the cat around the bush and onto the flag by building a Scratch-style command script.</p><div class="scratch-howto"><span class="eyebrow">HOW TO PLAY</span><strong>Click commands in the order the cat should use them.</strong><span>Start facing right. The cat moves one square at a time and turns in place.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="scratch-reset">Reset script</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace" role="region" aria-label="Scratch block path puzzle"><div class="scratch-puzzle-board"><div class="scratch-grid" aria-label="Cat path board">' + cells.join('') + '</div><div class="scratch-board-legend"><span>🐱 Start</span><span>🌿 Bush</span><span>⚑ Goal</span></div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR SCRIPT</span><small>' + scratchDraft.length + ' commands</small></div><ol class="scratch-stack">' + draftMarkup + '</ol><div class="scratch-divider"><span>CLICK TO ADD A COMMAND</span></div><div class="scratch-block-picker">' + availableMarkup + '</div>' + feedbackMarkup + '</div></div></div></section>';
+  }
+
+  function renderCpuGame(node, skill, mini) {
+    if (cpuNodeId !== node.id) resetCpuGame();
+    var gridMarkup = Array.from({ length: 9 }, function (_, index) {
+      var selected = Boolean(cpuGridSelected[index]);
+      return '<button class="cpu-grid-cell' + (selected ? ' is-selected' : '') + (cpuSolved && CPU_GRID_TARGETS.indexOf(index) !== -1 ? ' is-correct' : '') + '" type="button" data-action="cpu-grid-select" data-cpu-grid-cell="' + index + '" aria-label="Select grid square ' + (index + 1) + '" aria-pressed="' + selected + '"><span class="sr-only">Grid square ' + (index + 1) + '</span></button>';
+    }).join('');
+    var feedbackMarkup = cpuFeedback ? '<p class="scratch-feedback ' + (cpuSolved ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(cpuFeedback) + '</p>' : '';
+    var actionMarkup = cpuSolved ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>' : '<span class="cpu-action-hint">' + Object.keys(cpuGridSelected).length + ' / ' + CPU_GRID_TARGETS.length + ' CPU tiles selected</span>';
+    return '<section class="screen screen--challenge screen--cpu" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SYSTEMS CHECK</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout cpu-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept) + '</p><div class="cpu-brief"><span class="cpu-brief-icon" aria-hidden="true">☑</span><div><span class="eyebrow">CREW VERIFICATION</span><strong>Select every grid square containing the CPU.</strong><span>Like a shipboard reCAPTCHA, choose all the tiles that touch the processor chip.</span></div></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="cpu-reset">Reset check</button><button class="text-button" data-action="back-map">Return to map</button></div>' + feedbackMarkup + '</div><div class="cpu-workspace" role="region" aria-label="Computer component identification challenge"><div class="cpu-console-top"><span class="mini-crewmate mini-crewmate--red" aria-hidden="true"><i></i><b></b></span><div><span>SHIP SYSTEMS / COMPONENT SCAN</span><strong>' + (cpuSolved ? 'VERIFICATION COMPLETE' : 'SELECT CPU TILES') + '</strong></div><span class="cpu-status-light' + (cpuSolved ? ' is-complete' : '') + '" aria-hidden="true"></span></div><div class="computer-case"><div class="motherboard"><img class="computer-interior-art" src="' + COMPUTER_INTERIOR_SRC + '" alt="" aria-hidden="true"><div class="cpu-grid-overlay" role="grid" aria-label="Select every grid square containing the CPU">' + gridMarkup + '</div></div><div class="case-caption"><span>COMPUTER CROSS-SECTION</span><small>Select every tile that touches the CPU</small></div></div></div></div></section>';
   }
 
   function renderSlideGame(node, skill, mini) {
@@ -2362,6 +2398,37 @@
     chartMatchPointerCleanup = null;
     chartMatchResizeHandler = null;
     activeMiniGame = null;
+    resetCpuGame();
+  }
+
+  function resetCpuGame() {
+    cpuNodeId = 'domain-systems-tech';
+    cpuSolved = false;
+    cpuFeedback = '';
+    cpuGridSelected = {};
+  }
+
+  function selectCpuGrid(cellIndex) {
+    if (cpuSolved) return;
+    if (cpuGridSelected[cellIndex]) delete cpuGridSelected[cellIndex];
+    else cpuGridSelected[cellIndex] = true;
+    var selected = Object.keys(cpuGridSelected).map(Number);
+    var hasWrongTile = selected.some(function (index) { return CPU_GRID_TARGETS.indexOf(index) === -1; });
+    var targetCount = CPU_GRID_TARGETS.filter(function (index) { return Boolean(cpuGridSelected[index]); }).length;
+    if (!hasWrongTile && targetCount === CPU_GRID_TARGETS.length) {
+      cpuSolved = true;
+      cpuFeedback = 'Correct. You selected every tile containing the CPU.';
+      announce('CPU tiles identified.');
+    } else if (hasWrongTile) {
+      cpuFeedback = 'One or more selected tiles do not contain the CPU. Deselect them and keep scanning.';
+      announce('Some selected tiles are not part of the CPU.');
+    } else if (targetCount) {
+      cpuFeedback = 'Good start. Keep selecting every tile that contains part of the CPU.';
+      announce('Keep selecting CPU tiles.');
+    } else {
+      cpuFeedback = '';
+    }
+    render();
   }
 
   function finishMiniGame() {
@@ -2433,6 +2500,7 @@
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'deploy-drag-drop' && activeMiniGame && !activeMiniGame.complete) return;
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'data-chart-match' && activeMiniGame && !activeMiniGame.complete) return;
       if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'minecraft-2d' && activeMiniGame && !activeMiniGame.complete) return;
+      if (selectedNode && selectedNode.miniGame && selectedNode.miniGame.visualType === 'cpu-recaptcha' && !cpuSolved) return;
       finishMiniGame();
       return;
     }
@@ -2440,6 +2508,8 @@
     if (action === 'scratch-remove') { removeScratchBlock(Number(element.getAttribute('data-scratch-index'))); return; }
     if (action === 'scratch-reset') { resetScratchGame(); render(); return; }
     if (action === 'scratch-check') { checkScratchGame(); return; }
+    if (action === 'cpu-grid-select') { selectCpuGrid(Number(element.getAttribute('data-cpu-grid-cell'))); return; }
+    if (action === 'cpu-reset') { resetCpuGame(); render(); return; }
     if (action === 'slide-select') { slideSelected = element.getAttribute('data-slide-id'); render(); return; }
     if (action === 'slide-place') { placeSlideComponent(element.getAttribute('data-slide-slot')); return; }
     if (action === 'slide-reset') { resetSlideGame(); render(); return; }
