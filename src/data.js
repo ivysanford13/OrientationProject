@@ -389,13 +389,20 @@ const REGIONS = [
     theme: "build-create",
     scene: WORLD_SCENES["build-create"],
     earnedSkill: SKILLS.creativity,
-    miniGame: makeMiniGame(
+    miniGame: Object.assign(makeMiniGame(
       "minigame-build-create-door",
       "Make a Door",
-      "Build a working doorway in a 2D Minecraft-style workspace.",
+      "Harvest oak logs, turn them into planks, and use the real Minecraft door recipe.",
       "minecraft-2d",
-      "Planned placeholder: place blocks to make a door that opens."
-    ),
+      "Chop two oak logs, craft eight planks, then arrange six planks two wide and three high."
+    ), {
+      status: "playable",
+      logCount: 2,
+      plankYield: 4,
+      doorPlankCount: 6,
+      doorOutputCount: 3,
+      theme: "oak-clearing",
+    }),
   }),
   makeNode({
     id: "region-analyze-solve",

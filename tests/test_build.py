@@ -57,8 +57,8 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(document.count("data:image/png;base64,"), 1)
         self.assertIn('width="1254" height="1254"', document)
         # Three panoramas, the jigsaw image, and supplied skill badge crops.
-        self.assertEqual(document.count("data:image/jpeg;base64,"), 25)
-        self.assertLess(output_size, 4_700_000)
+        self.assertEqual(document.count("data:image/jpeg;base64,"), 26)
+        self.assertLess(output_size, 4_750_000)
 
     def test_build_has_no_external_runtime_dependencies(self) -> None:
         build_module = load_build_module()

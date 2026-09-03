@@ -326,6 +326,20 @@ class QARunner:
         continue_button.click()
 
     @staticmethod
+    def solve_minecraft_door_game(page: Page) -> None:
+        """Complete the oak-log, plank, and shaped-door recipe loop."""
+
+        page.locator('[data-action="minecraft-move-tree"]').click()
+        page.locator(".mc-action-key").click()
+        page.locator(".mc-action-key").click()
+        page.locator('[data-action="minecraft-move-table"]').first.click()
+        page.locator('[data-action="minecraft-craft-planks"]').click()
+        for grid_index in (0, 1, 3, 4, 6, 7):
+            page.locator(f'[data-grid-index="{grid_index}"]').click()
+        page.locator('[data-action="minecraft-craft-door"]').click()
+        page.locator('[data-action="finish-game"]').click()
+
+    @staticmethod
     def finish_node(page: Page, node_id: str, enjoyed: bool = True) -> None:
         """Complete a mini-game stop or open a terminal career selection."""
 
@@ -340,7 +354,9 @@ class QARunner:
             if not enjoyed:
                 raise AssertionError("terminal career selections do not support rejection")
             return
-        if page.locator(".jigsaw-console").count():
+        if page.locator(".minecraft-game").count():
+            QARunner.solve_minecraft_door_game(page)
+        elif page.locator(".jigsaw-console").count():
             QARunner.solve_jigsaw(page)
         elif page.locator(".team-builder-game").count():
             candidates = page.locator('[data-action="toggle-teammate"]:not([disabled])')
@@ -534,8 +550,11 @@ class QARunner:
             region = page.locator(f'[data-node-id="{route.region_id}"]')
             region.click()
             page.locator(".screen--challenge").wait_for()
-            challenge_width = page.locator(".challenge-layout").bounding_box()["width"]
-            page.get_by_role("button", name="Skip game for now").click()
+            challenge_width = page.locator(".minecraft-game, .challenge-layout").first.bounding_box()["width"]
+            if page.locator(".minecraft-game").count():
+                self.solve_minecraft_door_game(page)
+            else:
+                page.get_by_role("button", name="Skip game for now").click()
             page.get_by_role("button", name=re.compile("Yes, keep going")).click()
             if challenge_width > 390:
                 raise AssertionError(f"mobile challenge is wider than viewport: {challenge_width}")
@@ -648,7 +667,26 @@ class QARunner:
                 page.keyboard.press("Enter")
                 page.locator(".screen--challenge").wait_for()
                 page.wait_for_timeout(70)
-                if page.locator(".scratch-workspace").count():
+                if page.locator(".minecraft-game").count():
+                    for selector in (
+                        '[data-action="minecraft-move-tree"]',
+                        ".mc-action-key",
+                        ".mc-action-key",
+                        '[data-action="minecraft-move-table"]',
+                        '[data-action="minecraft-craft-planks"]',
+                    ):
+                        control = page.locator(selector).first
+                        control.focus()
+                        page.keyboard.press("Enter")
+                    for grid_index in (0, 1, 3, 4, 6, 7):
+                        slot = page.locator(f'[data-grid-index="{grid_index}"]')
+                        slot.focus()
+                        page.keyboard.press("Enter")
+                    for selector in ('[data-action="minecraft-craft-door"]', '[data-action="finish-game"]'):
+                        control = page.locator(selector)
+                        control.focus()
+                        page.keyboard.press("Enter")
+                elif page.locator(".scratch-workspace").count():
                     for command in ("move", "left", "move", "move", "right", "move", "move", "move"):
                         block = page.locator(f'[data-scratch-id="{command}"]')
                         block.focus()
@@ -759,6 +797,8 @@ class QARunner:
             page.locator('[data-node-id="domain-software-apps"]').click()
             page.locator(".screen--challenge").wait_for()
             skip = page.get_by_role("button", name=re.compile("Skip game for now"))
+            if page.locator(".minecraft-game").count():
+                self.solve_minecraft_door_game(page)
             if skip.count():
                 skip.click()
             no_choice = page.get_by_role("button", name=re.compile("No, try another trail"))
@@ -833,7 +873,7 @@ class QARunner:
             self.start(page, f"Reflection {width}")
             page.locator('[data-node-id="region-build-create"]').click()
             page.locator(".screen--challenge").wait_for()
-            page.get_by_role("button", name=re.compile("Skip game for now")).click()
+            self.solve_minecraft_door_game(page)
             page.locator(".screen--reflection").wait_for()
             page.wait_for_timeout(500)
             dock = page.locator(".skill-dock")
@@ -892,7 +932,7 @@ class QARunner:
             self.start(page, f"Reflow {width}")
             page.locator('[data-node-id="region-build-create"]').click()
             page.locator(".screen--challenge").wait_for()
-            page.get_by_role("button", name=re.compile("Skip game for now")).click()
+            self.solve_minecraft_door_game(page)
             page.locator(".screen--reflection").wait_for()
             page.wait_for_timeout(500)
             self.assert_no_horizontal_overflow(page)

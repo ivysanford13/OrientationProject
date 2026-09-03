@@ -77,6 +77,7 @@ def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
         "__STARTER_BADGE_EMPATHY_DATA_URI__": image_data_uri("starter-badges/empathy.jpg"),
         "__SKILL_BADGE_SOFTWARE_DATA_URI__": image_data_uri("skill-badges/software.jpg"),
         "__SKILL_BADGE_DEVELOPER_DATA_URI__": image_data_uri("skill-badges/developer.jpg"),
+        "__SKILL_BADGE_CLOUD_BUILDER_DATA_URI__": image_data_uri("skill-badges/cloud-builder.jpg"),
         "__SKILL_BADGE_HACKER_DATA_URI__": image_data_uri("skill-badges/hacker.jpg"),
         "__SKILL_BADGE_TRENDY_DATA_URI__": image_data_uri("skill-badges/trendy.jpg"),
         "__SKILL_BADGE_FORTUNE_TELLER_DATA_URI__": image_data_uri("skill-badges/fortune-teller.jpg"),
