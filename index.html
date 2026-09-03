@@ -336,6 +336,33 @@ h1[tabindex="-1"]:focus { outline: none; }
 .screen--map { width: min(1430px, 100%); }.topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 19px; }.topbar .button { flex: 0 0 auto; }.map-instruction { max-width: 760px; margin: 0 0 22px; color: var(--ink-soft); font-size: 15px; }.world-map { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(13px, 2vw, 26px); padding: 25px clamp(10px, 2.4vw, 30px) 30px; border: 2px solid #c4d4e9; border-radius: 21px; background: rgba(246,249,255,.78); box-shadow: var(--shadow); }.world-map::before { position: absolute; inset: 0; opacity: .52; pointer-events: none; content: ""; background-image: linear-gradient(rgba(133,157,192,.11) 1px, transparent 1px), linear-gradient(90deg, rgba(133,157,192,.11) 1px, transparent 1px); background-size: 36px 36px; }.map-region { position: relative; z-index: 1; min-width: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }.map-region:not(:last-child)::after { top: 46px; right: -15px; width: 15px; height: 2px; background: var(--line-strong); }.region-ribbon { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 10px; min-height: 101px; padding: 14px 14px 13px; border-radius: 14px; color: var(--white); background: var(--region-color, var(--blue)); box-shadow: var(--shadow-tight); }.region-index { display: grid; place-items: center; width: 30px; height: 36px; border: 2px solid rgba(255,255,255,.57); border-radius: 8px; font-family: var(--font-display); font-size: 21px; }.region-ribbon h2 { margin: 0; font-family: var(--font-display); font-size: clamp(19px, 2.2vw, 28px); line-height: 1; text-transform: uppercase; }.region-ribbon p { margin: 7px 0 0; color: rgba(255,255,255,.82); font-size: 10px; line-height: 1.25; }.region-skill { grid-column: 2; margin-top: -4px; color: rgba(255,255,255,.92); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }.map-children { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 29px; }.map-children::before { position: absolute; top: -16px; left: 25%; width: 50%; height: 16px; border-top: 2px solid var(--line-strong); border-left: 2px solid var(--line-strong); border-right: 2px solid var(--line-strong); content: ""; }.map-domain { position: relative; min-width: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }.map-node { display: block; min-width: 0; width: 100%; overflow: hidden; }.map-node--domain { min-height: 124px; padding: 13px 11px 10px; border: 2px solid var(--line-strong); border-left-width: 5px; border-radius: 12px; color: var(--ink); background: rgba(255,255,255,.9); box-shadow: 0 4px 0 rgba(148,169,200,.24); text-align: left; }.map-node--domain:hover:not(:disabled) { border-color: var(--blue); border-left-color: var(--blue); }.node-number { display: block; margin-bottom: 5px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 9px; font-weight: 700; }.node-title { display: block; color: var(--ink); font-size: clamp(12px, 1.4vw, 16px); font-weight: 900; line-height: 1.05; }.node-subtitle { display: block; min-height: 27px; margin-top: 5px; color: var(--ink-soft); font-size: 10px; line-height: 1.15; }.node-reward { display: inline-block; margin-top: 9px; padding: 4px 6px; border-radius: 5px; color: var(--violet-dark); background: #eee8ff; font-family: var(--font-mono); font-size: 8px; font-weight: 700; text-transform: uppercase; }.node-status { position: absolute; top: 10px; right: 9px; color: var(--blue); font-family: var(--font-mono); font-size: 13px; font-weight: 700; }.map-domain.is-complete .map-node--domain { border-color: var(--green); background: #f0fffa; }.map-domain.is-future .map-node--domain, .map-node.is-future { border-color: #b3c0d1; border-left-color: #9aacbf; background: #f1f4f8; }.map-domain.is-future .node-title, .map-node.is-future .node-title { color: #77899f; }.map-specializations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 21px -2px 0; }.map-specializations::before { position: absolute; top: 144px; left: 50%; width: 2px; height: 19px; background: var(--line-strong); content: ""; }.map-node--specialization { position: relative; min-height: 84px; padding: 9px 7px 8px; border: 2px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--paper-blue); text-align: center; }.map-node--specialization:hover:not(:disabled) { border-color: var(--blue); transform: translateY(-2px); }.map-node--specialization .node-number { margin-bottom: 4px; font-size: 8px; }.map-node--specialization .node-title { font-size: 10px; line-height: 1.1; }.map-node--specialization .node-career { display: block; margin-top: 5px; color: var(--ink-soft); font-size: 9px; font-weight: 700; line-height: 1.1; }.map-node--specialization .node-reward { margin-top: 6px; padding: 3px 4px; font-size: 7px; }.map-node--specialization .node-status { top: 7px; right: 7px; font-size: 10px; }.map-node--specialization.is-complete { border-color: var(--green); background: #effcf8; }.map-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 16px; margin-top: 17px; color: var(--ink-soft); font-family: var(--font-mono); font-size: 10px; }.legend-dot { display: inline-block; width: 8px; height: 8px; margin-right: -11px; border-radius: 50%; background: var(--blue); }.legend-dot--done { background: var(--green); }.legend-dot--future { background: #9aacbf; }
 
 .screen--challenge { width: min(1180px, 100%); }.progress-chip { padding: 6px 9px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); color: var(--violet-dark); background: rgba(255,255,255,.65); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .1em; }.challenge-layout { display: grid; grid-template-columns: minmax(0, .86fr) minmax(360px, 1.14fr); gap: clamp(22px, 5vw, 72px); align-items: center; min-height: 460px; }.challenge-copy h1 { max-width: 550px; margin: 0; font-family: var(--font-display); font-size: clamp(42px, 6vw, 78px); line-height: .92; text-transform: uppercase; }.challenge-copy .lede { max-width: 560px; margin: 17px 0 0; color: var(--ink-soft); font-size: 16px; }.reward-callout { display: flex; align-items: center; gap: 12px; max-width: 400px; margin-top: 25px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.78); }.hex { display: grid; place-items: center; color: var(--night); background: var(--skill-color, var(--gold)); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); }.hex--small { flex: 0 0 47px; width: 47px; height: 54px; }.reward-callout strong { display: block; margin-top: 2px; font-family: var(--font-display); font-size: 22px; line-height: 1; text-transform: uppercase; }.reward-callout p { margin: 3px 0 0; color: var(--ink-soft); font-size: 11px; }.challenge-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 24px; }.placeholder-stage { position: relative; display: grid; place-items: center; min-height: 410px; overflow: hidden; border: 2px solid #bdcde4; border-radius: 20px; background: var(--night); box-shadow: var(--shadow); }.stage-grid { position: absolute; inset: 0; opacity: .43; background-image: linear-gradient(rgba(70,216,220,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(70,216,220,.18) 1px, transparent 1px); background-size: 33px 33px; transform: perspective(350px) rotateX(48deg) scale(1.5); transform-origin: bottom; }.placeholder-stage::before { position: absolute; top: 15%; left: 18%; width: 70px; height: 70px; border: 1px solid rgba(255,182,71,.6); border-radius: 50%; box-shadow: 0 0 28px rgba(255,182,71,.32); content: ""; }.placeholder-stage::after { position: absolute; right: 14%; bottom: 18%; width: 32px; height: 32px; border: 2px solid rgba(70,216,220,.76); clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); content: ""; }.placeholder-card { position: relative; z-index: 1; width: min(320px, 78%); padding: 26px 20px; border: 1px solid #4d6687; border-radius: 13px; color: var(--white); background: rgba(22,36,59,.91); box-shadow: 0 15px 35px rgba(0,0,0,.3); text-align: center; }.placeholder-icon { display: block; color: var(--gold); font-family: var(--font-mono); font-size: 41px; line-height: 1; }.placeholder-card .eyebrow { display: block; margin-top: 13px; color: var(--cyan); }.placeholder-card h2 { margin: 8px 0 0; font-family: var(--font-display); font-size: 25px; letter-spacing: .03em; text-transform: uppercase; }.placeholder-card p { margin: 8px 0 0; color: #c2d3ea; font-size: 12px; }.placeholder-meta { display: flex; justify-content: center; gap: 9px; margin-top: 16px; }.placeholder-meta span { padding: 5px 7px; border-radius: 5px; color: var(--gold); background: #263b5a; font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
+.placeholder-stage--wordle { padding: 26px 16px; }
+.wordle-game { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 380px; }
+.wordle-hint { margin: 0; padding: 8px 12px; border: 1px solid #4d6687; border-radius: 8px; color: var(--cyan); background: rgba(22,36,59,.91); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; text-align: center; }
+.wordle-board { display: flex; flex-direction: column; gap: 6px; }
+.wordle-row { display: flex; gap: 6px; }
+.wordle-cell { display: grid; place-items: center; width: 46px; height: 46px; border: 2px solid #3d5273; border-radius: 6px; color: var(--white); background: rgba(22,36,59,.6); font-family: var(--font-display); font-size: 22px; text-transform: uppercase; }
+.wordle-cell.is-filled { border-color: #7995bd; }
+.wordle-cell.is-correct { border-color: var(--green); background: var(--green); color: var(--night); }
+.wordle-cell.is-present { border-color: var(--gold); background: var(--gold); color: var(--night); }
+.wordle-cell.is-absent { border-color: #2b3b52; background: #2b3b52; color: #8fa2bd; }
+.wordle-message { min-height: 16px; margin: 0; color: #c2d3ea; font-family: var(--font-mono); font-size: 10px; letter-spacing: .03em; text-transform: uppercase; text-align: center; }
+.wordle-message.is-won { color: var(--green); }
+.wordle-message.is-lost { color: var(--coral); }
+.wordle-keyboard { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.wordle-keyboard-row { display: flex; justify-content: center; gap: 4px; width: 100%; }
+.wordle-key { min-width: 26px; height: 40px; padding: 0 6px; border: 0; border-radius: 5px; color: var(--white); background: #263b5a; font-family: var(--font-body); font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+.wordle-key:hover:not(:disabled) { background: #34507a; }
+.wordle-key:disabled { opacity: .55; cursor: default; }
+.wordle-key--wide { min-width: 46px; font-size: 9px; }
+.wordle-key--correct { background: var(--green); color: var(--night); }
+.wordle-key--present { background: var(--gold); color: var(--night); }
+.wordle-key--absent { background: #1b2940; color: #6c7f9c; }
+@media (max-width: 520px) {
+  .wordle-cell { width: 36px; height: 36px; font-size: 17px; }
+  .wordle-key { min-width: 21px; height: 36px; padding: 0 4px; font-size: 10px; }
+  .wordle-key--wide { min-width: 38px; font-size: 8px; }
+}
 
 .screen--career { width: min(1250px, 100%); }.career-hero { position: relative; overflow: hidden; margin-bottom: 24px; padding: clamp(25px, 5vw, 49px); border-radius: 20px; color: var(--white); background: var(--night); box-shadow: var(--shadow); }.career-hero::after { position: absolute; right: 6%; bottom: -110px; width: 300px; height: 300px; border: 2px solid rgba(70,216,220,.2); border-radius: 50%; box-shadow: 0 0 0 23px rgba(70,216,220,.04), 0 0 0 52px rgba(70,216,220,.04); content: ""; }.career-hero h1 { position: relative; z-index: 1; max-width: 800px; margin: 0; color: var(--white); font-family: var(--font-display); font-size: clamp(46px, 7vw, 88px); line-height: .9; text-transform: uppercase; }.career-hero .lede { position: relative; z-index: 1; max-width: 700px; margin: 17px 0 0; color: #c6d4e8; font-size: 16px; }.career-hero .eyebrow { color: var(--cyan); }.career-hero-meta { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 9px; margin-top: 25px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }.career-hero-meta span { padding: 7px 9px; border: 1px solid #48617f; border-radius: 6px; color: #b9cbe4; }.career-hero-meta strong { color: var(--gold); }.career-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(250px, .6fr); gap: 20px; align-items: start; }.career-facts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }.fact { min-width: 0; padding: 18px; border: 2px solid var(--line); border-radius: 13px; background: var(--white); }.fact h2 { margin: 0 0 9px; color: var(--blue-dark); font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }.fact ul { margin: 0; padding-left: 17px; }.fact li { margin: 5px 0; color: var(--ink-soft); font-size: 12px; }.career-sidebar { position: sticky; top: 18px; display: grid; gap: 12px; }.career-stat { padding: 18px; border: 2px solid var(--line); border-radius: 13px; background: var(--white); }.career-stat strong { display: block; margin-top: 5px; color: var(--ink); font-family: var(--font-display); font-size: 24px; line-height: 1.05; }.career-stat p { margin: 6px 0 0; color: var(--ink-soft); font-size: 12px; }.career-stat small { display: block; margin-top: 8px; color: #8193aa; font-size: 10px; }.career-sidebar .text-button { text-align: center; }
 
@@ -2307,17 +2334,19 @@ function makeSkill(id, label, category, badgeIcon) {
  * @param {string} concept
  * @param {string} visualType
  * @param {string} instructions
+ * @param {{answer:string,maxGuesses:number,hint:string}} [puzzle] Playable puzzle data. Omit while a game is still planned.
  * @returns {MiniGamePlan}
  */
-function makeMiniGame(id, title, concept, visualType, instructions) {
+function makeMiniGame(id, title, concept, visualType, instructions, puzzle) {
   return {
     id,
     title,
     concept,
     durationSeconds: 60,
     instructions,
-    status: "planned",
+    status: puzzle ? "ready" : "planned",
     visualType,
+    puzzle: puzzle || null,
   };
 }
 
@@ -2732,7 +2761,12 @@ const DOMAINS = [
       "Guess the Password",
       "Use Wordle-style clues to uncover a suspicious account password.",
       "wordle-password",
-      "Planned placeholder: make guesses and use the clues to narrow the answer."
+      "Make guesses and use the color clues to narrow down the password before you run out of tries.",
+      {
+        answer: "PHISH",
+        maxGuesses: 6,
+        hint: "It's the trick that starts with a fake email.",
+      }
     ),
   }),
   makeNode({
@@ -3778,6 +3812,7 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
   var scratchSolved = false;
   var scratchFeedback = '';
   var scratchPosition = { row: 4, col: 0, facing: 'right' };
+  var wordleSessions = {};
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -4298,12 +4333,165 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
     return 'You enjoyed ' + domain.title + '. Choose the work style that sounds most like you.';
   }
 
+  // ---------------------------------------------------------------------------
+  // Mini-game: Guess the Password (Wordle-style)
+  // ---------------------------------------------------------------------------
+
+  var WORDLE_KEYBOARD_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+
+  function getWordleSession(node) {
+    var puzzle = node.miniGame && node.miniGame.puzzle;
+    if (!puzzle) return null;
+    if (!wordleSessions[node.id]) {
+      wordleSessions[node.id] = { guesses: [], current: '', status: 'playing', keyStatus: {}, message: '' };
+    }
+    return wordleSessions[node.id];
+  }
+
+  function resetWordleSession(nodeId) {
+    delete wordleSessions[nodeId];
+  }
+
+  function evaluateWordleGuess(guess, answer) {
+    var result = new Array(guess.length).fill('absent');
+    var pool = answer.split('');
+    var used = new Array(answer.length).fill(false);
+    for (var i = 0; i < guess.length; i++) {
+      if (guess[i] === pool[i]) { result[i] = 'correct'; used[i] = true; }
+    }
+    for (var j = 0; j < guess.length; j++) {
+      if (result[j] === 'correct') continue;
+      var letter = guess[j];
+      for (var k = 0; k < pool.length; k++) {
+        if (!used[k] && pool[k] === letter) { result[j] = 'present'; used[k] = true; break; }
+      }
+    }
+    return result;
+  }
+
+  var WORDLE_STATUS_RANK = { absent: 0, present: 1, correct: 2 };
+
+  function mergeWordleKeyStatus(session, guess, feedback) {
+    for (var i = 0; i < guess.length; i++) {
+      var letter = guess[i];
+      var status = feedback[i];
+      var existing = session.keyStatus[letter];
+      if (!existing || WORDLE_STATUS_RANK[status] > WORDLE_STATUS_RANK[existing]) session.keyStatus[letter] = status;
+    }
+  }
+
+  function wordleTypeLetter(node, letter) {
+    var mini = node.miniGame;
+    var session = getWordleSession(node);
+    if (!session || session.status !== 'playing') return;
+    var wordLength = mini.puzzle.answer.length;
+    if (session.current.length >= wordLength) return;
+    session.current += letter;
+    session.message = '';
+    render();
+  }
+
+  function wordleBackspace(node) {
+    var session = getWordleSession(node);
+    if (!session || session.status !== 'playing') return;
+    session.current = session.current.slice(0, -1);
+    session.message = '';
+    render();
+  }
+
+  function wordleSubmitGuess(node) {
+    var mini = node.miniGame;
+    var session = getWordleSession(node);
+    if (!session || session.status !== 'playing') return;
+    var puzzle = mini.puzzle;
+    var wordLength = puzzle.answer.length;
+    if (session.current.length !== wordLength) {
+      session.message = 'Enter ' + wordLength + ' letters.';
+      render();
+      return;
+    }
+    var guess = session.current;
+    var feedback = evaluateWordleGuess(guess, puzzle.answer);
+    session.guesses.push({ word: guess, feedback: feedback });
+    mergeWordleKeyStatus(session, guess, feedback);
+    session.current = '';
+    if (guess === puzzle.answer) {
+      session.status = 'won';
+      session.message = 'Password cracked! It was ' + puzzle.answer + '.';
+      announce('You cracked the password. It was ' + puzzle.answer + '.');
+    } else if (session.guesses.length >= puzzle.maxGuesses) {
+      session.status = 'lost';
+      session.message = 'Out of tries. The password was ' + puzzle.answer + '.';
+      announce('Out of tries. The password was ' + puzzle.answer + '.');
+    } else {
+      session.message = '';
+      announce('Guess ' + session.guesses.length + ' of ' + puzzle.maxGuesses + ' submitted.');
+    }
+    render();
+  }
+
+  function renderWordleCell(letter, status) {
+    var classes = 'wordle-cell' + (status ? ' is-' + status : letter ? ' is-filled' : '');
+    return '<span class="' + classes + '">' + escapeHtml(letter || '') + '</span>';
+  }
+
+  function renderWordleRow(word, feedback, wordLength) {
+    var cells = '';
+    for (var i = 0; i < wordLength; i++) cells += renderWordleCell(word ? word[i] : '', feedback ? feedback[i] : '');
+    return '<div class="wordle-row">' + cells + '</div>';
+  }
+
+  function renderWordleBoard(session, puzzle) {
+    var wordLength = puzzle.answer.length;
+    var rows = '';
+    for (var i = 0; i < puzzle.maxGuesses; i++) {
+      if (i < session.guesses.length) {
+        rows += renderWordleRow(session.guesses[i].word, session.guesses[i].feedback, wordLength);
+      } else if (i === session.guesses.length && session.status === 'playing') {
+        rows += renderWordleRow(session.current, null, wordLength);
+      } else {
+        rows += renderWordleRow('', null, wordLength);
+      }
+    }
+    return '<div class="wordle-board" role="group" aria-label="Password guesses">' + rows + '</div>';
+  }
+
+  function renderWordleKeyboard(session) {
+    var disabled = session.status !== 'playing';
+    var rows = WORDLE_KEYBOARD_ROWS.map(function (row, index) {
+      var keys = row.split('').map(function (letter) {
+        var status = session.keyStatus[letter];
+        return '<button type="button" class="wordle-key' + (status ? ' wordle-key--' + status : '') + '" data-action="wordle-key" data-key="' + letter + '" ' + (disabled ? 'disabled' : '') + '>' + letter + '</button>';
+      }).join('');
+      if (index === WORDLE_KEYBOARD_ROWS.length - 1) {
+        keys = '<button type="button" class="wordle-key wordle-key--wide" data-action="wordle-backspace" aria-label="Backspace" ' + (disabled ? 'disabled' : '') + '>⌫</button>' + keys
+          + '<button type="button" class="wordle-key wordle-key--wide" data-action="wordle-submit" ' + (disabled ? 'disabled' : '') + '>Enter</button>';
+      }
+      return '<div class="wordle-keyboard-row">' + keys + '</div>';
+    }).join('');
+    return '<div class="wordle-keyboard" role="group" aria-label="On-screen keyboard">' + rows + '</div>';
+  }
+
+  function renderWordleStage(node, mini, session) {
+    var puzzle = mini.puzzle;
+    var messageClass = session.status === 'won' ? ' is-won' : session.status === 'lost' ? ' is-lost' : '';
+    var message = session.message || (mini.instructions || '');
+    return '<div class="placeholder-stage placeholder-stage--wordle" role="region" aria-label="Planned mini-game workspace"><div class="wordle-game"><p class="wordle-hint">HINT: ' + escapeHtml(puzzle.hint || 'Watch the color clues.') + '</p>' + renderWordleBoard(session, puzzle) + '<p class="wordle-message' + messageClass + '" role="status">' + escapeHtml(message) + '</p>' + renderWordleKeyboard(session) + '</div></div>';
+  }
+
+  function renderPlaceholderStage(mini) {
+    return '<div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div>';
+  }
+
   function renderMiniGame(node) {
     if (!node || !node.miniGame) return renderMap();
     var skill = skillFor(node);
     var mini = node.miniGame || {};
     if (node.id === 'domain-software-apps') return renderScratchGame(node, skill, mini);
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
+    var session = mini.visualType === 'wordle-password' && mini.puzzle ? getWordleSession(node) : null;
+    var stageMarkup = session ? renderWordleStage(node, mini, session) : renderPlaceholderStage(mini);
+    var statusChip = mini.status === 'ready' ? '~60 SEC' : '~60 SEC / PLANNED';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + statusChip + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div>' + stageMarkup + '</div></section>';
   }
 
   function renderScratchGame(node, skill, mini) {
@@ -4647,6 +4835,21 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
     if (action === 'scratch-remove') { removeScratchBlock(Number(element.getAttribute('data-scratch-index'))); return; }
     if (action === 'scratch-reset') { resetScratchGame(); render(); return; }
     if (action === 'scratch-check') { checkScratchGame(); return; }
+    if (action === 'wordle-key') {
+      var wordleNode = findNode(state.selectedNodeId);
+      if (wordleNode) wordleTypeLetter(wordleNode, element.getAttribute('data-key'));
+      return;
+    }
+    if (action === 'wordle-backspace') {
+      var backspaceNode = findNode(state.selectedNodeId);
+      if (backspaceNode) wordleBackspace(backspaceNode);
+      return;
+    }
+    if (action === 'wordle-submit') {
+      var submitNode = findNode(state.selectedNodeId);
+      if (submitNode) wordleSubmitGuess(submitNode);
+      return;
+    }
     if (action === 'enjoy-yes') { completeNode(state.selectedNodeId); return; }
     if (action === 'enjoy-maybe') { pauseReflection(); return; }
     if (action === 'enjoy-no') { requestRejectNode(element); return; }
@@ -4718,6 +4921,7 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
   function openNode(id) {
     var node = findNode(id);
     if (!canOpen(node)) return;
+    resetWordleSession(id);
     var replaying = isCompleted(node.id);
     var current = currentJourneyNode();
     if (id === 'domain-software-apps') resetScratchGame();
@@ -4963,6 +5167,7 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
   function replayNode(id) {
     var node = findNode(id);
     if (!node || !isCompleted(id)) return;
+    resetWordleSession(id);
     closeModal();
     if (!node.miniGame && node.career) { openCareerResult(node); return; }
     if (id === 'domain-software-apps') resetScratchGame();
@@ -5122,6 +5327,14 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && modalRoot && modalRoot.innerHTML) { closeModal(); return; }
     trapModalFocus(event);
+    if (state.screen !== 'mini' || (modalRoot && modalRoot.innerHTML)) return;
+    var activeTag = document.activeElement && document.activeElement.tagName;
+    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+    var node = findNode(state.selectedNodeId);
+    if (!node || !node.miniGame || node.miniGame.visualType !== 'wordle-password' || !node.miniGame.puzzle) return;
+    if (event.key === 'Enter') { event.preventDefault(); wordleSubmitGuess(node); return; }
+    if (event.key === 'Backspace') { event.preventDefault(); wordleBackspace(node); return; }
+    if (/^[a-zA-Z]$/.test(event.key)) { wordleTypeLetter(node, event.key.toUpperCase()); }
   });
 
   render();

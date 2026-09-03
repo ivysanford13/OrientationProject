@@ -70,17 +70,19 @@ function makeSkill(id, label, category, badgeIcon) {
  * @param {string} concept
  * @param {string} visualType
  * @param {string} instructions
+ * @param {{answer:string,maxGuesses:number,hint:string}} [puzzle] Playable puzzle data. Omit while a game is still planned.
  * @returns {MiniGamePlan}
  */
-function makeMiniGame(id, title, concept, visualType, instructions) {
+function makeMiniGame(id, title, concept, visualType, instructions, puzzle) {
   return {
     id,
     title,
     concept,
     durationSeconds: 60,
     instructions,
-    status: "planned",
+    status: puzzle ? "ready" : "planned",
     visualType,
+    puzzle: puzzle || null,
   };
 }
 
@@ -495,7 +497,12 @@ const DOMAINS = [
       "Guess the Password",
       "Use Wordle-style clues to uncover a suspicious account password.",
       "wordle-password",
-      "Planned placeholder: make guesses and use the clues to narrow the answer."
+      "Make guesses and use the color clues to narrow down the password before you run out of tries.",
+      {
+        answer: "PHISH",
+        maxGuesses: 6,
+        hint: "It's the trick that starts with a fake email.",
+      }
     ),
   }),
   makeNode({
