@@ -263,7 +263,7 @@ class QARunner:
 
     @staticmethod
     def finish_node(page: Page, node_id: str, enjoyed: bool = True) -> None:
-        """Travel to a node, skip its placeholder, and answer the enjoyment check."""
+        """Complete a mini-game stop or open a terminal career selection."""
 
         node = page.locator(f'[data-node-id="{node_id}"]')
         if node.count() != 1:
@@ -271,7 +271,11 @@ class QARunner:
         if node.is_disabled():
             raise AssertionError(f"map node {node_id} is still locked")
         node.click()
-        page.locator(".screen--challenge").wait_for()
+        page.locator(".screen--challenge, .screen--career").first.wait_for()
+        if page.locator(".screen--career").count():
+            if not enjoyed:
+                raise AssertionError("terminal career selections do not support rejection")
+            return
         if page.locator('[aria-label="Planned mini-game workspace"]').count() != 1:
             raise AssertionError(f"placeholder workspace missing for {node_id}")
         button = page.get_by_role("button", name=re.compile("Skip game for now"))
@@ -364,9 +368,6 @@ class QARunner:
             self.finish_node(page, route.domain_id)
             if page.locator(".hex-item").count() != 6:
                 raise AssertionError("domain reward did not create sixth skill hex")
-            rejected_spec = self.reject_first_sibling(page, route.specialization_id)
-            if rejected_spec:
-                rejected.append(rejected_spec)
             self.finish_node(page, route.specialization_id)
             page.locator("#career-title").wait_for()
             title = page.locator("#career-title").inner_text().strip()
@@ -380,7 +381,7 @@ class QARunner:
                 for label in page.locator(".hex-item.is-earned strong").all_text_contents()
             ]
             if len(state["completed"]) != 3 or len(state["earned"]) != 3:
-                raise AssertionError(f"route state should contain exactly 3 completed/rewards: {state}")
+                raise AssertionError(f"route state should contain exactly 3 completed selections and rewards: {state}")
             if earned_labels != list(route.skills):
                 raise AssertionError(f"expected reward order {route.skills}, got {earned_labels}")
             if page.locator(".hex-item").count() != 7:
@@ -473,9 +474,12 @@ class QARunner:
                     raise AssertionError("mobile lower choice is covered by the skill dock")
                 if avatar["y"] + avatar["height"] > dock["y"]:
                     raise AssertionError("mobile traveling avatar is covered by the skill dock")
-                page.locator(".screen--challenge").wait_for()
-                page.get_by_role("button", name="Skip game for now").click()
-                page.get_by_role("button", name=re.compile("Yes, keep going")).click()
+                if node_id == route.domain_id:
+                    page.locator(".screen--challenge").wait_for()
+                    page.get_by_role("button", name="Skip game for now").click()
+                    page.get_by_role("button", name=re.compile("Yes, keep going")).click()
+                else:
+                    page.locator(".screen--career").wait_for()
 
             if page.locator("#career-title").inner_text().strip().casefold() != route.career_title.casefold():
                 raise AssertionError("mobile terminal career did not render")
@@ -557,7 +561,7 @@ class QARunner:
             # Let the app's post-render focus helper finish before selecting
             # the first map node with keyboard input.
             page.wait_for_timeout(70)
-            for node_id in (ROUTES[0].region_id, ROUTES[0].domain_id, ROUTES[0].specialization_id):
+            for node_id in (ROUTES[0].region_id, ROUTES[0].domain_id):
                 target = page.locator(f'[data-node-id="{node_id}"]')
                 target.focus()
                 page.keyboard.press("Enter")
@@ -571,13 +575,17 @@ class QARunner:
                 yes.focus()
                 page.keyboard.press("Enter")
                 page.wait_for_timeout(35)
+            target = page.locator(f'[data-node-id="{ROUTES[0].specialization_id}"]')
+            target.focus()
+            page.keyboard.press("Enter")
+            page.locator(".screen--career").wait_for()
             if page.locator("#career-title").inner_text().strip().casefold() != ROUTES[0].career_title.casefold():
                 raise AssertionError("keyboard route did not reach terminal career")
             state = page.evaluate("CareerLaunchpadApp.getState()")
             if len(state["earned"]) != 3:
-                raise AssertionError("keyboard route did not award three skills")
+                raise AssertionError("keyboard route did not award exactly three skills")
             self.assert_clean(page, errors)
-            return "name entry, three map transitions, and rewards completed through focus + Enter"
+            return "name entry, two mini-games, and direct career selection completed through focus + Enter"
         finally:
             pass
 
@@ -931,7 +939,7 @@ class QARunner:
                         width: box.width,
                         height: box.height,
                         strongPx: strong ? parseFloat(getComputedStyle(strong).fontSize) : 0,
-                        smallPx: small ? parseFloat(getComputedStyle(small).fontSize) : 0,
+                        smallPx: small ? parseFloat(getComputedStyle(small).fontSize) : null,
                     };
                 })"""
             )
@@ -940,9 +948,9 @@ class QARunner:
                     violations.append(
                         f"{metric['label']} target={metric['width']:.1f}×{metric['height']:.1f}"
                     )
-                if metric["strongPx"] < 10 or metric["smallPx"] < 8:
+                if metric["strongPx"] < 10 or (metric["smallPx"] is not None and metric["smallPx"] < 8):
                     violations.append(
-                        f"{metric['label']} text={metric['strongPx']:.1f}/{metric['smallPx']:.1f}px"
+                        f"{metric['label']} primary={metric['strongPx']:.1f}px secondary={metric['smallPx']}"
                     )
 
             self.finish_node(page, "domain-software-apps")
@@ -955,7 +963,7 @@ class QARunner:
             if violations:
                 raise AssertionError("; ".join(violations))
             self.assert_clean(page, errors)
-            return f"touch targets >=44px, HUD text >=10/8px, career CTA contrast={contrast:.2f}:1"
+            return f"touch targets >=44px, primary HUD text >=10px, rendered secondary text >=8px, career CTA contrast={contrast:.2f}:1"
         finally:
             pass
 
@@ -996,7 +1004,7 @@ def main() -> int:
                 f"Complete route — {route.label}",
                 f"four-skill loadout recommends {route.region_id} → {route.domain_id} → {route.specialization_id}",
                 "select four starter skills; travel; skip placeholders; answer yes, with no-reroutes for second siblings",
-                f"career title={route.career_title}; four starter + three rewards={', '.join(route.skills)}; rejected siblings stay locked",
+                f"career title={route.career_title}; four starter + three rewards={', '.join(route.skills)}; rejected domain siblings stay locked",
                 lambda route=route: runner.route_loop(route),
             )
         runner.run_loop(
@@ -1136,7 +1144,7 @@ def main() -> int:
             "Deterministic accessibility metrics",
             "edit and HUD touch targets, HUD text sizes, and coral career CTA contrast",
             "measure computed boxes, font sizes, and foreground/background luminance",
-            "targets >=44px; HUD labels >=10/8px; normal CTA text contrast >=4.5:1",
+            "targets >=44px; primary HUD labels >=10px; rendered secondary labels >=8px; normal CTA text contrast >=4.5:1",
             runner.deterministic_accessibility_metrics_loop,
         )
     finally:

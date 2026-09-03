@@ -1,15 +1,27 @@
 /*
  * IS Career Launchpad — guided RPG progression controller
  *
- * Data and visuals remain separate from this file. Mini-games plug into the
- * stable node ids in data.js; until then, every node uses the same placeholder
- * → enjoyment check → reward/reroute contract.
+ * Data and visuals remain separate from this file. The region and domain
+ * selections use the placeholder → enjoyment check → reward/reroute
+ * contract; the final specialization selection opens its career directly.
  */
 (function careerLaunchpadApp() {
   'use strict';
 
   var STORAGE_KEY = 'is-career-launchpad:v2';
   var EXPLORER_AVATAR_SRC = '__EXPLORER_AVATAR_DATA_URI__';
+  var STARTER_BADGE_SOURCES = {
+    'creative-thinking': '__STARTER_BADGE_CREATIVE_THINKING_DATA_URI__',
+    'coding-curiosity': '__STARTER_BADGE_CODING_CURIOSITY_DATA_URI__',
+    'hands-on-tech': '__STARTER_BADGE_HANDS_ON_TECH_DATA_URI__',
+    'visual-design': '__STARTER_BADGE_VISUAL_DESIGN_DATA_URI__',
+    'numbers-patterns': '__STARTER_BADGE_NUMBERS_PATTERNS_DATA_URI__',
+    'problem-solving': '__STARTER_BADGE_PROBLEM_SOLVING_DATA_URI__',
+    'security-mindset': '__STARTER_BADGE_SECURITY_MINDSET_DATA_URI__',
+    'communication': '__STARTER_BADGE_COMMUNICATION_DATA_URI__',
+    'leadership': '__STARTER_BADGE_LEADERSHIP_DATA_URI__',
+    'empathy': '__STARTER_BADGE_EMPATHY_DATA_URI__'
+  };
   if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
   var root = document.getElementById('app');
   var dock = document.getElementById('skill-dock');
@@ -25,7 +37,6 @@
   var state = loadState();
   var modalReturnFocus = null;
   var travelTimer = null;
-  var focusAfterRenderId = null;
 
   // ---------------------------------------------------------------------------
   // Data normalization
@@ -62,7 +73,8 @@
       category: skill.category || 'discovery',
       color: skill.color || '#f6b347',
       glyph: skill.glyph || '✦',
-      badgeIcon: skill.badgeIcon || 'spark'
+      badgeIcon: skill.badgeIcon || 'spark',
+      badgeAsset: skill.badgeAsset || id.replace(/^starter-/, '')
     }, skill);
   }
 
@@ -106,9 +118,42 @@
     return { starterSkills: starterSkills, skills: skills, regions: regions, careers: careers };
   }
 
+  /** Preserve authored camera stops while supplying safe offline defaults. */
+  function normalizeScene(scene) {
+    if (!scene || typeof scene !== 'object') return null;
+    var camera = scene.camera && typeof scene.camera === 'object' ? scene.camera : {};
+    var fallbackStops = [
+      { x: 0, y: 70, compactX: 20, compactY: 66 },
+      { x: 50, y: 48, compactX: 50, compactY: 48 },
+      { x: 100, y: 57, compactX: 80, compactY: 55 }
+    ];
+    var authoredStops = Array.isArray(camera.stages) ? camera.stages : [];
+    var stages = fallbackStops.map(function (fallback, index) {
+      var stop = authoredStops[index] || {};
+      return {
+        x: finiteNumber(stop.x, fallback.x),
+        y: finiteNumber(stop.y, fallback.y),
+        compactX: finiteNumber(stop.compactX, fallback.compactX),
+        compactY: finiteNumber(stop.compactY, fallback.compactY)
+      };
+    });
+    return Object.assign({}, scene, {
+      camera: {
+        zoom: finiteNumber(camera.zoom, 250),
+        compactZoom: finiteNumber(camera.compactZoom, finiteNumber(camera.zoom, 250)),
+        stages: stages
+      }
+    });
+  }
+
+  function finiteNumber(value, fallback) {
+    var number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
+
   function normalizeNode(item, parentId, skills, careers) {
-    var reward = item.earnedSkill || item.skill || {};
-    var rewardSkill = typeof reward === 'string' ? skills[reward] : normalizeSkill(reward);
+    var reward = item.earnedSkill || item.skill || null;
+    var rewardSkill = typeof reward === 'string' ? skills[reward] : (reward ? normalizeSkill(reward) : null);
     if (rewardSkill) {
       if (!reward.color && item.color) rewardSkill.color = item.color;
       skills[rewardSkill.id] = Object.assign({}, skills[rewardSkill.id] || {}, rewardSkill);
@@ -119,8 +164,9 @@
       title: item.title || item.name || titleCase(item.id),
       subtitle: item.subtitle || item.description || '',
       description: item.description || item.subtitle || '',
+      scene: normalizeScene(item.scene),
       earnedSkill: rewardSkill ? rewardSkill.id : null,
-      miniGame: Object.assign({ title: 'Planned mini-game', concept: 'A focused sixty-second challenge will live here.', durationSeconds: 60 }, item.miniGame || {}),
+      miniGame: item.miniGame ? Object.assign({ title: 'Planned mini-game', concept: 'A focused sixty-second challenge will live here.', durationSeconds: 60 }, item.miniGame) : null,
       career: item.career || careers[item.careerId] || null,
       children: []
     });
@@ -195,7 +241,8 @@
 
   function validEarned(values) {
     return (Array.isArray(values) ? values : []).filter(function (entry) {
-      return entry && typeof entry === 'object' && typeof entry.nodeId === 'string' && !!findNode(entry.nodeId) && typeof entry.skillId === 'string' && !!model.skills[entry.skillId];
+      var node = entry && typeof entry.nodeId === 'string' ? findNode(entry.nodeId) : null;
+      return entry && typeof entry === 'object' && node && node.earnedSkill === entry.skillId && !!model.skills[entry.skillId];
     }).map(function (entry) {
       return { skillId: entry.skillId, nodeId: entry.nodeId, earnedAt: Number(entry.earnedAt) || 0 };
     });
@@ -218,6 +265,15 @@
       if (restored.starterSkills.length === 4 && !findNode(restored.activeRegionId)) restored.activeRegionId = recommendRegion(restored.starterSkills, restored.rejected).id;
       if (restored.screen === 'career' && !findNode(restored.selectedNodeId)) restored.screen = restored.starterSkills.length === 4 ? 'map' : 'landing';
       if ((restored.screen === 'mini' || restored.screen === 'reflection') && !findNode(restored.selectedNodeId)) restored.screen = restored.starterSkills.length === 4 ? 'map' : 'landing';
+      var restoredNode = findNode(restored.selectedNodeId);
+      if ((restored.screen === 'mini' || restored.screen === 'reflection') && restoredNode && !restoredNode.miniGame && restoredNode.career) {
+        if (restored.completed.indexOf(restoredNode.id) === -1) restored.completed.push(restoredNode.id);
+        restored.lastCareerId = restoredNode.career.id || restoredNode.career.title;
+        restored.screen = 'career';
+      }
+      if (restored.screen === 'career' && restoredNode && restoredNode.career && restoredNode.earnedSkill && !restored.earned.some(function (entry) { return entry.nodeId === restoredNode.id; })) {
+        restored.earned.push({ skillId: restoredNode.earnedSkill, nodeId: restoredNode.id, earnedAt: Date.now() });
+      }
       if (['interview-intro', 'interview-question', 'interview-feedback', 'interview-debrief'].indexOf(restored.screen) !== -1 && !interviewForCareer(restored.interview.careerId)) restored.screen = 'career';
       restored.avatar = 'cougar';
       return restored;
@@ -334,7 +390,8 @@
     return '<section class="screen screen--skills" aria-labelledby="skills-title"><div class="skills-heading"><div><p class="screen-kicker">LOADOUT / CHOOSE 4 OF 10</p><h1 id="skills-title" tabindex="-1">What are you good at—<br><em>or excited to become good at?</em></h1><p>Select exactly four. Your combination becomes your first skill stack and points your compass toward a career world.</p></div><div class="selection-meter" aria-live="polite"><strong>' + selected.length + '<span>/4</span></strong><small>skills selected</small></div></div><div class="starter-skill-grid">' + model.starterSkills.map(function (skill, index) {
       var picked = selected.indexOf(skill.id) !== -1;
       var unavailable = selected.length >= 4 && !picked;
-      return '<button class="starter-skill' + (picked ? ' is-picked' : '') + '" type="button" data-action="toggle-starter" data-skill-id="' + escapeAttr(skill.id) + '" aria-pressed="' + picked + '" ' + (unavailable ? 'aria-disabled="true"' : '') + ' style="--skill-color:' + escapeAttr(skill.color) + '"><span class="starter-number">' + String(index + 1).padStart(2, '0') + '</span><span class="starter-glyph" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><strong>' + escapeHtml(skill.label) + '</strong><small>' + escapeHtml(skill.description) + '</small><span class="pick-state">' + (picked ? 'Selected ✓' : 'Choose +') + '</span></button>';
+      var badgeSource = STARTER_BADGE_SOURCES[skill.badgeAsset] || '';
+      return '<button class="starter-skill' + (picked ? ' is-picked' : '') + '" type="button" data-action="toggle-starter" data-skill-id="' + escapeAttr(skill.id) + '" aria-pressed="' + picked + '" ' + (unavailable ? 'aria-disabled="true"' : '') + ' style="--skill-color:' + escapeAttr(skill.color) + '"><span class="starter-number">' + String(index + 1).padStart(2, '0') + '</span><span class="starter-badge-frame" aria-hidden="true"><img class="starter-badge-art" src="' + badgeSource + '" alt=""><i class="starter-selected-mark">✓</i></span><strong>' + escapeHtml(skill.label) + '</strong><small>' + escapeHtml(skill.description) + '</small><span class="pick-state">' + (picked ? 'Selected ✓' : 'Choose +') + '</span></button>';
     }).join('') + '</div><div class="skills-footer"><button class="text-button" data-action="back-landing">← Back</button><p>' + (selected.length === 4 ? 'Your compass is ready.' : 'Choose ' + (4 - selected.length) + ' more to continue.') + '</p><button class="button button--primary" data-action="confirm-skills" ' + (selected.length === 4 ? '' : 'disabled') + '>Reveal my world <span aria-hidden="true">↗</span></button></div></section>';
   }
 
@@ -355,17 +412,19 @@
     // Keep both phone forks above the fixed skill HUD; the chapter label now
     // lives in the sky band, leaving the lower terrain band available for the
     // route card and traveling explorer.
-    var lowerChoiceY = window.innerWidth <= 767 ? 43 : 53;
+    var compactMap = window.innerWidth <= 767;
+    var lowerChoiceY = compactMap ? 43 : 53;
+    var choiceX = compactMap ? 72 : 75;
     var sceneNodes = [];
-    if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: 43 }, kind: 'region' });
+    if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: window.innerWidth <= 430 ? 39 : 43 }, kind: 'region', routeIndex: 0 });
     if (stage === 1) {
       sceneNodes.push({ node: region, position: { x: 20, y: 62 }, kind: 'past' });
-      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 72, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
+      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 72, y: index ? lowerChoiceY : 29 }, kind: 'choice', routeIndex: index }); });
     }
     if (stage === 2) {
       sceneNodes.push({ node: region, position: { x: 24, y: 62 }, kind: 'past-region' });
       sceneNodes.push({ node: domain, position: { x: 47, y: 62 }, kind: 'past-domain' });
-      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 75, y: index ? lowerChoiceY : 29 }, kind: 'choice' }); });
+      domain.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: choiceX, y: index ? lowerChoiceY : 29 }, kind: 'choice', routeIndex: index }); });
     }
     var avatarPosition = avatarMapPosition(stage, current && current.id, sceneNodes);
     var travelTarget = state.travelTargetId && sceneNodes.filter(function (entry) { return entry.node.id === state.travelTargetId; })[0];
@@ -373,7 +432,7 @@
     var targetPosition = travelTarget ? avatarMapPosition(stage, travelTarget.node.id, sceneNodes) : avatarPosition;
     var fromPosition = travelFrom ? avatarMapPosition(stage, travelFrom.node.id, sceneNodes) : avatarPosition;
     var routePath = scene.paths && scene.paths[stage] || 'M80 360 C220 380 355 270 580 224 S730 154 850 155';
-    var sceneStyle = '--scene-sky:' + escapeAttr(scene.sky || '#9ed8eb') + ';--scene-horizon:' + escapeAttr(scene.horizon || '#a4d477') + ';--scene-terrain:' + escapeAttr(scene.terrain || '#347c51') + ';--scene-mountain:' + escapeAttr(scene.mountain || '#6d8fa5') + ';--scene-sun:' + escapeAttr(scene.sun || '#ffb647') + ';--scene-haze:' + escapeAttr(scene.haze || '#d9f4ef') + ';--scene-accent:' + escapeAttr(scene.accent || region.color || '#2f6fed');
+    var sceneStyle = '--scene-sky:' + escapeAttr(scene.sky || '#9ed8eb') + ';--scene-horizon:' + escapeAttr(scene.horizon || '#a4d477') + ';--scene-terrain:' + escapeAttr(scene.terrain || '#347c51') + ';--scene-mountain:' + escapeAttr(scene.mountain || '#6d8fa5') + ';--scene-sun:' + escapeAttr(scene.sun || '#ffb647') + ';--scene-haze:' + escapeAttr(scene.haze || '#d9f4ef') + ';--scene-accent:' + escapeAttr(scene.accent || region.color || '#2f6fed') + ';' + cameraStyle(scene, stage);
 
     var travelClass = state.screen === 'travel' ? ' is-traveling' : '';
     var shiftClass = state.lastAward ? ' is-shifting' : '';
@@ -387,11 +446,64 @@
 
     return '<section class="screen screen--map world-screen" aria-labelledby="map-title">' +
       '<header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + mapTitle + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header>' +
-      '<section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + travelClass + shiftClass + '" style="' + sceneStyle + '" aria-label="Interactive journey map">' + panorama +
-      '<svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true"><path class="route-shadow" d="' + escapeAttr(routePath) + '"></path><path class="route-line" d="' + escapeAttr(routePath) + '"></path><path class="route-pulse" d="' + escapeAttr(routePath) + '"></path></svg>' +
-      '<div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + avatar + travelBanner +
+      '<section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + travelClass + shiftClass + '" data-camera-stage="' + stage + '" style="' + sceneStyle + '" aria-label="Interactive journey map">' + panorama +
+      renderQuestPath(stage, sceneNodes, routePath) +
+      (stage === 0 ? '<div class="start-camp world-landmark" style="--x:9%;--y:69%" aria-label="Journey start"><span aria-hidden="true">⌂</span><small>START</small></div>' : '') + renderWorldMilestones(stage, sceneNodes) + sceneNodes.map(renderWorldStop).join('') + avatar + travelBanner +
       '<div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(chapterTitle) + '</strong>' + renderJourneyMeter(stage) + '</div></section>' +
-      '<div class="map-action-row"><p><strong>' + openRouteCount + '</strong> forward route' + (openRouteCount === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+      '<div class="map-action-row"><p>' + (stage === 2 ? '<strong>' + openRouteCount + '</strong> career possibilit' + (openRouteCount === 1 ? 'y' : 'ies') + ' ready to explore.' : '<strong>' + openRouteCount + '</strong> forward route' + (openRouteCount === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.') + '</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+  }
+
+  /**
+   * Preserve each world's authored terrain curves while snapping the live
+   * branches to their destination cards. Separate branch groups let pointer,
+   * keyboard, and travel states highlight one choice at a time.
+   */
+  function renderQuestPath(stage, entries, authoredPath) {
+    var segments = String(authoredPath || '').match(/M[^M]*/g) || [];
+    var destinations = entries.filter(function (entry) { return typeof entry.routeIndex === 'number'; });
+    var trunk = stage > 0 && segments[0] ? segments[0].trim() : '';
+    var branches = destinations.map(function (entry, index) {
+      var segmentIndex = stage === 0 ? index : index + 1;
+      var authored = segments[segmentIndex] || segments[segments.length - 1] || authoredPath;
+      return { nodeId: entry.node.id, path: alignRouteEndpoint(authored, entry.position) };
+    });
+    var trunkMarkup = trunk
+      ? '<path class="route-shadow" d="' + escapeAttr(trunk) + '"></path><path class="route-complete" d="' + escapeAttr(trunk) + '"></path>'
+      : '';
+    var branchMarkup = branches.map(function (branch) {
+      return '<g class="route-option" data-route-node-id="' + escapeAttr(branch.nodeId) + '"><path class="route-shadow" d="' + escapeAttr(branch.path) + '"></path><path class="route-line" d="' + escapeAttr(branch.path) + '"></path><path class="route-pulse" d="' + escapeAttr(branch.path) + '"></path></g>';
+    }).join('');
+    return '<svg class="quest-path" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true">' + trunkMarkup + branchMarkup + '</svg>';
+  }
+
+  function alignRouteEndpoint(path, position) {
+    var endpointX = Math.round(position.x * 10);
+    var endpointY = Math.round(position.y * 5.2);
+    return String(path || '').trim().replace(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*$/, endpointX + ' ' + endpointY);
+  }
+
+  /** Translate authored chapter stops into CSS camera variables. */
+  function cameraStyle(scene, stage) {
+    var camera = scene.camera || {};
+    var stops = Array.isArray(camera.stages) && camera.stages.length === 3 ? camera.stages : [
+      { x: 0, y: 70, compactX: 20, compactY: 66 },
+      { x: 50, y: 48, compactX: 50, compactY: 48 },
+      { x: 100, y: 57, compactX: 80, compactY: 55 }
+    ];
+    var current = stops[Math.max(0, Math.min(2, stage))];
+    var previous = stops[Math.max(0, stage - 1)];
+    return [
+      '--camera-zoom:' + finiteNumber(camera.zoom, 250) + '%',
+      '--camera-compact-zoom:' + finiteNumber(camera.compactZoom, finiteNumber(camera.zoom, 250)) + '%',
+      '--camera-x:' + finiteNumber(current.x, 50) + '%',
+      '--camera-y:' + finiteNumber(current.y, 50) + '%',
+      '--camera-from-x:' + finiteNumber(previous.x, current.x) + '%',
+      '--camera-from-y:' + finiteNumber(previous.y, current.y) + '%',
+      '--camera-compact-x:' + finiteNumber(current.compactX, current.x) + '%',
+      '--camera-compact-y:' + finiteNumber(current.compactY, current.y) + '%',
+      '--camera-compact-from-x:' + finiteNumber(previous.compactX, previous.x) + '%',
+      '--camera-compact-from-y:' + finiteNumber(previous.compactY, previous.y) + '%'
+    ].join(';');
   }
 
   function renderJourneyMeter(stage) {
@@ -403,9 +515,9 @@
   }
 
   function renderWorldLandmarks(landmarks) {
-    return (Array.isArray(landmarks) ? landmarks : []).map(function (landmark) {
+    return (Array.isArray(landmarks) ? landmarks : []).map(function (landmark, index) {
       var type = slug(landmark.type || 'landmark');
-      return '<div class="world-landmark landmark-' + escapeAttr(type) + '" style="--x:' + Number(landmark.x || 50) + '%;--y:' + Number(landmark.y || 40) + '%" aria-hidden="true"><span class="landmark-art landmark-art--' + escapeAttr(type) + '"><i></i><b></b></span><small>' + escapeHtml(landmark.label || 'Landmark') + '</small></div>';
+      return '<div class="world-landmark landmark-' + escapeAttr(type) + ' landmark-chapter-' + Math.min(index, 2) + '" style="--x:' + Number(landmark.x || 50) + '%;--y:' + Number(landmark.y || 40) + '%" aria-hidden="true"><span class="landmark-art landmark-art--' + escapeAttr(type) + '"><i></i><b></b></span><small>' + escapeHtml(landmark.label || 'Landmark') + '</small></div>';
     }).join('');
   }
 
@@ -426,7 +538,9 @@
     var complete = isCompleted(node.id);
     var open = canOpen(node);
     var destination = state.screen === 'travel' && state.travelTargetId === node.id;
-    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + (destination ? ' is-destination' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '" style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon" aria-hidden="true">' + (rejected ? '×' : complete ? '✓' : entry.kind.indexOf('past') === 0 ? '✓' : entry.kind === 'region' ? '◆' : '●') + '</span><span class="stop-copy"><small>' + escapeHtml(destination ? 'TRAVELING' : rejected ? 'TRAIL CLOSED' : complete ? 'EXPLORED' : 'NEXT STOP') + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
+    var status = destination ? 'TRAVELING' : rejected ? 'TRAIL CLOSED' : complete ? 'EXPLORED' : node.career && !node.miniGame ? 'CAREER POSSIBILITY' : 'NEXT STOP';
+    var routeAttribute = typeof entry.routeIndex === 'number' ? ' data-route-node-id="' + escapeAttr(node.id) + '"' : '';
+    return '<button class="world-stop world-stop--' + entry.kind + (rejected ? ' is-rejected' : '') + (complete ? ' is-complete' : '') + (destination ? ' is-destination' : '') + '" type="button" data-action="open-node" data-node-id="' + escapeAttr(node.id) + '"' + routeAttribute + ' style="--x:' + entry.position.x + '%;--y:' + entry.position.y + '%;--node-color:' + escapeAttr(node.color || '#2f6fed') + '" ' + (open ? '' : 'disabled') + '><span class="stop-icon" aria-hidden="true">' + (rejected ? '×' : complete ? '✓' : entry.kind.indexOf('past') === 0 ? '✓' : entry.kind === 'region' ? '◆' : '●') + '</span><span class="stop-copy"><small>' + escapeHtml(status) + '</small><strong>' + escapeHtml(node.title) + '</strong><em>' + escapeHtml(rejected ? 'You chose the other path' : node.subtitle) + '</em></span></button>';
   }
 
   function avatarMapPosition(stage, currentId, entries) {
@@ -452,7 +566,7 @@
   }
 
   function renderMiniGame(node) {
-    if (!node) return renderMap();
+    if (!node || !node.miniGame) return renderMap();
     var skill = skillFor(node);
     var mini = node.miniGame || {};
     return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / PLANNED</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div></div></section>';
@@ -648,7 +762,7 @@
     document.body.classList.toggle('dock-floating', !inlineDock);
     if (!items.length) { dock.innerHTML = ''; return; }
     dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2 id="skill-dock-title">SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
-      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span class="hex-face" aria-hidden="true">' + renderBadgeIcon(item.skill) + '<strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong><small>' + escapeHtml(item.starter ? 'starter' : 'earned') + '</small></span></button>';
+      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span class="hex-face" aria-hidden="true">' + renderBadgeIcon(item.skill) + '<strong>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong></span></button>';
     }).join('') + '</div></div>';
   }
 
@@ -665,7 +779,8 @@
 
   function wireEvents() {
     root.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
-    if (dock) dock.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    wireMapRouteReactions();
+    wireDockEvents();
     var form = document.getElementById('start-form');
     if (form) form.addEventListener('submit', handleStart);
     var interviewForm = document.getElementById('interview-answer-form');
@@ -691,6 +806,32 @@
         }
       });
     }
+  }
+
+  function wireDockEvents() {
+    if (dock) dock.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+  }
+
+  /** Pair each open destination card with its SVG branch for hover and focus. */
+  function wireMapRouteReactions() {
+    root.querySelectorAll('.world-stop[data-route-node-id]:not([disabled])').forEach(function (stop) {
+      var nodeId = stop.getAttribute('data-route-node-id');
+      stop.addEventListener('mouseenter', function () { setMapRouteFocus(stop, nodeId); });
+      stop.addEventListener('focus', function () { setMapRouteFocus(stop, nodeId); });
+      stop.addEventListener('mouseleave', function () {
+        if (document.activeElement !== stop) setMapRouteFocus(stop, null);
+      });
+      stop.addEventListener('blur', function () { setMapRouteFocus(stop, null); });
+    });
+  }
+
+  function setMapRouteFocus(source, nodeId) {
+    var world = source && source.closest ? source.closest('.rpg-world') : source;
+    if (!world) return;
+    world.classList.toggle('has-route-focus', Boolean(nodeId));
+    world.querySelectorAll('.route-option[data-route-node-id]').forEach(function (route) {
+      route.classList.toggle('is-focused', route.getAttribute('data-route-node-id') === nodeId);
+    });
   }
 
   function handleStart(event) {
@@ -748,8 +889,29 @@
     var index = state.starterSkills.indexOf(skillId);
     if (index !== -1) state.starterSkills.splice(index, 1);
     else if (state.starterSkills.length < 4 && model.skills[skillId]) state.starterSkills.push(skillId);
-    focusAfterRenderId = skillId;
-    saveState(); render();
+    saveState(); refreshStarterSkillSelection();
+  }
+
+  /** Update the loadout without rebuilding the screen or moving the viewport. */
+  function refreshStarterSkillSelection() {
+    var selectedCount = state.starterSkills.length;
+    root.querySelectorAll('.starter-skill[data-skill-id]').forEach(function (button) {
+      var picked = state.starterSkills.indexOf(button.getAttribute('data-skill-id')) !== -1;
+      var unavailable = selectedCount >= 4 && !picked;
+      button.classList.toggle('is-picked', picked);
+      button.setAttribute('aria-pressed', String(picked));
+      if (unavailable) button.setAttribute('aria-disabled', 'true');
+      else button.removeAttribute('aria-disabled');
+      var status = button.querySelector('.pick-state');
+      if (status) status.textContent = picked ? 'Selected ✓' : 'Choose +';
+    });
+    var meter = root.querySelector('.selection-meter strong');
+    if (meter) meter.innerHTML = selectedCount + '<span>/4</span>';
+    var footerCopy = root.querySelector('.skills-footer p');
+    if (footerCopy) footerCopy.textContent = selectedCount === 4 ? 'Your compass is ready.' : 'Choose ' + (4 - selectedCount) + ' more to continue.';
+    var confirm = root.querySelector('[data-action="confirm-skills"]');
+    if (confirm) confirm.disabled = selectedCount !== 4;
+    renderDock(); wireDockEvents(); updateHeader();
   }
 
   function confirmStarterSkills() {
@@ -780,17 +942,77 @@
     var current = currentJourneyNode();
     state.selectedNodeId = id; state.reviewingNodeId = replaying ? id : null; state.travelFromId = current ? current.id : null; state.travelTargetId = id;
     if (nodeDepth(node) === 1) state.activeDomainId = id;
-    state.screen = 'travel'; saveState(); render();
+    state.screen = 'travel'; saveState(); beginMapTravel(node);
     if (travelTimer) window.clearTimeout(travelTimer);
     travelTimer = window.setTimeout(function () {
-      state.screen = 'mini'; state.travelTargetId = null; state.travelFromId = null; saveState(); render();
-      announce(node.title + ' challenge opened.');
+      state.travelTargetId = null; state.travelFromId = null;
+      if (nodeDepth(node) === 2 && node.career) {
+        openCareerResult(node);
+      } else {
+        state.screen = 'mini'; saveState(); render();
+        announce(node.title + ' challenge opened.');
+      }
     }, prefersReducedMotion ? 70 : 1780);
+  }
+
+  /** Final specialization choices are destinations, not mini-game stops. */
+  function openCareerResult(node) {
+    if (!node || !node.career) return;
+    if (!isCompleted(node.id)) state.completed.push(node.id);
+    var skill = node.earnedSkill ? skillFor(node) : null;
+    var alreadyEarned = state.earned.some(function (entry) { return entry.nodeId === node.id; });
+    if (skill && !alreadyEarned) state.earned.push({ skillId: skill.id, nodeId: node.id, earnedAt: Date.now() });
+    state.reviewingNodeId = null;
+    state.selectedNodeId = node.id;
+    state.lastCareerId = node.career.id || node.career.title;
+    state.lastAward = Boolean(skill && !alreadyEarned);
+    state.screen = 'career';
+    saveState(); render();
+    if (skill && !alreadyEarned) {
+      animateSkillReward(skill); showToast('+' + skill.name + ' added to your stack', skill);
+      announce(skill.name + ' earned. ' + node.career.title + ' career match opened.');
+      window.setTimeout(function () { state.lastAward = false; renderDock(); }, prefersReducedMotion ? 0 : 850);
+    } else announce(node.career.title + ' career match opened.');
+  }
+
+  /** Start map travel in place so selecting a stop never flashes or jumps. */
+  function beginMapTravel(node) {
+    var world = root.querySelector('.rpg-world');
+    var avatar = root.querySelector('.map-avatar');
+    var destination = root.querySelector('[data-action="open-node"][data-node-id="' + node.id + '"]');
+    if (!world || !avatar || !destination) { render(); return; }
+
+    var destinationX = parseFloat(destination.style.getPropertyValue('--x')) || 50;
+    var destinationY = parseFloat(destination.style.getPropertyValue('--y')) || 50;
+    var currentX = parseFloat(avatar.style.getPropertyValue('--to-x')) || 9;
+    var currentY = parseFloat(avatar.style.getPropertyValue('--to-y')) || 64;
+
+    world.classList.add('is-traveling');
+    setMapRouteFocus(world, node.id);
+    destination.classList.add('is-destination');
+    var destinationStatus = destination.querySelector('.stop-copy small');
+    if (destinationStatus) destinationStatus.textContent = 'TRAVELING';
+    avatar.style.setProperty('--from-x', currentX + '%');
+    avatar.style.setProperty('--from-y', currentY + '%');
+    avatar.style.setProperty('--to-x', destinationX + '%');
+    avatar.style.setProperty('--to-y', Math.max(17, destinationY - 14) + '%');
+    avatar.setAttribute('aria-label', (state.name || 'Your explorer') + ' traveling to ' + node.title);
+    avatar.classList.add('is-traveling');
+    world.insertAdjacentHTML('beforeend', '<div class="travel-banner" aria-live="polite"><span>EXPLORER MOVING</span><strong>' + escapeHtml(node.title) + '</strong><i aria-hidden="true"></i></div>');
+    var chapterHud = world.querySelector('.world-stage-label');
+    if (chapterHud && window.matchMedia && window.matchMedia('(max-width: 560px), (orientation: landscape) and (max-height: 500px)').matches) {
+      chapterHud.style.setProperty('transition-property', 'none', 'important');
+      chapterHud.style.visibility = 'hidden';
+      chapterHud.style.opacity = '0';
+    }
+    dock.classList.remove('dock--screen-map');
+    dock.classList.add('dock--screen-travel');
   }
 
   function completeNode(id) {
     var node = findNode(id);
     if (!node) return;
+    if (!node.miniGame) { openCareerResult(node); return; }
     var alreadyCompleted = isCompleted(id);
     if (!alreadyCompleted) state.completed.push(id);
     var skill = skillFor(node);
@@ -960,7 +1182,9 @@
   function replayNode(id) {
     var node = findNode(id);
     if (!node || !isCompleted(id)) return;
-    closeModal(); state.reviewingNodeId = id; state.selectedNodeId = id; state.screen = 'mini'; saveState(); render();
+    closeModal();
+    if (!node.miniGame && node.career) { openCareerResult(node); return; }
+    state.reviewingNodeId = id; state.selectedNodeId = id; state.screen = 'mini'; saveState(); render();
   }
 
   // ---------------------------------------------------------------------------
@@ -1043,9 +1267,7 @@
   }
 
   function focusAfterRender() {
-    var target = focusAfterRenderId ? root.querySelector('[data-skill-id="' + focusAfterRenderId + '"]') : null;
-    focusAfterRenderId = null;
-    if (!target) target = root.querySelector('h1, input, [data-action="open-node"]');
+    var target = root.querySelector('h1, input, [data-action="open-node"]');
     if (!target) return;
     window.setTimeout(function () {
       if (document.body.contains(target) && target.focus) {

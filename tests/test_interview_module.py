@@ -135,7 +135,7 @@ class InterviewModuleTests(unittest.TestCase):
                     activeRegionId: regionId,
                     activeDomainId: domainId,
                     completed: nodes.map(item => item.id),
-                    earned: nodes.map((item, index) => ({
+                    earned: nodes.filter(item => item.earnedSkill).map((item, index) => ({
                         skillId: item.earnedSkill,
                         nodeId: item.id,
                         earnedAt: index + 1,

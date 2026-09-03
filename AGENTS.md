@@ -27,10 +27,10 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - A user can enter a name, meet the single BYU cougar explorer, and select exactly four of ten starter skills.
 - The four skills appear immediately in the bottom-right honeycomb and deterministically recommend one of three regions.
 - The focused world map reveals only the current region, then its two domains, then the chosen domain's two specializations.
-- The avatar visibly travels from its current stage to the selected point before the mini-game opens.
-- Selecting a node opens its planned mini-game placeholder.
+- The avatar visibly travels from its current stage to the selected point before its mini-game or career result opens.
+- Selecting a region or domain opens its planned mini-game placeholder; selecting a specialization opens its career result directly.
 - After skipping a placeholder, **Yes** awards its configured skill and advances; **No** locks that option and forces the sibling route.
-- A complete route starts with four skills, awards three more, and ends at the correct career match.
+- A complete route starts with four skills, awards three more across its three selections, and ends at the correct career match.
 - Users can restart, revisit completed nodes, and complete another route.
 - Layout works at mobile, tablet, and desktop sizes and respects reduced motion.
 - The root `index.html` runs offline and produces no browser console errors.
@@ -65,6 +65,14 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Programmatically focused screen headings should announce context without rendering a control-style focus rectangle; reserve visible rings for interactive elements.
 - The skill HUD is a true two-row honeycomb, not a horizontal carousel: preserve the supplied tall hex proportions and stable cell positions as rewards are added.
 - Each career region is one traversable panorama: advancing a chapter pans the camera deeper into the same world while the cougar travels between route stops; do not revert to static stage backdrops.
-- Chapter changes must read as full scene transitions, not subtle pans: keep the default map camera tightly zoomed and use substantial lateral travel plus a brief push-in before revealing the new fork.
+- Chapter changes must read as full scene transitions, not subtle pans: keep the default map camera tightly zoomed and use substantial lateral travel before revealing the new fork.
 - On short-landscape maps, the chapter HUD belongs in the upper-left clearing and yields to the travel banner; placing it near the right-side fork obscures route cards.
 - On compact phones, hide the chapter HUD for the brief travel state so the full-width destination banner has one clear reading band; restore the HUD on arrival.
+- Keep the world camera at one close zoom across all chapters; progression pans between authored panorama crops without a push-in/pull-back pulse.
+- Route branches must terminate at their actual destination cards and react independently to pointer focus, keyboard focus, and travel selection.
+- Only the region and domain selections launch mini-games and enjoyment checks; the third specialization selection travels directly to its career result and awards its skill without a mini-game.
+- Removing a mini-game must not remove its route reward: the specialization skill is still the seventh tile and completes the two-row honeycomb on the career result.
+- The skill honeycomb must position an eighth tile when both career possibilities in a domain are explored; all badges omit redundant "starter" and "earned" sublabels.
+- Starter-skill toggles update their cards, counter, action state, and honeycomb in place; never rerender the full screen or reset scroll for a loadout click.
+- A map destination click begins travel inside the existing world DOM so the panorama, viewport, and controls do not flash or jump.
+- The starter-skill picker uses scaled crops of the supplied badge artwork; do not substitute reconstructed CSS or SVG badges there.

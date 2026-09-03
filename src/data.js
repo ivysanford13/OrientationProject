@@ -1,9 +1,9 @@
 /*
  * Information Systems Career Launchpad data
  *
- * This file is intentionally the single source of truth for the map.  Mini-games
- * are currently placeholders; each placeholder has a stable id and metadata so a
- * future game can replace it without changing the progression state machine.
+ * This file is intentionally the single source of truth for the map. Region and
+ * domain mini-games are currently placeholders; each has a stable id and metadata
+ * so a future game can replace it without changing the progression state machine.
  */
 
 /**
@@ -34,8 +34,8 @@
  * @property {string} description Student-facing explanation.
  * @property {string} color Hex color token for the branch.
  * @property {string} theme Theme name used by the visual renderer.
- * @property {EarnedSkill} earnedSkill Skill awarded when the placeholder is skipped/completed.
- * @property {MiniGamePlan} miniGame Planned mini-game metadata.
+ * @property {EarnedSkill|null} earnedSkill Skill awarded when the node is completed.
+ * @property {MiniGamePlan|null} miniGame Planned mini-game metadata for tiers one and two.
  * @property {string|null} careerId Career-result id for tier-three nodes.
  */
 
@@ -95,8 +95,8 @@ function makeMiniGame(id, title, concept, visualType, instructions) {
  * @param {string} input.color
  * @param {string} input.theme
  * @param {Object} [input.scene] Data-driven art direction for top-level worlds.
- * @param {EarnedSkill} input.earnedSkill
- * @param {MiniGamePlan} input.miniGame
+ * @param {EarnedSkill} [input.earnedSkill]
+ * @param {MiniGamePlan} [input.miniGame]
  * @param {string|null} [input.careerId]
  * @returns {MapNode}
  */
@@ -111,8 +111,8 @@ function makeNode(input) {
     color: input.color,
     theme: input.theme,
     scene: input.scene || null,
-    earnedSkill: input.earnedSkill,
-    miniGame: input.miniGame,
+    earnedSkill: input.earnedSkill || null,
+    miniGame: input.miniGame || null,
     careerId: input.careerId || null,
   };
 }
@@ -151,6 +151,22 @@ const COLORS = {
 };
 
 /**
+ * Camera stops for the three map chapters. The artwork stays at one close
+ * zoom; progression changes which horizontal slice fills the map frame.
+ * Compact coordinates compensate for a portrait viewport's much narrower
+ * crop while keeping the same authored panorama.
+ */
+const WORLD_CAMERA = {
+  zoom: 250,
+  compactZoom: 250,
+  stages: [
+    { x: 0, y: 70, compactX: 20, compactY: 66 },
+    { x: 50, y: 48, compactX: 50, compactY: 48 },
+    { x: 100, y: 57, compactX: 80, compactY: 55 },
+  ],
+};
+
+/**
  * Art direction for each world.  This stays content-owned so the renderer can
  * add a new region without growing a second, hard-coded map implementation.
  * Landmark types are intentionally small CSS/SVG-like primitives: the bundle
@@ -165,6 +181,7 @@ const WORLD_SCENES = {
     sun: "#ffb647",
     haze: "#d9f4ef",
     accent: COLORS.build,
+    camera: WORLD_CAMERA,
     paths: {
       0: "M80 360 C180 408 306 390 398 302 S500 244 580 224",
       1: "M80 360 C170 392 240 350 290 286 M290 286 C430 212 520 182 720 150 M290 286 C415 318 545 382 720 390",
@@ -184,6 +201,7 @@ const WORLD_SCENES = {
     sun: "#f9cf71",
     haze: "#e5e2ff",
     accent: COLORS.analyze,
+    camera: WORLD_CAMERA,
     paths: {
       0: "M80 360 C176 318 252 174 390 214 S508 306 580 224",
       1: "M80 360 C150 330 188 246 244 214 M244 214 C354 164 482 194 544 274 M544 274 C602 338 660 292 720 150 M244 214 C360 296 438 374 720 390",
@@ -203,6 +221,7 @@ const WORLD_SCENES = {
     sun: "#ffd071",
     haze: "#e7f7e7",
     accent: COLORS.people,
+    camera: WORLD_CAMERA,
     paths: {
       0: "M80 360 C202 432 336 432 448 350 S520 265 580 224",
       1: "M80 360 C192 424 284 410 344 334 M344 334 C442 222 586 214 720 150 M344 334 C470 352 578 418 720 390",
@@ -231,6 +250,7 @@ const STARTER_SKILLS = [
     description: "I enjoy imagining new ways something could work.",
     glyph: "✦",
     badgeIcon: "lightbulb",
+    badgeAsset: "creative-thinking",
     color: "#f6b347",
     category: "starter",
     affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 1 },
@@ -242,6 +262,7 @@ const STARTER_SKILLS = [
     description: "I like learning how instructions become working software.",
     glyph: "</>",
     badgeIcon: "code-monitor",
+    badgeAsset: "coding-curiosity",
     color: "#49cfe0",
     category: "starter",
     affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 0 },
@@ -253,6 +274,7 @@ const STARTER_SKILLS = [
     description: "I enjoy setting up, fixing, and understanding devices.",
     glyph: "⚙",
     badgeIcon: "monitor",
+    badgeAsset: "hands-on-tech",
     color: "#7da8ff",
     category: "starter",
     affinities: { "region-build-create": 3, "region-analyze-solve": 1, "region-people-lead": 0 },
@@ -264,6 +286,7 @@ const STARTER_SKILLS = [
     description: "I notice how layout, color, and flow shape an experience.",
     glyph: "◈",
     badgeIcon: "pencil",
+    badgeAsset: "visual-design",
     color: "#f49ac2",
     category: "starter",
     affinities: { "region-build-create": 2, "region-analyze-solve": 0, "region-people-lead": 2 },
@@ -275,6 +298,7 @@ const STARTER_SKILLS = [
     description: "I like spotting trends and making sense of data.",
     glyph: "▥",
     badgeIcon: "numbers",
+    badgeAsset: "numbers-patterns",
     color: "#a98df4",
     category: "starter",
     affinities: { "region-build-create": 0, "region-analyze-solve": 3, "region-people-lead": 1 },
@@ -286,6 +310,7 @@ const STARTER_SKILLS = [
     description: "I enjoy breaking a difficult problem into smaller clues.",
     glyph: "?",
     badgeIcon: "gears",
+    badgeAsset: "problem-solving",
     color: "#8870e8",
     category: "starter",
     affinities: { "region-build-create": 1, "region-analyze-solve": 3, "region-people-lead": 1 },
@@ -297,6 +322,7 @@ const STARTER_SKILLS = [
     description: "I naturally look for risks, weak points, and safeguards.",
     glyph: "◇",
     badgeIcon: "shield",
+    badgeAsset: "security-mindset",
     color: "#ef7d78",
     category: "starter",
     affinities: { "region-build-create": 1, "region-analyze-solve": 3, "region-people-lead": 0 },
@@ -308,6 +334,7 @@ const STARTER_SKILLS = [
     description: "I like making ideas clear for other people.",
     glyph: "“”",
     badgeIcon: "microphone",
+    badgeAsset: "communication",
     color: "#5ed4a2",
     category: "starter",
     affinities: { "region-build-create": 0, "region-analyze-solve": 1, "region-people-lead": 3 },
@@ -319,6 +346,7 @@ const STARTER_SKILLS = [
     description: "I enjoy organizing a group around a shared goal.",
     glyph: "▲",
     badgeIcon: "chess",
+    badgeAsset: "leadership",
     color: "#31b98d",
     category: "starter",
     affinities: { "region-build-create": 0, "region-analyze-solve": 1, "region-people-lead": 3 },
@@ -330,6 +358,7 @@ const STARTER_SKILLS = [
     description: "I pay attention to what people need and how they feel.",
     glyph: "♥",
     badgeIcon: "handshake",
+    badgeAsset: "empathy",
     color: "#78d9be",
     category: "starter",
     affinities: { "region-build-create": 1, "region-analyze-solve": 0, "region-people-lead": 3 },
@@ -519,13 +548,6 @@ const SPECIALIZATIONS = [
     theme: "build-create",
     earnedSkill: SKILLS.coder,
     careerId: "application-developer",
-    miniGame: makeMiniGame(
-      "minigame-code-build-uis",
-      "UI Builder Challenge",
-      "A future Scratch-style activity will connect interface blocks into a working interaction.",
-      "block-coding",
-      "Planned placeholder: the detailed UI-building challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-architect-software",
@@ -538,13 +560,6 @@ const SPECIALIZATIONS = [
     theme: "build-create",
     earnedSkill: SKILLS.designer,
     careerId: "software-engineer",
-    miniGame: makeMiniGame(
-      "minigame-architect-software",
-      "System Blueprint",
-      "A future planning activity will arrange software components into a reliable architecture.",
-      "architecture-blueprint",
-      "Planned placeholder: the detailed architecture challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-deploy-cloud-platforms",
@@ -557,13 +572,6 @@ const SPECIALIZATIONS = [
     theme: "build-create",
     earnedSkill: SKILLS.cloudBuilder,
     careerId: "cloud-engineer",
-    miniGame: makeMiniGame(
-      "minigame-deploy-cloud-platforms",
-      "Cloud Route Planner",
-      "A future infrastructure activity will connect services to a working cloud deployment.",
-      "cloud-topology",
-      "Planned placeholder: the detailed cloud deployment challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-support-connected-systems",
@@ -576,13 +584,6 @@ const SPECIALIZATIONS = [
     theme: "build-create",
     earnedSkill: SKILLS.systemsThinker,
     careerId: "systems-engineer",
-    miniGame: makeMiniGame(
-      "minigame-support-connected-systems",
-      "Systems Troubleshooter",
-      "A future diagnostic activity will trace a failure through connected technology.",
-      "systems-diagnostic",
-      "Planned placeholder: the detailed systems troubleshooting challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-explain-trends-data",
@@ -595,13 +596,6 @@ const SPECIALIZATIONS = [
     theme: "analyze-solve",
     earnedSkill: SKILLS.trendy,
     careerId: "data-analyst",
-    miniGame: makeMiniGame(
-      "minigame-explain-trends-data",
-      "Data Story",
-      "A future analysis activity will turn a small dataset into one useful insight.",
-      "data-story",
-      "Planned placeholder: the detailed data-story challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-predict-outcomes-models",
@@ -614,13 +608,6 @@ const SPECIALIZATIONS = [
     theme: "analyze-solve",
     earnedSkill: SKILLS.fortuneTeller,
     careerId: "data-scientist",
-    miniGame: makeMiniGame(
-      "minigame-predict-outcomes-models",
-      "Forecast the Next Move",
-      "A future modeling activity will use patterns to make a careful prediction.",
-      "model-forecast",
-      "Planned placeholder: the detailed forecasting challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-detect-investigate-threats",
@@ -633,13 +620,6 @@ const SPECIALIZATIONS = [
     theme: "analyze-solve",
     earnedSkill: SKILLS.detective,
     careerId: "cybersecurity-analyst",
-    miniGame: makeMiniGame(
-      "minigame-detect-investigate-threats",
-      "Threat Investigation",
-      "A future investigation activity will connect clues to the most likely security incident.",
-      "threat-investigation",
-      "Planned placeholder: the detailed threat-investigation challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-evaluate-controls-risk",
@@ -652,13 +632,6 @@ const SPECIALIZATIONS = [
     theme: "analyze-solve",
     earnedSkill: SKILLS.bodyguard,
     careerId: "it-risk-analyst",
-    miniGame: makeMiniGame(
-      "minigame-evaluate-controls-risk",
-      "Risk Watch",
-      "A future risk activity will compare safeguards and choose the strongest control.",
-      "risk-controls",
-      "Planned placeholder: the detailed controls-and-risk challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-plan-timelines-delivery",
@@ -671,13 +644,6 @@ const SPECIALIZATIONS = [
     theme: "people-lead",
     earnedSkill: SKILLS.logistical,
     careerId: "it-project-manager",
-    miniGame: makeMiniGame(
-      "minigame-plan-timelines-delivery",
-      "Timeline Tactics",
-      "A future delivery activity will place project work in a realistic sequence.",
-      "timeline-planner",
-      "Planned placeholder: the detailed timeline-and-delivery challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-improve-processes-requirements",
@@ -690,13 +656,6 @@ const SPECIALIZATIONS = [
     theme: "people-lead",
     earnedSkill: SKILLS.renovator,
     careerId: "business-analyst",
-    miniGame: makeMiniGame(
-      "minigame-improve-processes-requirements",
-      "Process Renovation",
-      "A future requirements activity will turn a messy request into a clearer process.",
-      "process-mapping",
-      "Planned placeholder: the detailed process-improvement challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-research-design-experiences",
@@ -709,13 +668,6 @@ const SPECIALIZATIONS = [
     theme: "people-lead",
     earnedSkill: SKILLS.creative,
     careerId: "ux-designer",
-    miniGame: makeMiniGame(
-      "minigame-research-design-experiences",
-      "Experience Sketch",
-      "A future design activity will organize user clues into a first experience concept.",
-      "experience-design",
-      "Planned placeholder: the detailed user-experience challenge will be added later."
-    ),
   }),
   makeNode({
     id: "spec-set-strategy-prioritize-value",
@@ -728,13 +680,6 @@ const SPECIALIZATIONS = [
     theme: "people-lead",
     earnedSkill: SKILLS.strategist,
     careerId: "product-manager",
-    miniGame: makeMiniGame(
-      "minigame-set-strategy-prioritize-value",
-      "Product Priorities",
-      "A future product activity will rank opportunities by user value and effort.",
-      "priority-board",
-      "Planned placeholder: the detailed product-prioritization challenge will be added later."
-    ),
   }),
 ];
 
