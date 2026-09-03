@@ -241,3 +241,10 @@ Result: **32/32 PASS**
 - assert: distinct region art remains offline-safe; no route, focus, viewport, storage, interview, or console regression
 - result: full automated suite passed 41/41; the separate release matrix passed 32/32 on the final build
 - duration: 241337 ms
+
+## 35. Supplied-proportion skill honeycomb — PASS
+- inspect: four-skill starter cluster and seven-skill completed cluster at desktop, phone, and short-landscape viewports
+- action: rebuild the standalone HTML, measure every badge and row offset, and rerun the complete release suite
+- assert: portrait badge ratio stays 66:76; rows use a stable half-tile stagger; the map tray remains bottom-right and never covers a route choice
+- result: honeycomb geometry and collision gates passed; full automated suite passed 42/42
+- duration: 241476 ms

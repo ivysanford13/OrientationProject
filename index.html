@@ -1549,6 +1549,131 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
   .travel-banner,
   .travel-banner i { animation: none; }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Skill honeycomb v2                                                         */
+/* The source badges are tall enamel hexes. Their stable two-row coordinates */
+/* let the four-skill loadout begin as a cluster and each reward extend it.   */
+/* -------------------------------------------------------------------------- */
+.skill-dock,
+.skill-dock.dock--inline {
+  width: min(440px, calc(100% - 36px));
+  min-height: 150px;
+}
+
+.skill-dock .dock-inner,
+.skill-dock.dock--inline .dock-inner {
+  min-height: 146px;
+  gap: 11px;
+  padding: 10px 12px;
+}
+
+.skill-dock .dock-label,
+.skill-dock.dock--inline .dock-label {
+  flex: 0 0 105px;
+}
+
+.skill-dock .hex-track,
+.skill-dock.dock--inline .hex-track {
+  position: relative;
+  flex: 0 0 300px;
+  width: 300px;
+  height: 134px;
+  min-width: 0;
+  overflow: visible;
+  padding: 0;
+}
+
+.skill-dock .hex-item,
+.skill-dock.dock--inline .hex-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 66px;
+  min-width: 66px;
+  height: 76px;
+  min-height: 76px;
+  margin: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  transform-origin: center;
+}
+
+/* First four already form a honeycomb. Rewards then extend the open edges. */
+.skill-dock .hex-item:nth-child(1) { top: 0; left: 33px; }
+.skill-dock .hex-item:nth-child(2) { top: 0; left: 99px; }
+.skill-dock .hex-item:nth-child(3) { top: 57px; left: 0; }
+.skill-dock .hex-item:nth-child(4) { top: 57px; left: 66px; }
+.skill-dock .hex-item:nth-child(5) { top: 0; left: 165px; }
+.skill-dock .hex-item:nth-child(6) { top: 57px; left: 132px; }
+.skill-dock .hex-item:nth-child(7) { top: 0; left: 231px; }
+
+.skill-dock .hex-item:hover,
+.skill-dock .hex-item:focus-visible {
+  z-index: 12;
+  transform: translateY(-5px) scale(1.05);
+}
+
+.skill-dock .hex-item::before { inset: 2px; }
+.skill-dock .hex-item::after,
+.skill-dock .hex-face { inset: 5px; }
+.skill-dock .hex-item::before,
+.skill-dock .hex-item::after,
+.skill-dock .hex-face { clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.skill-dock .hex-face { grid-template-rows: minmax(23px, 1fr) auto auto; padding: 4px 3px 6px; }
+.skill-dock .hex-face .hex-icon { width: 28px; height: 28px; }
+.skill-dock .hex-face strong { max-width: 49px; font-size: 9px; }
+.skill-dock .hex-face small { margin-top: 2px; font-size: 7px; }
+
+.skill-dock.dock--inline {
+  margin-right: clamp(12px, 4vw, 52px);
+  margin-left: auto;
+}
+
+@media (max-width: 560px), (orientation: landscape) and (max-height: 500px) {
+  .skill-dock,
+  .skill-dock.dock--inline {
+    width: min(440px, calc(100% - 24px));
+    min-height: 182px;
+  }
+  .skill-dock .dock-inner,
+  .skill-dock.dock--inline .dock-inner {
+    display: block;
+    min-height: 178px;
+    padding: 7px 10px 8px;
+  }
+  .skill-dock .dock-label,
+  .skill-dock.dock--inline .dock-label {
+    display: flex;
+    min-height: 28px;
+  }
+  .skill-dock .hex-track,
+  .skill-dock.dock--inline .hex-track {
+    width: 300px;
+    height: 134px;
+    margin: -1px auto 0;
+  }
+}
+
+@media (max-width: 350px) {
+  .skill-dock .hex-track,
+  .skill-dock.dock--inline .hex-track { width: 263px; height: 116px; }
+  .skill-dock .hex-item,
+  .skill-dock.dock--inline .hex-item { width: 58px; min-width: 58px; height: 66px; min-height: 66px; }
+  .skill-dock .hex-item:nth-child(1) { top: 0; left: 29px; }
+  .skill-dock .hex-item:nth-child(2) { top: 0; left: 87px; }
+  .skill-dock .hex-item:nth-child(3) { top: 50px; left: 0; }
+  .skill-dock .hex-item:nth-child(4) { top: 50px; left: 58px; }
+  .skill-dock .hex-item:nth-child(5) { top: 0; left: 145px; }
+  .skill-dock .hex-item:nth-child(6) { top: 50px; left: 116px; }
+  .skill-dock .hex-item:nth-child(7) { top: 0; left: 203px; }
+  .skill-dock .hex-face .hex-icon { width: 24px; height: 24px; }
+  .skill-dock .hex-face strong { max-width: 42px; font-size: 8px; }
+  .skill-dock .hex-face small { font-size: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-dock .hex-item { transition: none; }
+}
 </style>
   </head>
   <body>

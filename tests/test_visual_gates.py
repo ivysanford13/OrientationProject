@@ -731,6 +731,55 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertNotEqual(visual["keyline"], "rgba(0, 0, 0, 0)")
         self.assert_clean(errors)
 
+    def test_skill_dock_keeps_portrait_honeycomb_geometry(self) -> None:
+        """Keep the supplied tall proportions in a stable bottom-right honeycomb."""
+
+        page, errors = self.new_page(1440, 900)
+        state = self.base_state(page, "region-build-create", stage=3)
+        state["screen"] = "career"
+        self.load_state(page, state, ".screen--career")
+
+        dock = page.locator("#skill-dock")
+        badges = dock.locator(".hex-item")
+        self.assertEqual(badges.count(), 7)
+        boxes = [badges.nth(index).bounding_box() for index in range(7)]
+        self.assertTrue(all(box is not None for box in boxes))
+        badge_boxes = [box for box in boxes if box is not None]
+
+        for box in badge_boxes:
+            self.assertGreater(box["height"], box["width"])
+            self.assertAlmostEqual(box["width"] / box["height"], 66 / 76, delta=0.03)
+
+        top_row = [badge_boxes[index] for index in (0, 1, 4, 6)]
+        bottom_row = [badge_boxes[index] for index in (2, 3, 5)]
+        top_centers = [box["y"] + box["height"] / 2 for box in top_row]
+        bottom_centers = [box["y"] + box["height"] / 2 for box in bottom_row]
+        self.assertLessEqual(max(top_centers) - min(top_centers), 0.5)
+        self.assertLessEqual(max(bottom_centers) - min(bottom_centers), 0.5)
+        self.assertAlmostEqual(bottom_centers[0] - top_centers[0], 57, delta=0.5)
+
+        top_x = sorted(box["x"] for box in top_row)
+        bottom_x = sorted(box["x"] for box in bottom_row)
+        self.assertTrue(all(abs((right - left) - 66) <= 0.5 for left, right in zip(top_x, top_x[1:])))
+        self.assertTrue(all(abs((right - left) - 66) <= 0.5 for left, right in zip(bottom_x, bottom_x[1:])))
+        self.assertAlmostEqual(top_x[0] - bottom_x[0], 33, delta=0.5)
+
+        # Career screens intentionally keep the tray in normal flow, but its
+        # cluster remains right-aligned. Map screens use the fixed HUD anchor.
+        inline_dock = dock.bounding_box()
+        self.assertIsNotNone(inline_dock)
+        assert inline_dock is not None
+        self.assertLessEqual(1440 - (inline_dock["x"] + inline_dock["width"]), 55)
+
+        map_state = self.base_state(page, "region-build-create", stage=2)
+        self.load_state(page, map_state, ".screen--map")
+        fixed_dock = page.locator("#skill-dock").bounding_box()
+        self.assertIsNotNone(fixed_dock)
+        assert fixed_dock is not None
+        self.assertLessEqual(1440 - (fixed_dock["x"] + fixed_dock["width"]), 20)
+        self.assertLessEqual(900 - (fixed_dock["y"] + fixed_dock["height"]), 20)
+        self.assert_clean(errors)
+
     def test_single_cougar_explorer_is_consistent_across_the_journey(self) -> None:
         """Use one embedded cougar asset for landing, travel, and reflection."""
 

@@ -63,3 +63,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - High-detail world art remains a decorative layer beneath semantic route controls; never bake destinations, labels, or the cougar into the map image.
 - Travel animation must park the cougar beside its destination card, not on top of it, and the visible route must terminate at the active stop.
 - Programmatically focused screen headings should announce context without rendering a control-style focus rectangle; reserve visible rings for interactive elements.
+- The skill HUD is a true two-row honeycomb, not a horizontal carousel: preserve the supplied tall hex proportions and stable cell positions as rewards are added.
