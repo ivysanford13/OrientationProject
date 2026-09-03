@@ -53,3 +53,5 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - The supplied pixel-art BYU cougar is the only explorer avatar; it appears consistently on the landing page, map, and reflection checkpoints.
 - Embed shared binary art once per standalone build and reuse its data-URI constant across renderers; repeated inline copies unnecessarily inflate the HTML.
 - After replacing a screen's DOM, treat focus left on a detached trigger as stale; move focus to the new heading so keyboard and screen-reader users receive the new context.
+- Map decision titles must wrap in full at every supported viewport; ellipses hide the meaning of a route and make the choice depend on guessing.
+- Any map-card typography or size change requires collision checks against the avatar and floating skill dock at phone, short-landscape, and desktop viewports.

@@ -354,7 +354,7 @@
     // Keep both phone forks above the fixed skill HUD; the chapter label now
     // lives in the sky band, leaving the lower terrain band available for the
     // route card and traveling explorer.
-    var lowerChoiceY = window.innerWidth <= 767 ? 43 : 70;
+    var lowerChoiceY = window.innerWidth <= 767 ? 43 : 64;
     var sceneNodes = [];
     if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: 43 }, kind: 'region' });
     if (stage === 1) {
@@ -410,6 +410,9 @@
     // explorer in the lower-left clearing so it remains visible beside the
     // active fork instead of inheriting the hidden past-domain card's center.
     if (current && window.innerWidth <= 767 && stage === 2 && current.kind === 'past-domain') return { x: 16, y: 76 };
+    // On wider maps the completed domain card remains visible. Park the cougar
+    // a full card-height above it instead of letting the sprite bridge the card.
+    if (current && current.kind.indexOf('past') === 0) return { x: current.position.x, y: Math.max(17, current.position.y - 21) };
     if (current) return { x: current.position.x, y: Math.max(17, current.position.y - 14) };
     if (stage === 2) return { x: 31, y: 49 };
     if (stage === 1) return { x: 17, y: 49 };

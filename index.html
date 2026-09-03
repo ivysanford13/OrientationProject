@@ -501,7 +501,7 @@ button, [tabindex] { scroll-margin-bottom: calc(var(--dock-height) + 28px); }
 .stop-icon { display: grid; flex: 0 0 43px; place-items: center; width: 43px; height: 49px; color: var(--white); background: var(--node-color); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); font-weight: 900; }
 .stop-copy { display: block; min-width: 0; }
 .stop-copy small { display: block; color: var(--blue-dark); font-family: var(--font-mono); font-size: 8px; font-weight: 900; letter-spacing: .1em; }
-.stop-copy strong { display: block; overflow: hidden; margin-top: 2px; font-family: var(--font-display); font-size: 18px; line-height: 1; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.stop-copy strong { display: block; margin-top: 2px; font-family: var(--font-display); font-size: 18px; line-height: .96; overflow-wrap: anywhere; text-wrap: balance; text-transform: uppercase; white-space: normal; }
 .stop-copy em { display: block; overflow: hidden; margin-top: 4px; color: #536981; font-size: 9px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
 .world-stop.is-complete { opacity: .86; background: #effcf8; }
 .world-stop.is-complete .stop-icon { background: var(--green); }
@@ -3089,7 +3089,7 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
     // Keep both phone forks above the fixed skill HUD; the chapter label now
     // lives in the sky band, leaving the lower terrain band available for the
     // route card and traveling explorer.
-    var lowerChoiceY = window.innerWidth <= 767 ? 43 : 70;
+    var lowerChoiceY = window.innerWidth <= 767 ? 43 : 64;
     var sceneNodes = [];
     if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: 43 }, kind: 'region' });
     if (stage === 1) {
@@ -3145,6 +3145,9 @@ CAREER_RESEARCH_DATA.interviews.forEach(function (interview) {
     // explorer in the lower-left clearing so it remains visible beside the
     // active fork instead of inheriting the hidden past-domain card's center.
     if (current && window.innerWidth <= 767 && stage === 2 && current.kind === 'past-domain') return { x: 16, y: 76 };
+    // On wider maps the completed domain card remains visible. Park the cougar
+    // a full card-height above it instead of letting the sprite bridge the card.
+    if (current && current.kind.indexOf('past') === 0) return { x: current.position.x, y: Math.max(17, current.position.y - 21) };
     if (current) return { x: current.position.x, y: Math.max(17, current.position.y - 14) };
     if (stage === 2) return { x: 31, y: 49 };
     if (stage === 1) return { x: 17, y: 49 };

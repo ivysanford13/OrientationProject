@@ -493,7 +493,7 @@ button, [tabindex] { scroll-margin-bottom: calc(var(--dock-height) + 28px); }
 .stop-icon { display: grid; flex: 0 0 43px; place-items: center; width: 43px; height: 49px; color: var(--white); background: var(--node-color); clip-path: polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%); font-weight: 900; }
 .stop-copy { display: block; min-width: 0; }
 .stop-copy small { display: block; color: var(--blue-dark); font-family: var(--font-mono); font-size: 8px; font-weight: 900; letter-spacing: .1em; }
-.stop-copy strong { display: block; overflow: hidden; margin-top: 2px; font-family: var(--font-display); font-size: 18px; line-height: 1; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.stop-copy strong { display: block; margin-top: 2px; font-family: var(--font-display); font-size: 18px; line-height: .96; overflow-wrap: anywhere; text-wrap: balance; text-transform: uppercase; white-space: normal; }
 .stop-copy em { display: block; overflow: hidden; margin-top: 4px; color: #536981; font-size: 9px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
 .world-stop.is-complete { opacity: .86; background: #effcf8; }
 .world-stop.is-complete .stop-icon { background: var(--green); }

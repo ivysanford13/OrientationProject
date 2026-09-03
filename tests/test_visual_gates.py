@@ -546,27 +546,72 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(errors)
 
-    def test_avatar_never_overlaps_a_visible_map_card_at_phone_widths(self) -> None:
+    def test_avatar_and_skill_dock_never_cover_visible_map_decisions(self) -> None:
+        """Protect route cards across phone, short-landscape, and desktop maps."""
+
         failures: list[str] = []
         all_errors: list[str] = []
-        for width, height in ((320, 568), (390, 844)):
+        for width, height in ((320, 568), (390, 844), (844, 390), (1440, 900)):
             page, errors = self.new_page(width, height)
             all_errors.extend(errors)
-            for stage in (0, 1, 2):
-                state = self.base_state(page, "region-build-create", stage=stage)
-                self.load_state(page, state, ".screen--map")
-                avatar = page.locator(".map-avatar")
-                stops = page.locator(".world-stop")
-                for index in range(stops.count()):
-                    stop = stops.nth(index)
-                    if not stop.is_visible():
-                        continue
-                    overlap = self.overlap_area(avatar, stop)
-                    if overlap > 0.5:
+            for region_id in REGION_PATHS:
+                for stage in (0, 1, 2):
+                    state = self.base_state(page, region_id, stage=stage)
+                    self.load_state(page, state, ".screen--map")
+                    avatar = page.locator(".map-avatar")
+                    dock = page.locator("#skill-dock")
+                    stops = page.locator(".world-stop")
+                    for index in range(stops.count()):
+                        stop = stops.nth(index)
+                        if not stop.is_visible():
+                            continue
                         node_id = stop.get_attribute("data-node-id")
+                        avatar_overlap = self.overlap_area(avatar, stop)
+                        if avatar_overlap > 0.5:
+                            failures.append(
+                                f"{width}x{height} {region_id} stage={stage} avatar/card {node_id} overlap={avatar_overlap:.1f}px²"
+                            )
+                        if not stop.is_disabled():
+                            dock_overlap = self.overlap_area(dock, stop)
+                            if dock_overlap > 0.5:
+                                failures.append(
+                                    f"{width}x{height} {region_id} stage={stage} dock/choice {node_id} overlap={dock_overlap:.1f}px²"
+                                )
+        self.assertEqual(failures, [], "; ".join(failures))
+        self.assert_clean(all_errors)
+
+    def test_active_route_titles_never_hide_which_choice_they_represent(self) -> None:
+        """Require every specialization label to render in full without ellipsis."""
+
+        failures: list[str] = []
+        all_errors: list[str] = []
+        for width, height in ((320, 568), (390, 844), (844, 390), (1440, 900)):
+            page, errors = self.new_page(width, height)
+            all_errors.extend(errors)
+            for region_id in REGION_PATHS:
+                state = self.base_state(page, region_id, stage=2)
+                self.load_state(page, state, ".screen--map")
+                titles = page.locator(".world-stop--choice:not([disabled]) .stop-copy strong")
+                self.assertEqual(titles.count(), 2)
+                for index in range(titles.count()):
+                    title = titles.nth(index)
+                    geometry = title.evaluate(
+                        """element => ({
+                            text: element.textContent.trim(),
+                            whiteSpace: getComputedStyle(element).whiteSpace,
+                            clientWidth: element.clientWidth,
+                            scrollWidth: element.scrollWidth,
+                        })"""
+                    )
+                    if geometry["whiteSpace"] == "nowrap":
                         failures.append(
-                            f"{width}x{height} stage={stage} avatar/card {node_id} overlap={overlap:.1f}px²"
+                            f"{width}x{height} {region_id} {geometry['text']!r} cannot wrap"
                         )
+                    if geometry["scrollWidth"] > geometry["clientWidth"] + 1:
+                        failures.append(
+                            f"{width}x{height} {region_id} {geometry['text']!r} clips horizontally"
+                        )
+
         self.assertEqual(failures, [], "; ".join(failures))
         self.assert_clean(all_errors)
 
