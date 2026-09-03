@@ -24,7 +24,7 @@ Build a polished, browser-runnable Information Systems career exploration protot
 
 ## Version-One Acceptance Criteria
 
-- A user can enter a name, choose an avatar, and select exactly four of ten starter skills.
+- A user can enter a name, meet the single BYU cougar explorer, and select exactly four of ten starter skills.
 - The four skills appear immediately in the bottom-right honeycomb and deterministically recommend one of three regions.
 - The focused world map reveals only the current region, then its two domains, then the chosen domain's two specializations.
 - The avatar visibly travels from its current stage to the selected point before the mini-game opens.
@@ -50,3 +50,4 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - When a data factory gains new visual metadata, explicitly preserve that field through normalization instead of silently dropping it.
 - Programmatic focus after screen changes should use `preventScroll` and reset the new screen to the top.
 - Skill rewards use the supplied deep-blue enamel hexagon language: pale keyline, dark outline, line-art pictogram, condensed uppercase label, and honeycomb stacking.
+- The supplied pixel-art BYU cougar is the only explorer avatar; it appears consistently on the landing page, map, and reflection checkpoints.

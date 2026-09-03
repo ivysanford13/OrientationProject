@@ -1,6 +1,6 @@
 # IS Career Launchpad
 
-A retro RPG-style Information Systems career explorer for incoming BYU students. Students choose four strengths from a ten-skill loadout, receive a recommended career world, and watch their avatar travel through a three-level path. Every planned one-minute mini-game ends with an enjoyment check: **yes** awards a new skill and advances the map; **no** closes that trail and returns the student to its alternative.
+A retro RPG-style Information Systems career explorer for incoming BYU students. Students join a pixel-art BYU cougar guide, choose four strengths from a ten-skill loadout, receive a recommended career world, and watch their explorer travel through a three-level path. Every planned one-minute mini-game ends with an enjoyment check: **yes** awards a new skill and advances the map; **no** closes that trail and returns the student to its alternative.
 
 ## Run the prototype
 

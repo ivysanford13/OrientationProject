@@ -396,8 +396,13 @@ class QARunner:
                 raise AssertionError("landing screen missing")
             if page.locator("#welcome-title").bounding_box()["width"] < 300:
                 raise AssertionError("desktop landing title unexpectedly narrow")
-            if page.locator(".avatar-choice").count() != 4:
-                raise AssertionError("landing should offer four explorers")
+            if page.locator(".landing-explorer-stage .explorer-avatar").count() != 1:
+                raise AssertionError("landing should present exactly one cougar explorer")
+            if page.locator(".avatar-choice").count() != 0:
+                raise AssertionError("legacy avatar choices should not remain")
+            avatar_source = page.locator(".landing-explorer-stage .explorer-avatar").get_attribute("src") or ""
+            if not avatar_source.startswith("data:image/png;base64,"):
+                raise AssertionError("cougar explorer should be embedded in the offline HTML")
             page.get_by_label("What should we call you?").fill("Loadout QA")
             page.get_by_role("button", name="Choose my starter skills").click()
             if page.locator(".starter-skill").count() != 10:
@@ -414,7 +419,7 @@ class QARunner:
                 raise AssertionError("four selections did not enable the world reveal")
             self.assert_no_horizontal_overflow(page)
             self.assert_clean(page, errors)
-            return "1440px landing; four avatars; exactly 10 skills with a four-choice cap; no overflow"
+            return "1440px landing; one embedded cougar explorer; exactly 10 skills with a four-choice cap; no overflow"
         finally:
             pass
 
@@ -957,9 +962,9 @@ def main() -> int:
             )
         runner.run_loop(
             "Desktop landing layout",
-            "1440×1000 landing screen, title, form, and avatar controls",
+            "1440×1000 landing screen, title, form, and single cougar explorer",
             "load fresh offline file and inspect bounding boxes",
-            "visible landing hierarchy, four avatars, and no horizontal overflow",
+            "visible landing hierarchy, one embedded cougar avatar, and no horizontal overflow",
             runner.landing_layout,
         )
         runner.run_loop(

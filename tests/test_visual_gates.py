@@ -605,6 +605,29 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
         self.assertNotEqual(visual["keyline"], "rgba(0, 0, 0, 0)")
         self.assert_clean(errors)
 
+    def test_single_cougar_explorer_is_consistent_across_the_journey(self) -> None:
+        """Use one embedded cougar asset for landing, travel, and reflection."""
+
+        page, errors = self.new_page(390, 844)
+        landing = page.locator(".landing-explorer-stage .explorer-avatar")
+        self.assertEqual(landing.count(), 1)
+        self.assertEqual(page.locator(".avatar-choice").count(), 0)
+        source = landing.get_attribute("src") or ""
+        self.assertTrue(source.startswith("data:image/png;base64,"))
+
+        map_state = self.base_state(page, "region-build-create", stage=1)
+        self.load_state(page, map_state, ".screen--map")
+        map_avatar = page.locator(".map-avatar .explorer-avatar")
+        self.assertEqual(map_avatar.count(), 1)
+        self.assertEqual(map_avatar.get_attribute("src"), source)
+
+        reflection = self.state_for_screen(page, "reflection")
+        self.load_state(page, reflection, ".screen--reflection")
+        reflection_avatar = page.locator(".reflection-avatar .explorer-avatar")
+        self.assertEqual(reflection_avatar.count(), 1)
+        self.assertEqual(reflection_avatar.get_attribute("src"), source)
+        self.assert_clean(errors)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 
 
@@ -20,6 +21,16 @@ def read_source(filename: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def image_data_uri(filename: str) -> str:
+    """Return a PNG asset as an offline-safe data URI."""
+
+    path = SOURCE_DIR / "assets" / filename
+    if not path.is_file():
+        raise FileNotFoundError(f"Required image asset is missing: {path}")
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
 def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
     """Inline the stylesheet and scripts into the standalone deliverable."""
 
@@ -29,6 +40,7 @@ def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
         "__INLINE_DATA__": read_source("data.js"),
         "__INLINE_RESEARCH__": read_source("research-data.js"),
         "__INLINE_APP__": read_source("app.js"),
+        "__EXPLORER_AVATAR_DATA_URI__": image_data_uri("byu-cougar-explorer.png"),
     }
 
     document = template

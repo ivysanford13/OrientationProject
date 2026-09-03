@@ -987,3 +987,165 @@ body.dock-inline #app { padding-bottom: clamp(28px, 4vw, 56px) !important; }
   .skill-dock.dock--safe-top .hex-face strong { grid-area: 2 / 1; max-width: 36px; font-size: 7px; }
   .skill-dock.dock--safe-top .hex-face small { display: none; }
 }
+
+/* Single explorer system — the supplied pixel-art BYU cougar is the player
+   identity on the landing page, map, and reflection checkpoints. */
+.explorer-avatar {
+  display: block;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.landing-explorer-stage {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-height: 590px;
+  overflow: hidden;
+  border: 2px solid #263b5a;
+  border-radius: 32px 32px 92px 32px;
+  background:
+    linear-gradient(rgba(70,216,220,.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70,216,220,.11) 1px, transparent 1px),
+    radial-gradient(circle at 50% 37%, rgba(255,182,71,.32), transparent 34%),
+    linear-gradient(160deg, #172944 0%, #0f1728 72%);
+  background-size: 29px 29px, 29px 29px, auto, auto;
+  box-shadow: 0 24px 54px rgba(15,23,40,.3), inset 0 0 0 8px rgba(255,255,255,.035);
+  transform: rotate(1.2deg);
+}
+.landing-explorer-stage::before {
+  position: absolute;
+  top: 22px;
+  left: 24px;
+  color: var(--cyan);
+  content: "EXPLORER / PLAYER 01";
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.landing-explorer-stage::after {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 5px rgba(0,164,119,.14), 0 0 18px var(--green);
+  content: "";
+}
+.explorer-orbit {
+  position: absolute;
+  top: 66px;
+  width: 390px;
+  height: 390px;
+  border: 2px solid rgba(70,216,220,.24);
+  border-radius: 50%;
+  box-shadow: 0 0 0 26px rgba(39,112,232,.06), 0 0 0 62px rgba(123,67,230,.04);
+}
+.explorer-orbit::before,
+.explorer-orbit::after {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 14px var(--gold);
+  content: "";
+}
+.explorer-orbit::before { top: 55px; right: 20px; width: 8px; height: 8px; }
+.explorer-orbit::after { bottom: 42px; left: 28px; width: 5px; height: 5px; }
+.explorer-avatar--hero {
+  position: relative;
+  z-index: 2;
+  width: min(92%, 500px);
+  max-height: 520px;
+  filter: drop-shadow(0 22px 11px rgba(0,0,0,.38));
+  animation: explorer-idle 3.8s ease-in-out infinite;
+}
+.explorer-id {
+  position: absolute;
+  z-index: 3;
+  right: 22px;
+  bottom: 20px;
+  min-width: 210px;
+  padding: 12px 15px;
+  border: 1px solid #4b6588;
+  border-left: 5px solid var(--gold);
+  border-radius: 8px;
+  color: var(--white);
+  background: rgba(15,23,40,.9);
+  box-shadow: 0 10px 22px rgba(0,0,0,.28);
+}
+.explorer-id span,
+.explorer-id small { display: block; color: #a9bdd9; font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.explorer-id strong { display: block; margin: 2px 0; color: var(--white); font-family: var(--font-display); font-size: 22px; line-height: 1; letter-spacing: .03em; }
+.explorer-id small { color: var(--cyan); }
+
+.assigned-explorer {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 11px;
+  align-items: center;
+  margin: 15px 0 18px;
+  padding: 11px 12px;
+  border: 1px solid #bbcee7;
+  border-radius: 10px;
+  background: #eef5ff;
+}
+.assigned-status { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--white); background: var(--blue); font-weight: 900; }
+.assigned-explorer small { display: block; color: var(--blue-dark); font-family: var(--font-mono); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.assigned-explorer strong { display: block; color: var(--ink); font-family: var(--font-display); font-size: 21px; line-height: 1; text-transform: uppercase; }
+.assigned-explorer p { margin: 3px 0 0; color: var(--ink-soft); font-size: 11px; }
+
+.map-avatar > .avatar-shell {
+  width: 76px;
+  height: 86px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  clip-path: none;
+}
+.map-avatar > .avatar-shell::before,
+.map-avatar > .avatar-shell::after { display: none; }
+.explorer-avatar--map { width: 100%; height: 100%; filter: drop-shadow(0 4px 1px rgba(15,23,40,.38)); }
+.map-avatar small { margin-top: -5px; }
+
+.reflection-avatar.avatar-cougar {
+  top: 8px;
+  width: 122px;
+  height: 134px;
+  border: 0;
+  overflow: visible;
+  color: inherit;
+  background: transparent;
+  clip-path: none;
+}
+.explorer-avatar--reflection { width: 100%; height: 100%; filter: drop-shadow(0 10px 6px rgba(15,23,40,.28)); }
+
+@keyframes explorer-idle {
+  0%, 100% { transform: translateY(0) rotate(-.4deg); }
+  50% { transform: translateY(-8px) rotate(.4deg); }
+}
+
+@media (max-width: 980px) {
+  .landing-explorer-stage { width: min(520px, 100%); min-height: 510px; margin: 12px auto 0; }
+  .explorer-avatar--hero { max-height: 445px; }
+}
+
+@media (max-width: 560px) {
+  .landing-explorer-stage { min-height: 390px; border-radius: 24px 24px 62px 24px; }
+  .explorer-orbit { top: 54px; width: 280px; height: 280px; }
+  .explorer-avatar--hero { width: min(94%, 350px); max-height: 355px; }
+  .explorer-id { right: 14px; bottom: 13px; min-width: 182px; padding: 9px 11px; }
+  .explorer-id strong { font-size: 18px; }
+  .map-avatar > .avatar-shell { width: 62px; height: 70px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explorer-avatar--hero { animation: none; }
+}
