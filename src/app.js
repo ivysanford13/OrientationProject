@@ -648,9 +648,10 @@
 
   function getWordleSession(node) {
     var puzzle = node.miniGame && node.miniGame.puzzle;
-    if (!puzzle) return null;
+    if (!puzzle || !puzzle.answers || !puzzle.answers.length) return null;
     if (!wordleSessions[node.id]) {
-      wordleSessions[node.id] = { guesses: [], current: '', status: 'playing', keyStatus: {}, message: '' };
+      var pick = puzzle.answers[Math.floor(Math.random() * puzzle.answers.length)];
+      wordleSessions[node.id] = { answer: pick.answer, hint: pick.hint, guesses: [], current: '', status: 'playing', keyStatus: {}, message: '' };
     }
     return wordleSessions[node.id];
   }
@@ -688,14 +689,13 @@
   }
 
   function wordleTypeLetter(node, letter) {
-    var mini = node.miniGame;
     var session = getWordleSession(node);
     if (!session || session.status !== 'playing') return;
-    var wordLength = mini.puzzle.answer.length;
+    var wordLength = session.answer.length;
     if (session.current.length >= wordLength) return;
     session.current += letter;
     session.message = '';
-    render();
+    refreshWordleStage(node);
   }
 
   function wordleBackspace(node) {
@@ -703,38 +703,38 @@
     if (!session || session.status !== 'playing') return;
     session.current = session.current.slice(0, -1);
     session.message = '';
-    render();
+    refreshWordleStage(node);
   }
 
   function wordleSubmitGuess(node) {
     var mini = node.miniGame;
     var session = getWordleSession(node);
     if (!session || session.status !== 'playing') return;
-    var puzzle = mini.puzzle;
-    var wordLength = puzzle.answer.length;
+    var maxGuesses = mini.puzzle.maxGuesses;
+    var wordLength = session.answer.length;
     if (session.current.length !== wordLength) {
       session.message = 'Enter ' + wordLength + ' letters.';
-      render();
+      refreshWordleStage(node);
       return;
     }
     var guess = session.current;
-    var feedback = evaluateWordleGuess(guess, puzzle.answer);
+    var feedback = evaluateWordleGuess(guess, session.answer);
     session.guesses.push({ word: guess, feedback: feedback });
     mergeWordleKeyStatus(session, guess, feedback);
     session.current = '';
-    if (guess === puzzle.answer) {
+    if (guess === session.answer) {
       session.status = 'won';
-      session.message = 'Password cracked! It was ' + puzzle.answer + '.';
-      announce('You cracked the password. It was ' + puzzle.answer + '.');
-    } else if (session.guesses.length >= puzzle.maxGuesses) {
+      session.message = 'Password cracked! It was ' + session.answer + '.';
+      announce('You cracked the password. It was ' + session.answer + '.');
+    } else if (session.guesses.length >= maxGuesses) {
       session.status = 'lost';
-      session.message = 'Out of tries. The password was ' + puzzle.answer + '.';
-      announce('Out of tries. The password was ' + puzzle.answer + '.');
+      session.message = 'Out of tries. The password was ' + session.answer + '.';
+      announce('Out of tries. The password was ' + session.answer + '.');
     } else {
       session.message = '';
-      announce('Guess ' + session.guesses.length + ' of ' + puzzle.maxGuesses + ' submitted.');
+      announce('Guess ' + session.guesses.length + ' of ' + maxGuesses + ' submitted.');
     }
-    render();
+    refreshWordleStage(node);
   }
 
   function renderWordleCell(letter, status) {
@@ -748,10 +748,10 @@
     return '<div class="wordle-row">' + cells + '</div>';
   }
 
-  function renderWordleBoard(session, puzzle) {
-    var wordLength = puzzle.answer.length;
+  function renderWordleBoard(session, maxGuesses) {
+    var wordLength = session.answer.length;
     var rows = '';
-    for (var i = 0; i < puzzle.maxGuesses; i++) {
+    for (var i = 0; i < maxGuesses; i++) {
       if (i < session.guesses.length) {
         rows += renderWordleRow(session.guesses[i].word, session.guesses[i].feedback, wordLength);
       } else if (i === session.guesses.length && session.status === 'playing') {
@@ -780,10 +780,44 @@
   }
 
   function renderWordleStage(node, mini, session) {
-    var puzzle = mini.puzzle;
     var messageClass = session.status === 'won' ? ' is-won' : session.status === 'lost' ? ' is-lost' : '';
     var message = session.message || (mini.instructions || '');
-    return '<div class="placeholder-stage placeholder-stage--wordle" role="region" aria-label="Planned mini-game workspace"><div class="wordle-game"><p class="wordle-hint">HINT: ' + escapeHtml(puzzle.hint || 'Watch the color clues.') + '</p>' + renderWordleBoard(session, puzzle) + '<p class="wordle-message' + messageClass + '" role="status">' + escapeHtml(message) + '</p>' + renderWordleKeyboard(session) + '</div></div>';
+    return '<div class="placeholder-stage placeholder-stage--wordle" role="region" aria-label="Planned mini-game workspace"><div class="wordle-game"><p class="wordle-hint">HINT: ' + escapeHtml(session.hint || 'Watch the color clues.') + '</p>' + renderWordleBoard(session, mini.puzzle.maxGuesses) + '<p class="wordle-message' + messageClass + '" role="status">' + escapeHtml(message) + '</p>' + renderWordleKeyboard(session) + '</div></div>';
+  }
+
+  /** Update the wordle board/keyboard/action button in place without rebuilding the screen or moving focus/scroll. */
+  function refreshWordleStage(node) {
+    var mini = node.miniGame;
+    var session = getWordleSession(node);
+    var stage = root.querySelector('.placeholder-stage--wordle');
+    var actionButton = root.querySelector('[data-action="finish-game"]');
+    if (!session || !stage || !actionButton) { render(); return; }
+
+    var activeElement = document.activeElement;
+    var focusWasInStage = stage.contains(activeElement);
+    var activeKey = focusWasInStage && activeElement.getAttribute ? activeElement.getAttribute('data-key') : null;
+    var activeAction = focusWasInStage && activeElement.getAttribute ? activeElement.getAttribute('data-action') : null;
+
+    var temp = document.createElement('div');
+    temp.innerHTML = renderWordleStage(node, mini, session);
+    var freshStage = temp.firstElementChild;
+    stage.parentNode.replaceChild(freshStage, stage);
+    freshStage.querySelectorAll('[data-action]').forEach(function (element) {
+      element.addEventListener('click', handleAction);
+    });
+
+    if (focusWasInStage) {
+      var refocusTarget = activeKey
+        ? freshStage.querySelector('[data-key="' + activeKey + '"]')
+        : activeAction
+          ? freshStage.querySelector('[data-action="' + activeAction + '"]')
+          : null;
+      if (refocusTarget && !refocusTarget.disabled) refocusTarget.focus({ preventScroll: true });
+    }
+
+    actionButton.innerHTML = session.status !== 'playing'
+      ? 'Continue to enjoyment check <span aria-hidden="true">→</span>'
+      : 'Skip game for now <span aria-hidden="true">→</span>';
   }
 
   function renderPlaceholderStage(mini) {
@@ -802,7 +836,10 @@
     var session = mini.visualType === 'wordle-password' && mini.puzzle ? getWordleSession(node) : null;
     var stageMarkup = session ? renderWordleStage(node, mini, session) : renderPlaceholderStage(mini);
     var statusChip = mini.status === 'ready' ? '~60 SEC' : '~60 SEC / PLANNED';
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + statusChip + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button><button class="text-button" data-action="back-map">Return to map</button></div></div>' + stageMarkup + '</div></section>';
+    var actionMarkup = session && session.status !== 'playing'
+      ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>'
+      : '<button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + statusChip + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="back-map">Return to map</button></div></div>' + stageMarkup + '</div></section>';
   }
 
   function renderScratchGame(node, skill, mini) {
@@ -1277,7 +1314,7 @@
       var node = findNode(entry.nodeId);
       if (skill) items.push({ skill: skill, source: node ? node.title : 'Journey skill', starter: false });
     });
-    dock.hidden = items.length === 0;
+    dock.hidden = items.length === 0 || state.screen === 'mini';
     dock.classList.toggle('has-skills', items.length > 0);
     var shortLandscape = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
     var interviewScreen = /^interview-/.test(state.screen || '');
