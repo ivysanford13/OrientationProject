@@ -30,6 +30,7 @@
     'software': '__SKILL_BADGE_SOFTWARE_DATA_URI__',
     'coder': '__SKILL_BADGE_DEVELOPER_DATA_URI__',
     'cloud-builder': '__SKILL_BADGE_CLOUD_BUILDER_DATA_URI__',
+    'systems-thinker': '__SKILL_BADGE_SYSTEMS_THINKER_DATA_URI__',
     'designer': STARTER_BADGE_SOURCES['visual-design'],
     'hardware': STARTER_BADGE_SOURCES['hands-on-tech'],
     'analyst': STARTER_BADGE_SOURCES['problem-solving'],
