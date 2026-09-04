@@ -1111,7 +1111,7 @@
     var previous = slidePositions[selectedId];
     var occupant = Object.keys(slidePositions).filter(function (componentId) { return slidePositions[componentId] === slot; })[0];
     if (occupant && occupant !== selectedId) { if (previous) slidePositions[occupant] = previous; else delete slidePositions[occupant]; }
-    slidePositions[selectedId] = slot; slideSelected = null; slideFeedback = ''; render();
+    slidePositions[selectedId] = slot; slideSelected = null; slideFeedback = ''; refreshSlideGame();
   }
 
   function checkSlideGame() {
@@ -1124,7 +1124,26 @@
     if (slidePositions.cta === 'cta') score += 1;
     if (score >= 6) { slideSolved = true; slideQnaIndex = 0; slideQnaScore = 0; slideQnaFeedback = ''; slideFeedback = 'Clear composition! Now defend your design in four quick crew-review questions.'; announce('Slide clarity check passed.'); }
     else { slideFeedback = 'The slide is complete, but it needs clearer hierarchy. Keep the title at the top, group the facts, and give the call to action a strong bottom position.'; announce('Try rearranging the slide for clearer communication.'); }
-    render();
+    refreshSlideGame();
+  }
+
+  /** Update the slide-builder/crew-review screen in place without a full reload or moving focus/scroll. */
+  function refreshSlideGame() {
+    var node = findNode(slideNodeId);
+    if (!node) { render(); return; }
+    var skill = skillFor(node);
+    var mini = node.miniGame;
+    var screen = root.querySelector('.screen--challenge');
+    if (!screen) { render(); return; }
+
+    var temp = document.createElement('div');
+    temp.innerHTML = renderSlideGame(node, skill, mini);
+    var freshScreen = temp.querySelector('.screen--challenge');
+    if (!freshScreen) { render(); return; }
+
+    screen.replaceWith(freshScreen);
+    freshScreen.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    wireSlideEvents();
   }
 
   function answerSlideQna(answer) {
@@ -1132,7 +1151,7 @@
     if (slideQnaIndex < 0 || slideQnaIndex >= answers.length) return;
     if (answer === answers[slideQnaIndex]) slideQnaScore += 1;
     slideQnaFeedback = answer === answers[slideQnaIndex] ? 'Good call.' : 'That choice would make the message less clear.';
-    slideQnaIndex += 1; render();
+    slideQnaIndex += 1; refreshSlideGame();
   }
 
   /** Render the chart-matching task as a shipboard data-routing console. */
@@ -2428,7 +2447,44 @@
     } else {
       cpuFeedback = '';
     }
-    render();
+    refreshCpuGame();
+  }
+
+  /** Update the CPU grid, action counter/button, and feedback in place without rebuilding the screen or moving focus/scroll. */
+  function refreshCpuGame() {
+    var node = findNode(cpuNodeId);
+    if (!node) { render(); return; }
+    var skill = skillFor(node);
+    var mini = node.miniGame;
+    var workspace = root.querySelector('.cpu-workspace');
+    var actionsEl = root.querySelector('.challenge-actions');
+    if (!workspace || !actionsEl) { render(); return; }
+
+    var activeElement = document.activeElement;
+    var focusWasInWorkspace = workspace.contains(activeElement);
+    var activeCellIndex = focusWasInWorkspace && activeElement.getAttribute ? activeElement.getAttribute('data-cpu-grid-cell') : null;
+
+    var temp = document.createElement('div');
+    temp.innerHTML = renderCpuGame(node, skill, mini);
+    var freshWorkspace = temp.querySelector('.cpu-workspace');
+    var freshActions = temp.querySelector('.challenge-actions');
+    var freshFeedback = temp.querySelector('.scratch-feedback');
+    if (!freshWorkspace || !freshActions) { render(); return; }
+
+    var existingFeedback = actionsEl.nextElementSibling && actionsEl.nextElementSibling.classList.contains('scratch-feedback') ? actionsEl.nextElementSibling : null;
+
+    workspace.replaceWith(freshWorkspace);
+    actionsEl.replaceWith(freshActions);
+    if (existingFeedback) existingFeedback.remove();
+    if (freshFeedback) freshActions.insertAdjacentElement('afterend', freshFeedback);
+
+    freshWorkspace.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    freshActions.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+
+    if (activeCellIndex !== null) {
+      var refocusTarget = freshWorkspace.querySelector('[data-cpu-grid-cell="' + activeCellIndex + '"]');
+      if (refocusTarget && !refocusTarget.disabled) refocusTarget.focus({ preventScroll: true });
+    }
   }
 
   function finishMiniGame() {
@@ -2506,13 +2562,13 @@
     }
     if (action === 'scratch-add') { addScratchBlock(element.getAttribute('data-scratch-id')); return; }
     if (action === 'scratch-remove') { removeScratchBlock(Number(element.getAttribute('data-scratch-index'))); return; }
-    if (action === 'scratch-reset') { resetScratchGame(); render(); return; }
+    if (action === 'scratch-reset') { resetScratchGame(); refreshScratchGame(); return; }
     if (action === 'scratch-check') { checkScratchGame(); return; }
     if (action === 'cpu-grid-select') { selectCpuGrid(Number(element.getAttribute('data-cpu-grid-cell'))); return; }
-    if (action === 'cpu-reset') { resetCpuGame(); render(); return; }
-    if (action === 'slide-select') { slideSelected = element.getAttribute('data-slide-id'); render(); return; }
+    if (action === 'cpu-reset') { resetCpuGame(); refreshCpuGame(); return; }
+    if (action === 'slide-select') { slideSelected = element.getAttribute('data-slide-id'); refreshSlideGame(); return; }
     if (action === 'slide-place') { placeSlideComponent(element.getAttribute('data-slide-slot')); return; }
-    if (action === 'slide-reset') { resetSlideGame(); render(); return; }
+    if (action === 'slide-reset') { resetSlideGame(); refreshSlideGame(); return; }
     if (action === 'slide-check') { checkSlideGame(); return; }
     if (action === 'slide-qna-answer') { answerSlideQna(element.getAttribute('data-slide-answer')); return; }
     if (action === 'wordle-key') {
@@ -2863,13 +2919,44 @@
 
   function addScratchBlock(id) {
     if (scratchSolved || ['move', 'left', 'right'].indexOf(id) === -1) return;
-    scratchDraft.push(id); scratchFeedback = ''; render();
+    scratchDraft.push(id); scratchFeedback = ''; refreshScratchGame();
   }
 
   function removeScratchBlock(index) {
     if (scratchSolved) return;
     if (index >= 0 && index < scratchDraft.length) scratchDraft.splice(index, 1);
-    scratchFeedback = ''; render();
+    scratchFeedback = ''; refreshScratchGame();
+  }
+
+  /** Update the scratch workspace and action button in place without rebuilding the screen or moving focus/scroll. */
+  function refreshScratchGame() {
+    var node = findNode(scratchNodeId);
+    if (!node) { render(); return; }
+    var skill = skillFor(node);
+    var mini = node.miniGame;
+    var workspace = root.querySelector('.scratch-workspace');
+    var actionButton = root.querySelector('.challenge-actions .button--primary');
+    if (!workspace || !actionButton) { render(); return; }
+
+    var activeElement = document.activeElement;
+    var focusWasInWorkspace = workspace.contains(activeElement);
+    var activeScratchId = focusWasInWorkspace && activeElement.getAttribute ? activeElement.getAttribute('data-scratch-id') : null;
+
+    var temp = document.createElement('div');
+    temp.innerHTML = renderScratchGame(node, skill, mini);
+    var freshWorkspace = temp.querySelector('.scratch-workspace');
+    var freshActionButton = temp.querySelector('.challenge-actions .button--primary');
+    if (!freshWorkspace || !freshActionButton) { render(); return; }
+
+    workspace.replaceWith(freshWorkspace);
+    actionButton.replaceWith(freshActionButton);
+    freshWorkspace.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
+    freshActionButton.addEventListener('click', handleAction);
+
+    if (activeScratchId) {
+      var refocusTarget = freshWorkspace.querySelector('[data-scratch-id="' + activeScratchId + '"]');
+      if (refocusTarget && !refocusTarget.disabled) refocusTarget.focus({ preventScroll: true });
+    }
   }
 
   function checkScratchGame() {
@@ -2895,7 +2982,7 @@
     if (hitBush) { scratchFeedback = 'The cat bumped into the bush. Turn before moving forward.'; announce('The cat needs a different route.'); }
     else if (position.row === 2 && position.col === 4) { scratchSolved = true; scratchFeedback = 'Great route! The cat reached the flag.'; announce('Scratch path solved.'); }
     else { scratchFeedback = 'The cat is safe, but has not reached the flag yet. Add more commands.'; announce('Keep building the route.'); }
-    render();
+    refreshScratchGame();
   }
 
   // ---------------------------------------------------------------------------
