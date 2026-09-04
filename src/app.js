@@ -45,7 +45,7 @@
     'market-reach': '__SKILL_BADGE_MARKET_REACH_DATA_URI__',
     'logistical': '__SKILL_BADGE_LOGISTICAL_DATA_URI__',
     'renovator': '__SKILL_BADGE_RENOVATOR_DATA_URI__',
-    'creative': '__SKILL_BADGE_CREATIVE_DATA_URI__',
+    'creative': STARTER_BADGE_SOURCES['creative-thinking'],
     'strategist': STARTER_BADGE_SOURCES['leadership']
   };
   if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';

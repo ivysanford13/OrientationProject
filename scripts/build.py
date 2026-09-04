@@ -88,7 +88,6 @@ def build(output_path: Path = DEFAULT_OUTPUT) -> Path:
         "__SKILL_BADGE_MARKET_REACH_DATA_URI__": image_data_uri("skill-badges/market-reach.jpg"),
         "__SKILL_BADGE_LOGISTICAL_DATA_URI__": image_data_uri("skill-badges/logistical.jpg"),
         "__SKILL_BADGE_RENOVATOR_DATA_URI__": image_data_uri("skill-badges/renovator.jpg"),
-        "__SKILL_BADGE_CREATIVE_DATA_URI__": image_data_uri("skill-badges/creative.jpg"),
         "__WORLD_BUILD_ATLAS_DATA_URI__": image_data_uri("career-world-build-v2.jpg"),
         "__WORLD_ANALYZE_ATLAS_DATA_URI__": image_data_uri("career-world-analyze-v2.jpg"),
         "__WORLD_PEOPLE_ATLAS_DATA_URI__": image_data_uri("career-world-people-v2.jpg"),
