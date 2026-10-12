@@ -51,6 +51,7 @@
   if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
   var root = document.getElementById('app');
   var dock = document.getElementById('skill-dock');
+  var renderedDockKeys = new Set();
   var toastRegion = document.getElementById('toast-region');
   var modalRoot = document.getElementById('modal-root');
   var headerStatus = document.getElementById('header-status-copy');
@@ -477,6 +478,7 @@
   // ---------------------------------------------------------------------------
 
   function render() {
+    clearToast();
     root.innerHTML = renderScreen(); renderDock(); updateHeader(); wireEvents();
     syncMiniGameLifecycle();
     window.scrollTo(0, 0); focusAfterRender();
@@ -499,10 +501,10 @@
 
   function renderLanding() {
     return '<section class="screen hero-screen screen--landing" aria-labelledby="welcome-title">' +
-      '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS / FIELD GUIDE 02</p><h1 id="welcome-title" class="screen-title" tabindex="-1">Build your skills.<br><em>Find your world.</em></h1><p class="screen-subtitle">Choose the strengths that feel like you, then watch your explorer travel through an IS career world built around them.</p>' +
+      '<div class="hero-copy landing-copy"><p class="screen-kicker">INFORMATION SYSTEMS · CAREER EXPLORER</p><h1 id="welcome-title" class="screen-title" tabindex="-1"><span>Build your skills.</span><br><em>Find your world.</em></h1><p class="screen-subtitle">Choose the strengths that feel like you, then watch your explorer travel through an IS career world built around them.</p>' +
       '<form id="start-form" class="launch-card start-card"><p class="card-label">Create your explorer</p><label for="player-name">What should we call you?</label><input id="player-name" name="playerName" autocomplete="name" maxlength="32" placeholder="Your first name" value="' + escapeHtml(state.name) + '" required><div class="assigned-explorer"><span class="assigned-status" aria-hidden="true">✓</span><div><small>Your explorer is ready</small><strong>BYU Cougar</strong><p>One guide. Every world. Your skills shape the route.</p></div></div><button class="button button--primary button--wide" type="submit">Choose my starter skills <span aria-hidden="true">→</span></button></form>' +
-      '<div class="landing-fast-track"><span>OR SKIP THE GAME</span><button class="button button-secondary" type="button" data-action="open-interview-picker">Go straight to interview prep <span aria-hidden="true">↗</span></button><small>Choose a field, answer three beginner-friendly questions, and get instant checklist feedback.</small></div>' +
-      (state.name && state.starterSkills.length === 4 ? '<button class="text-button" data-action="resume">Resume ' + escapeHtml(state.name) + '’s journey</button>' : '') + '</div><aside class="landing-explorer-stage" aria-label="Your BYU cougar explorer"><img class="explorer-avatar explorer-avatar--hero" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt="Pixel-art BYU cougar wearing a blue Y hoodie and backpack"><div class="explorer-id"><span>PLAYER 01</span><strong>COUGAR EXPLORER</strong><small>Ready for launch</small></div></aside><p class="landing-note">Four starter skills · three worlds · one career path</p></section>';
+      '<div class="landing-fast-track"><span>OR SKIP THE GAME</span><button class="button button-secondary" type="button" data-action="open-interview-picker">Go straight to interview prep <span aria-hidden="true">→</span></button><small>Choose a field, answer three beginner-friendly questions, and get instant checklist feedback.</small></div>' +
+      (state.name && state.starterSkills.length === 4 ? '<button class="text-button" data-action="resume">Resume ' + escapeHtml(state.name) + '’s journey</button>' : '') + '</div><aside class="landing-explorer-stage" aria-label="Your BYU cougar explorer"><img class="explorer-avatar explorer-avatar--hero" src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt="Pixel-art BYU cougar wearing a blue Y hoodie and backpack"><div class="explorer-id"><span>PLAYER 01</span><strong>COUGAR EXPLORER</strong><small>Ready for launch</small></div></aside></section>';
   }
 
   function renderInterviewPicker() {
@@ -517,7 +519,7 @@
       var recommended = recommendedRegion && recommendedRegion.id === region.id;
       return '<section class="interview-family" style="--family-color:' + escapeAttr(region.color || '#2770e8') + '"><header><span>' + escapeHtml(region.title) + '</span>' + (recommended ? '<b>Your skill match</b>' : '') + '<p>' + escapeHtml(region.subtitle || region.description) + '</p></header><div class="interview-role-list">' + careers.map(function (career) {
         var isSaved = state.interview.careerId === career.id && state.interview.status !== 'idle';
-        return '<button class="interview-role-card" type="button" data-action="choose-interview" data-career-id="' + escapeAttr(career.id) + '"><span class="role-card-arrow" aria-hidden="true">↗</span><strong>' + escapeHtml(career.title) + '</strong><small>' + escapeHtml(career.summary) + '</small><em>' + (isSaved ? 'Continue saved practice' : '3 questions · about 4 min') + '</em></button>';
+        return '<button class="interview-role-card" type="button" data-action="choose-interview" data-career-id="' + escapeAttr(career.id) + '"><span class="role-card-arrow" aria-hidden="true">→</span><strong>' + escapeHtml(career.title) + '</strong><small>' + escapeHtml(career.summary) + '</small><em>' + (isSaved ? 'Continue saved practice' : '3 questions · about 4 min') + '</em></button>';
       }).join('') + '</div></section>';
     }).join('');
     return '<section class="screen interview-picker" aria-labelledby="interview-picker-title"><header class="topbar"><button class="button button--quiet" data-action="back-landing">← Back to launchpad</button><span class="progress-chip">12 CAREER PRACTICE SETS</span></header><div class="interview-picker-heading"><p class="screen-kicker">INTERVIEW PREP / PICK A FIELD</p><h1 id="interview-picker-title" tabindex="-1">Practice for the role<br><em>you want to explore.</em></h1><p>You do not need a perfect résumé or a finished game path. Pick the closest role and answer using class, work, club, volunteer, or personal-project examples.</p></div><div class="interview-family-grid">' + groups + '</div><aside class="deterministic-note"><strong>No chatbot. No mystery score.</strong><span>Your answer stays in this browser. Feedback checks for clear, role-specific building blocks and shows exactly what to add next.</span></aside></section>';
@@ -525,12 +527,12 @@
 
   function renderSkillSelect() {
     var selected = state.starterSkills;
-    return '<section class="screen screen--skills" aria-labelledby="skills-title"><div class="skills-heading"><div><p class="screen-kicker">LOADOUT / CHOOSE 4 OF 10</p><h1 id="skills-title" tabindex="-1">What are you good at—<br><em>or excited to become good at?</em></h1><p>Select exactly four. Your combination becomes your first skill stack and points your compass toward a career world.</p></div><div class="selection-meter" aria-live="polite"><strong>' + selected.length + '<span>/4</span></strong><small>skills selected</small></div></div><div class="starter-skill-grid">' + model.starterSkills.map(function (skill) {
+    return '<section class="screen screen--skills" aria-labelledby="skills-title"><div class="skills-heading"><div><p class="screen-kicker">LOADOUT / CHOOSE 4 OF 10</p><h1 id="skills-title" tabindex="-1">What are you good at—<em>or want to learn?</em></h1><p>Select exactly four. Your combination becomes your first skill stack and points your compass toward a career world.</p></div><div class="selection-meter" aria-live="polite"><strong>' + selected.length + '<span>/4</span></strong><small>skills selected</small></div></div><div class="starter-skill-grid">' + model.starterSkills.map(function (skill) {
       var picked = selected.indexOf(skill.id) !== -1;
       var unavailable = selected.length >= 4 && !picked;
       var badgeSource = STARTER_BADGE_SOURCES[skill.badgeAsset] || '';
-      return '<button class="starter-skill' + (picked ? ' is-picked' : '') + '" type="button" data-action="toggle-starter" data-skill-id="' + escapeAttr(skill.id) + '" aria-pressed="' + picked + '" ' + (unavailable ? 'aria-disabled="true"' : '') + ' style="--skill-color:' + escapeAttr(skill.color) + '"><span class="starter-badge-frame" aria-hidden="true"><img class="starter-badge-art" src="' + badgeSource + '" alt=""><i class="starter-selected-mark">✓</i></span><strong>' + escapeHtml(skill.label) + '</strong><small>' + escapeHtml(skill.description) + '</small><span class="pick-state">' + (picked ? 'Selected ✓' : 'Choose +') + '</span></button>';
-    }).join('') + '</div><div class="skills-footer"><button class="text-button" data-action="back-landing">← Back</button><p>' + (selected.length === 4 ? 'Your compass is ready.' : 'Choose ' + (4 - selected.length) + ' more to continue.') + '</p><button class="button button--primary" data-action="confirm-skills" ' + (selected.length === 4 ? '' : 'disabled') + '>Reveal my world <span aria-hidden="true">↗</span></button></div></section>';
+      return '<button class="starter-skill' + (picked ? ' is-picked' : '') + '" type="button" data-action="toggle-starter" data-skill-id="' + escapeAttr(skill.id) + '" aria-pressed="' + picked + '" ' + (unavailable ? 'aria-disabled="true"' : '') + ' style="--skill-color:' + escapeAttr(skill.color) + '"><span class="starter-badge-frame" aria-hidden="true"><img class="starter-badge-art" src="' + badgeSource + '" alt=""><i class="starter-selected-mark">✓</i></span><strong>' + escapeHtml(skill.label) + '</strong><small>' + escapeHtml(skill.description) + '</small><span class="pick-state">' + (picked ? 'Selected ✓' : unavailable ? '4 of 4 picked' : 'Choose +') + '</span></button>';
+    }).join('') + '</div><div class="skills-footer"><button class="text-button" data-action="back-landing">← Back</button><p aria-live="polite">' + (selected.length === 4 ? '4 of 4 picked — tap a selected skill to swap.' : 'Choose ' + (4 - selected.length) + ' more to continue.') + '</p><button class="button button--primary" data-action="confirm-skills" ' + (selected.length === 4 ? '' : 'disabled') + '>Reveal my world <span aria-hidden="true">→</span></button></div></section>';
   }
 
   function renderMap() {
@@ -546,20 +548,18 @@
     var current = currentJourneyNode();
     var scores = scoreRegions(state.starterSkills);
     var recommendation = region.id === state.recommendedRegionId ? 'BEST STARTING MATCH' : 'NEXT BEST MATCH';
-    // Keep the lower fork above the fixed skill stack on compact phone screens.
-    // Keep both phone forks above the fixed skill HUD; the chapter label now
-    // lives in the sky band, leaving the lower terrain band available for the
-    // route card and traveling explorer.
+    // Reserve separate bands for the chapter HUD and each fork. Keep these
+    // centers shared by the controls, SVG endpoints and explorer parking.
     var compactMap = window.innerWidth <= 767;
     var shortLandscapeMap = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
-    var upperChoiceY = shortLandscapeMap ? 26 : 29;
-    var lowerChoiceY = compactMap ? 43 : shortLandscapeMap ? 58 : 53;
-    var choiceX = compactMap ? 72 : 77;
+    var upperChoiceY = shortLandscapeMap ? 28 : compactMap ? 34 : 29;
+    var lowerChoiceY = shortLandscapeMap ? 62 : compactMap ? 60 : 53;
+    var choiceX = compactMap ? 62 : shortLandscapeMap ? 77 : 52;
     var sceneNodes = [];
-    if (stage === 0) sceneNodes.push({ node: region, position: { x: 58, y: window.innerWidth <= 430 ? 39 : 43 }, kind: 'region', routeIndex: 0 });
+    if (stage === 0) sceneNodes.push({ node: region, position: { x: compactMap || shortLandscapeMap ? 58 : 52, y: window.innerWidth <= 430 ? 39 : 43 }, kind: 'region', routeIndex: 0 });
     if (stage === 1) {
       sceneNodes.push({ node: region, position: { x: 20, y: 62 }, kind: 'past' });
-      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: 72, y: index ? lowerChoiceY : upperChoiceY }, kind: 'choice', routeIndex: index }); });
+      region.children.forEach(function (item, index) { sceneNodes.push({ node: item, position: { x: choiceX, y: index ? lowerChoiceY : upperChoiceY }, kind: 'choice', routeIndex: index }); });
     }
     if (stage === 2) {
       sceneNodes.push({ node: region, position: { x: 18, y: 78 }, kind: 'past-region' });
@@ -585,12 +585,12 @@
     var chapterTitle = stage === 0 ? region.title : stage === 1 ? 'Choose a domain' : 'Choose a career style';
 
     return '<section class="screen screen--map world-screen" aria-labelledby="map-title">' +
-      '<header class="world-header"><div><p class="screen-kicker">WORLD ' + region.number + ' / ' + recommendation + '</p><h1 id="map-title" tabindex="-1">' + mapTitle + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small>Match score ' + Number(scores[region.id] || 0) + ' · based on your four skills</small><button class="text-button" data-action="edit-skills">Edit starter skills</button></div></header>' +
+      '<header class="world-header"><div><p class="screen-kicker">' + (stage === 0 ? 'WORLD ' + region.number + ' / ' + recommendation : escapeHtml(region.title) + ' · CHAPTER ' + (stage + 1)) + '</p><h1 id="map-title" tabindex="-1">' + mapTitle + '</h1><p>' + mapPrompt(stage, region, domain) + '</p></div><div class="compass-card" style="--region-color:' + escapeAttr(region.color) + '"><span>Your skill compass points to</span><strong>' + escapeHtml(region.title) + '</strong><small title="Match score ' + Number(scores[region.id] || 0) + '">' + (region.id === state.recommendedRegionId ? 'Strongest match for your four skills' : 'Another match for your four skills') + '</small><button class="text-button" data-action="edit-skills"><span aria-hidden="true">✎</span> Edit starter skills</button></div></header>' +
       '<section class="rpg-world stage-' + stage + ' theme-' + escapeAttr(region.theme || slug(region.id)) + travelClass + shiftClass + '" data-camera-stage="' + stage + '" style="' + sceneStyle + '" aria-label="Interactive journey map">' + panorama +
       renderQuestPath(stage, sceneNodes, routePath) +
       sceneNodes.map(renderWorldStop).join('') + avatar + travelBanner +
       '<div class="world-stage-label"><span>CHAPTER ' + (stage + 1) + ' OF 3</span><strong>' + escapeHtml(chapterTitle) + '</strong>' + renderJourneyMeter(stage) + '</div></section>' +
-      '<div class="map-action-row"><p>' + (stage === 2 ? '<strong>' + openRouteCount + '</strong> career possibilit' + (openRouteCount === 1 ? 'y' : 'ies') + ' ready to explore.' : '<strong>' + openRouteCount + '</strong> forward route' + (openRouteCount === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.') + '</p><button class="button button--quiet" data-action="restart">Restart journey</button></div></section>';
+      '<div class="map-action-row"><p>' + (stage === 2 ? '<strong>' + openRouteCount + '</strong> career possibilit' + (openRouteCount === 1 ? 'y' : 'ies') + ' ready to explore.' : '<strong>' + openRouteCount + '</strong> forward route' + (openRouteCount === 1 ? '' : 's') + ' open · a “no” closes that trail and returns you here.') + '</p><button class="text-button" data-action="restart">Restart journey</button></div></section>';
   }
 
   /**
@@ -658,7 +658,7 @@
   }
 
   function renderJourneyMeter(stage) {
-    var labels = ['Arrival', 'Crossroads', 'Career'];
+    var labels = ['Arrive', 'Choose', 'Career'];
     return '<ol class="journey-meter" aria-label="Journey progress">' + labels.map(function (label, index) {
       var status = index < stage ? ' is-complete' : index === stage ? ' is-current' : '';
       return '<li class="' + status + '"><i aria-hidden="true">' + (index < stage ? '✓' : index + 1) + '</i><small>' + label + '</small></li>';
@@ -686,14 +686,15 @@
     // Keep the cougar in a quiet clearing beside the route card. This makes the
     // explorer feel connected to the stop without covering its badge or copy.
     if (current && current.kind.indexOf('past') === 0) {
-      if (compact) return { x: 20, y: 75 };
-      if (current.kind === 'past-domain') return { x: 60, y: 86 };
+      if (compact) return { x: 12, y: 80 };
+      if (current.kind === 'past-domain') return { x: 60, y: shortLandscape ? 90 : 86 };
       if (shortLandscape) return { x: 45, y: 77 };
       return { x: 36, y: 72 };
     }
     if (current) {
+      if (compact) return { x: 12, y: current.position.y };
       return {
-        x: Math.max(compact ? 18 : 12, current.position.x - (compact ? 27 : 19)),
+        x: Math.max(compact ? 18 : 12, current.position.x - 23),
         y: Math.min(78, current.position.y + 11)
       };
     }
@@ -903,6 +904,7 @@
       if (refocusTarget && !refocusTarget.disabled) refocusTarget.focus({ preventScroll: true });
     }
 
+    actionButton.className = 'button ' + (session.status !== 'playing' ? 'button--primary' : 'button-secondary');
     actionButton.innerHTML = session.status !== 'playing'
       ? 'Continue to enjoyment check <span aria-hidden="true">→</span>'
       : 'Skip game for now <span aria-hidden="true">→</span>';
@@ -910,6 +912,41 @@
 
   function renderPlaceholderStage(mini) {
     return '<div class="placeholder-stage" role="region" aria-label="Planned mini-game workspace"><div class="stage-grid" aria-hidden="true"></div><div class="placeholder-card"><span class="placeholder-icon" aria-hidden="true">⌁</span><span class="eyebrow">GAME SPACE / EDITABLE MODULE</span><h2>' + escapeHtml(mini.title) + '</h2><p>' + escapeHtml(mini.instructions || 'Placeholder ready for a future interactive build.') + '</p><div class="placeholder-meta"><span>~ ' + escapeHtml(mini.durationSeconds || 60) + ' sec</span><span>' + escapeHtml(mini.visualType || 'activity') + '</span></div></div></div>';
+  }
+
+  /** Shared game copy keeps the route label, brief, and reward in one order. */
+  function renderGameCopy(node) {
+    var mini = node.miniGame || {};
+    var briefs = {
+      'minecraft-2d': ['WOODWORKING', 'Harvest logs, make planks, then craft a door.', 'Chop two oak logs, craft eight planks, then fill two columns of the crafting grid with six planks.'],
+      'jigsaw': ['SCANNER REPAIR', 'Match each panel to the scanner grid.', mini.instructions],
+      'team-builder': ['CREW DRAFT', 'Choose three teammates who round out your strengths.', 'Read each explorer’s strengths and the team coach’s advice. Select a teammate again to free their seat.'],
+      'deploy-drag-drop': ['WEBSITE HOSTING', 'Stage the file, then select Host.', mini.instructions],
+      'data-chart-match': ['DATA FEEDS', 'Connect each spreadsheet to its matching chart.', 'Drag a plug, or select a sheet and then a chart. Look for time, categories, or parts of a whole.'],
+      'block-coding': ['VISUAL CODING', 'Choose commands in the order the cougar should use them.', 'Start facing right. Move one square at a time and turn in place to reach the flag without touching the bush.'],
+      'cpu-recaptcha': ['SYSTEMS CHECK', 'Select every grid square containing the CPU.', 'Choose all tiles that touch the processor chip. Select a tile again to remove it.'],
+      'slide-builder': ['SLIDE STUDIO', 'Make the idea clear in five seconds.', 'Select a content piece, then its slide area, or drag it there. Put the headline first, group the facts, and make the next step easy to find.'],
+      'wordle-password': ['PASSWORD CHECK', 'Use letter clues to uncover the password.', 'Enter a five-letter guess. Green means the right place, gold means another place, and gray means the letter is absent.']
+    };
+    var brief = briefs[mini.visualType] || ['MINI-GAME', 'Try the activity, then reflect on it.', mini.instructions];
+    var descriptions = {
+      'minecraft-2d': 'Harvest oak logs, turn them into planks, and build a useful object.',
+      'block-coding': 'Guide the cougar around the bush and onto the flag by building a command script.',
+      'wordle-password': 'Use letter clues to uncover a suspicious account password.',
+      'deploy-drag-drop': 'A website becomes useful when people can reach it. Stage the finished file, then host it.',
+      'cpu-recaptcha': 'Inspect the computer and identify its processor.',
+      'slide-builder': 'You are pitching Information Systems to incoming BYU students. Arrange each piece where it communicates best.'
+    };
+    return '<div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.title) + ' / ' + brief[0] + '</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(descriptions[mini.visualType] || mini.concept || mini.description) + '</p>' + renderGameBrief(brief[1], brief[2]) + renderGameReward(node) + '</div>';
+  }
+
+  function renderGameBrief(title, instructions) {
+    return '<div class="game-brief"><span class="eyebrow">HOW TO PLAY</span><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(instructions || 'Use the controls in the game workspace.') + '</p></div>';
+  }
+
+  function renderGameReward(node) {
+    var skill = skillFor(node);
+    return '<div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it if you choose to keep following this trail.</p></div></div>';
   }
 
   function renderMiniGame(node) {
@@ -926,18 +963,18 @@
     if (node.miniGame.visualType === 'cpu-recaptcha') return renderCpuGame(node, skill, mini);
     var session = mini.visualType === 'wordle-password' && mini.puzzle ? getWordleSession(node) : null;
     var stageMarkup = session ? renderWordleStage(node, mini, session) : renderPlaceholderStage(mini);
-    var statusChip = mini.status === 'ready' ? '~60 SEC' : '~60 SEC / PLANNED';
+    var statusChip = session ? '~60 SEC · PASSWORD CHECK' : '~60 SEC · ACTIVITY';
     var actionMarkup = session && session.status !== 'playing'
       ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>'
-      : '<button class="button button--primary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button>';
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + statusChip + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept || mini.description) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="back-map">Return to map</button></div></div>' + stageMarkup + '</div></section>';
+      : '<button class="button button-secondary" data-action="finish-game">Skip game for now <span aria-hidden="true">→</span></button>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">' + statusChip + '</span><button class="text-button" data-action="restart">Restart</button></header><div class="challenge-layout">' + renderGameCopy(node) + '<div class="game-stage-group">' + stageMarkup + '<div class="challenge-actions">' + actionMarkup + '</div></div></div></section>';
   }
 
   /** A compact side-view crafting loop using Minecraft's real oak recipes. */
   function renderMinecraftDoorMiniGame(node) {
     ensureMinecraftDoorGame(node);
     var skill = skillFor(node);
-    return '<section class="screen screen--challenge screen--minecraft" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">WOODWORK / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="mc-intro"><div class="challenge-copy"><p class="eyebrow">BUILD + CREATE / WOODWORKING</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(node.miniGame.title) + '</h1></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>Craft the door, then decide if building energized you.</p></div></div></div>' + renderMinecraftDoorBody(node) + '</section>';
+    return '<section class="screen screen--challenge screen--minecraft" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC · WOODWORK</span><button class="text-button" data-action="restart">Restart</button></header><div class="challenge-layout">' + renderGameCopy(node) + renderMinecraftDoorBody(node) + '</div></section>';
   }
 
   function ensureMinecraftDoorGame(node) {
@@ -979,7 +1016,7 @@
         ? '<button class="mc-action-key" type="button" data-action="minecraft-move-table"><span class="mc-control-icon mc-control-icon--arrow" aria-hidden="true">→</span><b>GO TO TABLE</b><small>Craft the logs</small></button>'
         : '';
     var craftingMarkup = game.phase === 'craft-planks' ? renderMinecraftPlankRecipe(mini, game) : game.phase === 'craft-door' ? renderMinecraftDoorRecipe(mini, game, selectedCount) : game.complete ? renderMinecraftComplete(mini, game) : '';
-    return '<div class="minecraft-game" data-minecraft-game><div class="mc-mission-bar"><div class="mc-objective-copy"><small>STEP ' + stageNumber + ' OF 3</small><strong>' + escapeHtml(stageTitle) + '</strong></div><ol aria-label="Crafting progress"><li class="' + (stageNumber > 1 ? 'is-done' : 'is-active') + '">CHOP</li><li class="' + (stageNumber > 2 ? 'is-done' : stageNumber === 2 ? 'is-active' : '') + '">PLANKS</li><li class="' + (game.complete ? 'is-done' : stageNumber === 3 ? 'is-active' : '') + '">DOOR</li></ol></div><div class="mc-world mc-world--' + game.position + '" style="--player-x:' + playerX + '%"><div class="mc-sky" aria-hidden="true"><i class="mc-cloud mc-cloud--one"></i><i class="mc-cloud mc-cloud--two"></i><i class="mc-sun"></i><i class="mc-hill mc-hill--one"></i><i class="mc-hill mc-hill--two"></i></div><div class="mc-ground" aria-hidden="true"></div><div class="mc-world-details" aria-hidden="true"><i class="mc-grass mc-grass--one"></i><i class="mc-grass mc-grass--two"></i><i class="mc-flower"></i><i class="mc-stone"></i></div>' + treeAction + tableAction + '<div class="mc-player" aria-label="BYU cougar explorer holding an axe"><span class="mc-axe" aria-hidden="true"></span><img src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></div>' + worldAction + (game.complete ? '<span class="mc-built-door" aria-hidden="true"><i></i><b></b><em></em></span>' : '') + '</div><div class="mc-lower"><section class="mc-inventory" aria-labelledby="mc-inventory-title"><div class="mc-panel-title"><strong id="mc-inventory-title">ITEMS</strong><span>AXE EQUIPPED</span></div><div class="mc-hotbar" aria-label="Current inventory"><span class="mc-slot' + (game.logs ? ' has-item' : '') + '">' + (game.logs ? '<i class="mc-item mc-item--log"></i><b>' + game.logs + '</b>' : '') + '<small>LOG</small></span><span class="mc-slot' + (loosePlanks ? ' has-item' : '') + '">' + (loosePlanks ? '<i class="mc-item mc-item--plank"></i><b>' + loosePlanks + '</b>' : '') + '<small>PLANK</small></span><span class="mc-slot' + (game.doors ? ' has-item' : '') + '">' + (game.doors ? '<i class="mc-item mc-item--door"></i><b>' + game.doors + '</b>' : '') + '<small>DOOR</small></span><span class="mc-slot has-item is-equipped"><i class="mc-item mc-item--axe"></i><small>AXE</small></span></div><p class="mc-status" role="status" aria-live="polite">' + escapeHtml(game.feedback) + '</p></section><section class="mc-craft-panel' + (craftingMarkup ? ' is-open' : '') + '" aria-label="Crafting table workspace">' + (craftingMarkup || '<div class="mc-table-closed"><span class="mc-mini-table" aria-hidden="true"><i></i><b></b><em></em></span><div><strong>CRAFTING TABLE</strong><p>Gather two logs, then bring them here.</p></div></div>') + '</section></div></div>';
+    return '<div class="game-stage-group" data-minecraft-game><div class="minecraft-game"><div class="mc-mission-bar"><div class="mc-objective-copy"><small>STEP ' + stageNumber + ' OF 3</small><strong>' + escapeHtml(stageTitle) + '</strong></div><ol aria-label="Crafting progress"><li class="' + (stageNumber > 1 ? 'is-done' : 'is-active') + '">CHOP</li><li class="' + (stageNumber > 2 ? 'is-done' : stageNumber === 2 ? 'is-active' : '') + '">PLANKS</li><li class="' + (game.complete ? 'is-done' : stageNumber === 3 ? 'is-active' : '') + '">DOOR</li></ol></div><div class="mc-world mc-world--' + game.position + '" style="--player-x:' + playerX + '%"><div class="mc-sky" aria-hidden="true"><i class="mc-cloud mc-cloud--one"></i><i class="mc-cloud mc-cloud--two"></i><i class="mc-sun"></i><i class="mc-hill mc-hill--one"></i><i class="mc-hill mc-hill--two"></i></div><div class="mc-ground" aria-hidden="true"></div><div class="mc-world-details" aria-hidden="true"><i class="mc-grass mc-grass--one"></i><i class="mc-grass mc-grass--two"></i><i class="mc-flower"></i><i class="mc-stone"></i></div>' + treeAction + tableAction + '<div class="mc-player" aria-label="BYU cougar explorer holding an axe"><span class="mc-axe" aria-hidden="true"></span><img src="' + EXPLORER_AVATAR_SRC + '" width="1254" height="1254" alt=""></div>' + worldAction + (game.complete ? '<span class="mc-built-door" aria-hidden="true"><i></i><b></b><em></em></span>' : '') + '</div><div class="mc-lower"><section class="mc-inventory" aria-labelledby="mc-inventory-title"><div class="mc-panel-title"><strong id="mc-inventory-title">ITEMS</strong><span>AXE EQUIPPED</span></div><div class="mc-hotbar" aria-label="Current inventory"><span class="mc-slot' + (game.logs ? ' has-item' : '') + '">' + (game.logs ? '<i class="mc-item mc-item--log"></i><b>' + game.logs + '</b>' : '') + '<small>LOG</small></span><span class="mc-slot' + (loosePlanks ? ' has-item' : '') + '">' + (loosePlanks ? '<i class="mc-item mc-item--plank"></i><b>' + loosePlanks + '</b>' : '') + '<small>PLANK</small></span><span class="mc-slot' + (game.doors ? ' has-item' : '') + '">' + (game.doors ? '<i class="mc-item mc-item--door"></i><b>' + game.doors + '</b>' : '') + '<small>DOOR</small></span><span class="mc-slot has-item is-equipped"><i class="mc-item mc-item--axe"></i><small>AXE</small></span></div><p class="mc-status" role="status" aria-live="polite">' + escapeHtml(game.feedback) + '</p></section><section class="mc-craft-panel' + (craftingMarkup ? ' is-open' : '') + '" aria-label="Crafting table workspace">' + (craftingMarkup || '<div class="mc-table-closed"><span class="mc-mini-table" aria-hidden="true"><i></i><b></b><em></em></span><div><strong>CRAFTING TABLE</strong><p>Gather two logs, then bring them here.</p></div></div>') + '</section></div></div>' + (game.complete ? '<div class="challenge-actions"><button class="button button--primary" type="button" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button></div>' : '') + '</div>';
   }
 
   function renderMinecraftTree(choppedLogs) {
@@ -1001,7 +1038,7 @@
   }
 
   function renderMinecraftComplete(mini, game) {
-    return '<div class="mc-craft-success"><span class="mc-success-check" aria-hidden="true">✓</span><div><small>RECIPE COMPLETE</small><strong>Oak Door ×' + Number(mini.doorOutputCount || game.doors || 3) + '</strong><p>You used six matching planks in the correct 2 × 3 shape.</p></div></div><button class="mc-craft-button is-complete" type="button" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>';
+    return '<div class="mc-craft-success"><span class="mc-success-check" aria-hidden="true">✓</span><div><small>RECIPE COMPLETE</small><strong>Oak Door ×' + Number(mini.doorOutputCount || game.doors || 3) + '</strong><p>You used six matching planks in the correct 2 × 3 shape.</p></div></div>';
   }
 
   function renderScratchGame(node, skill, mini) {
@@ -1015,7 +1052,7 @@
       var block = blocks.filter(function (candidate) { return candidate.id === id; })[0];
       return '<li class="scratch-stack-block scratch-block--' + block.kind + '"><span>' + (index + 1) + '</span><strong>' + escapeHtml(block.label) + '</strong><button type="button" class="scratch-remove" data-action="scratch-remove" data-scratch-index="' + index + '" aria-label="Remove command ' + (index + 1) + '">×</button></li>';
     }).join('') : '<li class="scratch-empty">Choose blocks below to build your script.</li>';
-    var availableMarkup = blocks.map(function (block, index) { return '<button type="button" class="scratch-block scratch-block--' + block.kind + '" data-action="scratch-add" data-scratch-id="' + block.id + '"><span class="scratch-block-shape" aria-hidden="true"></span><span><strong>' + escapeHtml(block.label) + '</strong><small>' + escapeHtml(block.hint) + '</small></span><b class="scratch-block-number">' + (index + 1) + '</b></button>'; }).join('');
+    var availableMarkup = blocks.map(function (block, index) { return '<button type="button" class="scratch-block scratch-block--' + block.kind + '" data-action="scratch-add" data-scratch-id="' + block.id + '"><span class="scratch-block-shape" aria-hidden="true">▶</span><span><strong>' + escapeHtml(block.label) + '</strong><small>' + escapeHtml(block.hint) + '</small></span><b class="scratch-block-number">' + (index + 1) + '</b></button>'; }).join('');
     var feedbackMarkup = scratchFeedback ? '<p class="scratch-feedback ' + (scratchSolved ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(scratchFeedback) + '</p>' : '';
     var actionMarkup = scratchSolved ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>' : '<button class="button button--primary" data-action="scratch-check" ' + (scratchDraft.length === 0 ? 'disabled' : '') + '>Run my script <span aria-hidden="true">→</span></button>';
     var cells = [];
@@ -1023,9 +1060,9 @@
       var isBush = row === 4 && col === 2;
       var isFlag = row === 2 && col === 4;
       var isCat = row === scratchPosition.row && col === scratchPosition.col;
-      cells.push('<div class="scratch-grid-cell' + (isBush ? ' is-bush' : '') + (isFlag ? ' is-flag' : '') + (isCat ? ' is-cat' : '') + '" aria-label="' + (isBush ? 'Bush obstacle' : isFlag ? 'Goal flag' : isCat ? 'Cat position' : 'Path square') + '">' + (isBush ? '🌿' : isFlag ? '⚑' : isCat ? '🐱' : '') + '</div>');
+      cells.push('<div class="scratch-grid-cell' + (isBush ? ' is-bush' : '') + (isFlag ? ' is-flag' : '') + (isCat ? ' is-cat' : '') + '" aria-label="' + (isBush ? 'Bush obstacle' : isFlag ? 'Goal flag' : isCat ? 'Cougar position' : 'Path square') + '">' + (isCat ? '<img class="scratch-cougar" src="' + EXPLORER_AVATAR_SRC + '" alt="">' : isBush ? '<span class="scratch-pixel-bush" aria-hidden="true"></span>' : isFlag ? '<span class="scratch-pixel-flag" aria-hidden="true"></span>' : '') + '</div>');
     }
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SCRATCH PUZZLE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout scratch-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">Guide the cat around the bush and onto the flag by building a Scratch-style command script.</p><div class="scratch-howto"><span class="eyebrow">HOW TO PLAY</span><strong>Click commands in the order the cat should use them.</strong><span>Start facing right. The cat moves one square at a time and turns in place.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="scratch-reset">Reset script</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace" role="region" aria-label="Scratch block path puzzle"><div class="scratch-puzzle-board"><div class="scratch-grid" aria-label="Cat path board">' + cells.join('') + '</div><div class="scratch-board-legend"><span>🐱 Start</span><span>🌿 Bush</span><span>⚑ Goal</span></div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR SCRIPT</span><small>' + scratchDraft.length + ' commands</small></div><ol class="scratch-stack">' + draftMarkup + '</ol><div class="scratch-divider"><span>CLICK TO ADD A COMMAND</span></div><div class="scratch-block-picker">' + availableMarkup + '</div>' + feedbackMarkup + '</div></div></div></section>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC · VISUAL CODING</span><button class="text-button" data-action="restart">Restart</button></header><div class="challenge-layout scratch-layout">' + renderGameCopy(node) + '<div class="game-stage-group"><div class="scratch-workspace surface-dark" role="region" aria-label="Block coding path puzzle"><div class="scratch-puzzle-board"><div class="scratch-grid" aria-label="Cougar path board">' + cells.join('') + '</div><div class="scratch-board-legend"><span>Cougar: start</span><span>Bush: obstacle</span><span>Flag: goal</span></div></div><div class="scratch-panel surface-light"><div class="scratch-panel-heading"><span class="eyebrow">YOUR SCRIPT</span><small>' + scratchDraft.length + ' commands</small></div><ol class="scratch-stack">' + draftMarkup + '</ol><div class="scratch-divider"><span>CLICK TO ADD A COMMAND</span></div><div class="scratch-block-picker">' + availableMarkup + '</div>' + feedbackMarkup + '</div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="scratch-reset">Reset script</button></div></div></div></section>';
   }
 
   function renderCpuGame(node, skill, mini) {
@@ -1036,7 +1073,7 @@
     }).join('');
     var feedbackMarkup = cpuFeedback ? '<p class="scratch-feedback ' + (cpuSolved ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(cpuFeedback) + '</p>' : '';
     var actionMarkup = cpuSolved ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>' : '<span class="cpu-action-hint">' + Object.keys(cpuGridSelected).length + ' / ' + CPU_GRID_TARGETS.length + ' CPU tiles selected</span>';
-    return '<section class="screen screen--challenge screen--cpu" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SYSTEMS CHECK</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout cpu-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept) + '</p><div class="cpu-brief"><span class="cpu-brief-icon" aria-hidden="true">☑</span><div><span class="eyebrow">CREW VERIFICATION</span><strong>Select every grid square containing the CPU.</strong><span>Like a shipboard reCAPTCHA, choose all the tiles that touch the processor chip.</span></div></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon" aria-hidden="true">' + renderBadgeIcon(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="cpu-reset">Reset check</button><button class="text-button" data-action="back-map">Return to map</button></div>' + feedbackMarkup + '</div><div class="cpu-workspace" role="region" aria-label="Computer component identification challenge"><div class="cpu-console-top"><span class="mini-crewmate mini-crewmate--red" aria-hidden="true"><i></i><b></b></span><div><span>SHIP SYSTEMS / COMPONENT SCAN</span><strong>' + (cpuSolved ? 'VERIFICATION COMPLETE' : 'SELECT CPU TILES') + '</strong></div><span class="cpu-status-light' + (cpuSolved ? ' is-complete' : '') + '" aria-hidden="true"></span></div><div class="computer-case"><div class="motherboard"><img class="computer-interior-art" src="' + COMPUTER_INTERIOR_SRC + '" alt="" aria-hidden="true"><div class="cpu-grid-overlay" role="grid" aria-label="Select every grid square containing the CPU">' + gridMarkup + '</div></div><div class="case-caption"><span>COMPUTER CROSS-SECTION</span><small>Select every tile that touches the CPU</small></div></div></div></div></section>';
+    return '<section class="screen screen--challenge screen--cpu" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC · SYSTEMS CHECK</span><button class="text-button" data-action="restart">Restart</button></header><div class="challenge-layout cpu-layout">' + renderGameCopy(node) + '<div class="game-stage-group"><div class="cpu-workspace surface-dark" role="region" aria-label="Computer component identification challenge"><div class="cpu-console-top"><span class="mini-crewmate mini-crewmate--red" aria-hidden="true"><i></i><b></b></span><div><span>SHIP SYSTEMS / COMPONENT SCAN</span><strong>' + (cpuSolved ? 'VERIFICATION COMPLETE' : 'SELECT CPU TILES') + '</strong></div><span class="cpu-status-light' + (cpuSolved ? ' is-complete' : '') + '" aria-hidden="true"></span></div><div class="computer-case"><div class="motherboard"><img class="computer-interior-art" src="' + COMPUTER_INTERIOR_SRC + '" alt="" aria-hidden="true"><div class="cpu-grid-overlay" role="grid" aria-label="Select every grid square containing the CPU">' + gridMarkup + '</div></div><div class="case-caption"><span>COMPUTER CROSS-SECTION</span><small>Select every tile that touches the CPU</small></div></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="cpu-reset">Reset check</button></div>' + feedbackMarkup + '</div></div></section>';
   }
 
   function renderSlideGame(node, skill, mini) {
@@ -1063,14 +1100,14 @@
       var content = item.image ? '<img src="' + EXPLORER_AVATAR_SRC + '" alt="BYU cougar explorer representing an Information Systems pathway">' : item.facts ? '<ul><li>IS connects people and technology.</li><li>Every industry needs IS thinkers.</li><li>You can start building skills today.</li></ul>' : '<strong>' + escapeHtml(item.text) + '</strong>';
       return '<div class="slide-placed slide-placed--' + item.kind + (item.image ? ' is-image' : '') + (slideSelected === item.id ? ' is-selected' : '') + '" draggable="true" data-slide-id="' + item.id + '" tabindex="0" aria-label="' + escapeAttr(item.text) + '">' + content + '</div>';
     };
-    var zoneMarkup = zones.map(function (zone) { return '<div class="slide-zone ' + zone.className + '" data-slide-slot="' + zone.id + '" aria-label="' + zone.aria + '">' + placedMarkup(zone.id) + '</div>'; }).join('');
+    var zoneMarkup = zones.map(function (zone) { return '<div class="slide-zone ' + zone.className + '" role="button" tabindex="0" data-slide-slot="' + zone.id + '" aria-label="' + zone.aria + '">' + placedMarkup(zone.id) + '</div>'; }).join('');
     var palette = components.map(function (item) {
       var placed = Boolean(slidePositions[item.id]);
-      return '<button type="button" class="slide-component scratch-block--' + item.kind + (slideSelected === item.id ? ' is-selected' : '') + (placed ? ' is-placed' : '') + '" draggable="true" data-action="slide-select" data-slide-id="' + item.id + '" aria-pressed="' + (slideSelected === item.id) + '"><span class="scratch-block-shape" aria-hidden="true"></span>' + (item.image ? '<img class="slide-component-thumb" src="' + EXPLORER_AVATAR_SRC + '" alt="">' : '') + '<strong>' + escapeHtml(item.text) + '</strong></button>';
+      return '<button type="button" class="slide-component scratch-block--' + item.kind + (slideSelected === item.id ? ' is-selected' : '') + (placed ? ' is-placed' : '') + '" draggable="true" data-action="slide-select" data-slide-id="' + item.id + '" aria-pressed="' + (slideSelected === item.id) + '">' + (item.image ? '<img class="slide-component-thumb" src="' + EXPLORER_AVATAR_SRC + '" alt="">' : '') + '<strong>' + escapeHtml(item.text) + '</strong></button>';
     }).join('');
     var feedbackMarkup = slideFeedback ? '<p class="scratch-feedback ' + (slideSolved ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(slideFeedback) + '</p>' : '';
     var actionMarkup = slideSolved ? '<button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button>' : '<button class="button button--primary" data-action="slide-check" ' + (Object.keys(slidePositions).length < 5 ? 'disabled' : '') + '>Review my slide <span aria-hidden="true">→</span></button>';
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC / SLIDE STUDIO</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout slide-layout"><div class="challenge-copy"><p class="eyebrow">' + escapeHtml(node.id) + ' / MINI-GAME STOP</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">You are pitching Information Systems to incoming BYU students. Drag each piece onto the slide area where it will communicate best.</p><div class="scratch-howto"><span class="eyebrow">THE BRIEF</span><strong>Make the idea clear in five seconds.</strong><span>The biggest statement belongs at the top. Supporting text follows. Group the evidence, give the visual room, and make the next step easy to find.</span></div><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>You earn it only if you choose to keep following this trail.</p></div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="slide-reset">Reset slide</button><button class="text-button" data-action="back-map">Return to map</button></div></div><div class="scratch-workspace slide-workspace" role="region" aria-label="Slide design workspace"><div class="slide-canvas"><div class="slide-canvas-label"><span class="eyebrow">YOUR SLIDE</span><small>' + Object.keys(slidePositions).length + ' / 5 pieces placed</small></div><div class="slide-blank-canvas slide-zones-canvas">' + zoneMarkup + '</div></div><div class="scratch-panel"><div class="scratch-panel-heading"><span class="eyebrow">YOUR CONTENT</span><small>' + (slideSelected ? 'Click a slide area' : 'Drag a piece to begin') + '</small></div><div class="slide-component-picker">' + palette + '</div>' + feedbackMarkup + '</div></div></div></section>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC · SLIDE STUDIO</span><button class="text-button" data-action="restart">Restart</button></header><div class="challenge-layout slide-layout">' + renderGameCopy(node) + '<div class="game-stage-group"><div class="scratch-workspace slide-workspace surface-dark" role="region" aria-label="Slide design workspace"><div class="slide-canvas"><div class="slide-canvas-label"><span class="eyebrow">YOUR SLIDE</span><small>' + Object.keys(slidePositions).length + ' / 5 pieces placed</small></div><div class="slide-blank-canvas slide-zones-canvas">' + zoneMarkup + '</div></div><div class="scratch-panel surface-light"><div class="scratch-panel-heading"><span class="eyebrow">YOUR CONTENT</span><small>' + (slideSelected ? 'Click a slide area' : 'Drag a piece to begin') + '</small></div><div class="slide-component-picker">' + palette + '</div>' + feedbackMarkup + '</div></div><div class="challenge-actions">' + actionMarkup + '<button class="text-button" data-action="slide-reset">Reset slide</button></div></div></div></section>';
   }
 
   function renderSlideQna(node, skill) {
@@ -1080,9 +1117,9 @@
       { prompt: 'What makes the illustration useful?', choices: [{ id: 'support', text: 'It reinforces the idea of people and technology' }, { id: 'decoration', text: 'It is as large and flashy as possible' }, { id: 'random', text: 'It adds something unrelated' }], answer: 'support' },
       { prompt: 'What should a viewer understand next?', choices: [{ id: 'action', text: 'A clear next step: explore an IS path' }, { id: 'mystery', text: 'Nothing—the viewer should guess' }, { id: 'more', text: 'Every detail about the major' }], answer: 'action' }
     ];
-    if (slideQnaIndex >= questions.length) return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">CREW REVIEW COMPLETE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="qna-card"><p class="screen-kicker">CREW REVIEW / 04 OF 04</p><h1 id="challenge-title" tabindex="-1">Briefing approved.</h1><p>Your crew review is complete. You made a clear visual story for the incoming students on board.</p><div class="qna-score"><strong>' + slideQnaScore + ' / 4</strong><span>clarity decisions understood</span></div><button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button></div></section>';
+    if (slideQnaIndex >= questions.length) return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">CREW REVIEW COMPLETE</span><button class="text-button" data-action="restart">Restart</button></header><div class="qna-card"><p class="screen-kicker">CREW REVIEW / 04 OF 04</p><h1 id="challenge-title" tabindex="-1">Briefing approved.</h1><p>Your crew review is complete. You made a clear visual story for the incoming students on board.</p><div class="qna-score"><strong>' + slideQnaScore + ' / 4</strong><span>clarity decisions understood</span></div>' + renderGameBrief('Reflect on the activity.', 'Continue to decide whether this work gives you energy.') + renderGameReward(node) + '<div class="challenge-actions"><button class="button button--primary" data-action="finish-game">Continue to enjoyment check <span aria-hidden="true">→</span></button></div></div></section>';
     var question = questions[slideQnaIndex];
-    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">CREW REVIEW / 0' + (slideQnaIndex + 1) + ' OF 04</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="qna-card"><p class="screen-kicker">AMONG-US-INSPIRED CREW REVIEW</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p>The crew is checking whether your slide communicates clearly to its audience.</p><div class="qna-choice-grid">' + question.choices.map(function (choice) { return '<button class="qna-choice" type="button" data-action="slide-qna-answer" data-slide-answer="' + choice.id + '"><span class="qna-choice-marker" aria-hidden="true">?</span><strong>' + escapeHtml(choice.text) + '</strong></button>'; }).join('') + '</div>' + (slideQnaFeedback ? '<p class="scratch-feedback ' + (slideQnaFeedback === 'Good call.' ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(slideQnaFeedback) + '</p>' : '') + '</div></section>';
+    return '<section class="screen screen--challenge" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">CREW REVIEW / 0' + (slideQnaIndex + 1) + ' OF 04</span><button class="text-button" data-action="restart">Restart</button></header><div class="qna-card"><p class="screen-kicker">CREW REVIEW</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p>The crew is checking whether your slide communicates clearly to its audience.</p>' + renderGameBrief('Choose the clearest design decision.', 'Use what you learned while arranging the slide to answer each crew question.') + renderGameReward(node) + '<div class="qna-choice-grid">' + question.choices.map(function (choice) { return '<button class="qna-choice" type="button" data-action="slide-qna-answer" data-slide-answer="' + choice.id + '"><span class="qna-choice-marker" aria-hidden="true">?</span><strong>' + escapeHtml(choice.text) + '</strong></button>'; }).join('') + '</div>' + (slideQnaFeedback ? '<p class="scratch-feedback ' + (slideQnaFeedback === 'Good call.' ? 'is-success' : 'is-error') + '" role="status">' + escapeHtml(slideQnaFeedback) + '</p>' : '') + '</div></section>';
   }
 
   function resetSlideGame() {
@@ -1101,6 +1138,12 @@
       zone.addEventListener('dragleave', function () { zone.classList.remove('is-drag-target'); });
       zone.addEventListener('drop', function (event) { event.preventDefault(); zone.classList.remove('is-drag-target'); placeSlideComponent(zone.getAttribute('data-slide-slot'), event.dataTransfer.getData('text/plain')); });
       zone.addEventListener('click', function () { if (slideSelected) placeSlideComponent(zone.getAttribute('data-slide-slot')); });
+      zone.addEventListener('keydown', function (event) {
+        if (event.target === zone && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault();
+          if (slideSelected) placeSlideComponent(zone.getAttribute('data-slide-slot'));
+        }
+      });
     });
   }
 
@@ -1136,6 +1179,10 @@
     var screen = root.querySelector('.screen--challenge');
     if (!screen) { render(); return; }
 
+    var active = document.activeElement;
+    var focusId = active && active.getAttribute && active.getAttribute('data-slide-id');
+    var focusSlot = active && active.getAttribute && active.getAttribute('data-slide-slot');
+    var wasReview = Boolean(screen.querySelector('.qna-card'));
     var temp = document.createElement('div');
     temp.innerHTML = renderSlideGame(node, skill, mini);
     var freshScreen = temp.querySelector('.screen--challenge');
@@ -1144,6 +1191,11 @@
     screen.replaceWith(freshScreen);
     freshScreen.querySelectorAll('[data-action]').forEach(function (element) { element.addEventListener('click', handleAction); });
     wireSlideEvents();
+    var focusTarget = freshScreen.querySelector('.qna-card') || wasReview
+      ? freshScreen.querySelector('#challenge-title')
+      : focusId ? freshScreen.querySelector('[data-slide-id="' + focusId + '"]')
+        : focusSlot ? freshScreen.querySelector('[data-slide-slot="' + focusSlot + '"]') : null;
+    if (focusTarget) focusTarget.focus({ preventScroll: true });
   }
 
   function answerSlideQna(answer) {
@@ -1157,7 +1209,7 @@
   /** Render the chart-matching task as a shipboard data-routing console. */
   function renderChartMatchMiniGame(node) {
     ensureChartMatchGame(node);
-    return '<section class="screen screen--challenge screen--chart-match" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">DATA REPAIR / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header>' + renderChartMatchBody(node) + '</section>';
+    return '<section class="screen screen--challenge screen--chart-match" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC · DATA REPAIR</span><button class="text-button" data-action="restart">Restart</button></header>' + renderChartMatchBody(node) + '</section>';
   }
 
   function ensureChartMatchGame(node) {
@@ -1182,7 +1234,7 @@
     var insightMarkup = sheets.filter(function (sheet) { return game.matches[sheet.id]; }).map(function (sheet) {
       return '<li><span aria-hidden="true">✓</span><p><strong>' + escapeHtml(sheet.name) + '</strong>' + escapeHtml(sheet.insight) + '</p></li>';
     }).join('');
-    return '<div class="chart-match-game" data-chart-game><div class="chart-match-intro"><div><p class="eyebrow">ANALYZE + SOLVE / DATA SABOTAGE</p><h1 id="challenge-title" tabindex="-1">Reconnect the<br><em>data feeds.</em></h1><p class="lede">The ship’s charts were scrambled. Inspect each spreadsheet, then draw a cable to the visualization that tells its story best.</p></div><div class="chart-match-mission"><span class="mission-alarm" aria-hidden="true"><i></i></span><div><small>EMERGENCY TASK</small><strong>' + matchedCount + ' / ' + sheets.length + ' feeds online</strong><p>Drag a plug, or select one sheet and one chart.</p></div><span class="mini-crewmate mini-crewmate--red" aria-hidden="true"><i></i><b></b></span></div></div><div class="chart-match-console"><div class="chart-console-rivets" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="chart-match-status" role="status" aria-live="polite"><span class="chart-status-lamp' + (game.complete ? ' is-complete' : '') + '" aria-hidden="true"></span><strong>' + escapeHtml(game.complete ? 'All feeds restored. Nice work, analyst.' : game.feedback) + '</strong><span>' + matchedCount + '/' + sheets.length + '</span></div><div class="chart-match-board"><svg class="chart-connector-layer" aria-hidden="true"><path class="chart-preview-line" data-chart-preview></path>' + sheets.map(function (sheet, index) { return '<path class="chart-match-line chart-match-line--' + index + '" data-chart-line-for="' + escapeAttr(sheet.id) + '"></path>'; }).join('') + '</svg><section class="chart-source-column" aria-labelledby="sheet-bank-title"><div class="chart-column-heading"><span>01</span><div><small>DATA BANK</small><strong id="sheet-bank-title">Excel sheets</strong></div></div>' + sheets.map(function (sheet, index) { return renderChartSheet(sheet, index, game); }).join('') + '</section><div class="chart-cable-gutter" aria-hidden="true"><span>ROUTE</span><i></i><i></i><i></i></div><section class="chart-target-column" aria-labelledby="chart-bank-title"><div class="chart-column-heading"><span>02</span><div><small>DISPLAY BANK</small><strong id="chart-bank-title">Charts</strong></div></div>' + charts.map(function (chart, index) { return renderChartTarget(chart, index, game); }).join('') + '</section></div><div class="chart-match-footer"><div class="chart-match-learnings">' + (insightMarkup ? '<ul>' + insightMarkup + '</ul>' : '<p><strong>Chart clue:</strong> Look for time, categories, or parts of a whole.</p>') + '</div>' + (game.complete ? '<button class="button chart-complete-button" data-action="finish-game">Task complete — continue <span aria-hidden="true">→</span></button>' : '<button class="button button-secondary" data-action="reset-chart-match" ' + (matchedCount ? '' : 'disabled') + '>Clear cables</button>') + '</div></div><aside class="chart-match-reward"><span class="mini-crewmate mini-crewmate--cyan" aria-hidden="true"><i></i><b></b></span><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skillFor(node)) + '" aria-hidden="true">' + renderBadgeArtwork(skillFor(node)) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skillFor(node).name) + '</strong><p>Restore all three feeds, then decide if data work energizes you.</p></div></div></aside></div>';
+    return '<div class="chart-match-game challenge-layout" data-chart-game>' + renderGameCopy(node) + '<div class="game-stage-group"><div class="chart-match-console surface-dark"><div class="chart-match-mission"><span class="mission-alarm" aria-hidden="true"><i></i></span><div><small>EMERGENCY TASK</small><strong>' + matchedCount + ' / ' + sheets.length + ' feeds online</strong><p>Drag a plug, or select one sheet and one chart.</p></div><span class="mini-crewmate mini-crewmate--red" aria-hidden="true"><i></i><b></b></span></div><div class="chart-console-rivets" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="chart-match-status" role="status" aria-live="polite"><span class="chart-status-lamp' + (game.complete ? ' is-complete' : '') + '" aria-hidden="true"></span><strong>' + escapeHtml(game.complete ? 'All feeds restored. Nice work, analyst.' : game.feedback) + '</strong><span>' + matchedCount + '/' + sheets.length + '</span></div><div class="chart-match-board"><svg class="chart-connector-layer" aria-hidden="true"><path class="chart-preview-line" data-chart-preview></path>' + sheets.map(function (sheet, index) { return '<path class="chart-match-line chart-match-line--' + index + '" data-chart-line-for="' + escapeAttr(sheet.id) + '"></path>'; }).join('') + '</svg><section class="chart-source-column" aria-labelledby="sheet-bank-title"><div class="chart-column-heading"><span>01</span><div><small>DATA BANK</small><strong id="sheet-bank-title">Excel sheets</strong></div></div>' + sheets.map(function (sheet, index) { return renderChartSheet(sheet, index, game); }).join('') + '</section><div class="chart-cable-gutter" aria-hidden="true"><span>ROUTE</span><i></i><i></i><i></i></div><section class="chart-target-column" aria-labelledby="chart-bank-title"><div class="chart-column-heading"><span>02</span><div><small>DISPLAY BANK</small><strong id="chart-bank-title">Charts</strong></div></div>' + charts.map(function (chart, index) { return renderChartTarget(chart, index, game); }).join('') + '</section></div></div><div class="chart-match-footer"><div class="chart-match-learnings">' + (insightMarkup ? '<ul>' + insightMarkup + '</ul>' : '<p><strong>Chart clue:</strong> Look for time, categories, or parts of a whole.</p>') + '</div>' + (game.complete ? '<button class="button chart-complete-button" data-action="finish-game">Task complete — continue <span aria-hidden="true">→</span></button>' : '<button class="button button-secondary" data-action="reset-chart-match" ' + (matchedCount ? '' : 'disabled') + '>Clear cables</button>') + '</div></div></div>';
   }
 
   function renderChartSheet(sheet, index, game) {
@@ -1200,8 +1252,8 @@
   }
 
   function renderChartGraphic(chart) {
-    if (chart.type === 'line') return '<svg class="mini-data-chart mini-data-chart--line" viewBox="0 0 260 112" role="img" aria-label="' + escapeAttr(chart.ariaLabel) + '"><path class="chart-gridline" d="M30 20H245M30 48H245M30 76H245M30 102H245"></path><path class="chart-axis" d="M30 12V102H250"></path><path class="chart-line-shadow" d="M35 84L84 73L133 65L182 44L232 23"></path><path class="chart-line-data" d="M35 84L84 73L133 65L182 44L232 23"></path><g class="chart-points"><circle cx="35" cy="84" r="4"></circle><circle cx="84" cy="73" r="4"></circle><circle cx="133" cy="65" r="4"></circle><circle cx="182" cy="44" r="4"></circle><circle cx="232" cy="23" r="4"></circle></g><g class="chart-ticks"><text x="35" y="111">M</text><text x="84" y="111">T</text><text x="133" y="111">W</text><text x="182" y="111">T</text><text x="232" y="111">F</text></g></svg>';
-    if (chart.type === 'bars') return '<svg class="mini-data-chart mini-data-chart--bars" viewBox="0 0 260 112" role="img" aria-label="' + escapeAttr(chart.ariaLabel) + '"><path class="chart-gridline" d="M30 20H245M30 48H245M30 76H245M30 102H245"></path><path class="chart-axis" d="M30 12V102H250"></path><g class="chart-bars"><rect x="48" y="23" width="31" height="79" rx="3"></rect><rect x="96" y="52" width="31" height="50" rx="3"></rect><rect x="144" y="72" width="31" height="30" rx="3"></rect><rect x="192" y="42" width="31" height="60" rx="3"></rect></g><g class="chart-ticks"><text x="64" y="111">EL</text><text x="112" y="111">RE</text><text x="160" y="111">ME</text><text x="208" y="111">NA</text></g></svg>';
+    if (chart.type === 'line') return '<svg class="mini-data-chart mini-data-chart--line" viewBox="0 0 260 128" role="img" aria-label="' + escapeAttr(chart.ariaLabel) + '"><path class="chart-gridline" d="M30 20H245M30 48H245M30 76H245M30 102H245"></path><path class="chart-axis" d="M30 12V102H250"></path><path class="chart-line-shadow" d="M35 84L84 73L133 65L182 44L232 23"></path><path class="chart-line-data" d="M35 84L84 73L133 65L182 44L232 23"></path><g class="chart-points"><circle cx="35" cy="84" r="4"></circle><circle cx="84" cy="73" r="4"></circle><circle cx="133" cy="65" r="4"></circle><circle cx="182" cy="44" r="4"></circle><circle cx="232" cy="23" r="4"></circle></g><g class="chart-ticks"><text x="35" y="121">M</text><text x="84" y="121">T</text><text x="133" y="121">W</text><text x="182" y="121">T</text><text x="232" y="121">F</text></g></svg>';
+    if (chart.type === 'bars') return '<svg class="mini-data-chart mini-data-chart--bars" viewBox="0 0 260 128" role="img" aria-label="' + escapeAttr(chart.ariaLabel) + '"><path class="chart-gridline" d="M30 20H245M30 48H245M30 76H245M30 102H245"></path><path class="chart-axis" d="M30 12V102H250"></path><g class="chart-bars"><rect x="48" y="23" width="31" height="79" rx="3"></rect><rect x="96" y="52" width="31" height="50" rx="3"></rect><rect x="144" y="72" width="31" height="30" rx="3"></rect><rect x="192" y="42" width="31" height="60" rx="3"></rect></g><g class="chart-ticks"><text x="64" y="121">EL</text><text x="112" y="121">RE</text><text x="160" y="121">ME</text><text x="208" y="121">NA</text></g></svg>';
     return '<svg class="mini-data-chart mini-data-chart--donut" viewBox="0 0 260 112" role="img" aria-label="' + escapeAttr(chart.ariaLabel) + '"><g transform="translate(68 56) rotate(-90)"><circle class="donut-track" r="39"></circle><circle class="donut-segment donut-segment--one" r="39"></circle><circle class="donut-segment donut-segment--two" r="39"></circle><circle class="donut-segment donut-segment--three" r="39"></circle></g><text class="donut-total" x="68" y="52">100</text><text class="donut-label" x="68" y="66">CREW</text><g class="donut-legend"><rect x="132" y="26" width="9" height="9" rx="2"></rect><text x="148" y="34">70%</text><rect x="132" y="50" width="9" height="9" rx="2"></rect><text x="148" y="58">20%</text><rect x="132" y="74" width="9" height="9" rx="2"></rect><text x="148" y="82">10%</text></g></svg>';
   }
 
@@ -1210,7 +1262,7 @@
     var skill = skillFor(node);
     var mini = node.miniGame;
     ensureJigsawGame(node);
-    return '<section class="screen screen--challenge screen--jigsaw" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">60 SEC / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="challenge-layout challenge-layout--jigsaw"><div class="challenge-copy"><p class="eyebrow">ANALYZE + SOLVE / SHIPBOARD TASK</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept) + '</p><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skill.name) + '</strong><p>Finish the repair, then decide whether this kind of work energized you.</p></div></div><div class="jigsaw-brief"><strong>How to repair</strong><p>' + escapeHtml(mini.instructions) + '</p><span>Mouse, touch, and keyboard ready</span></div></div>' + renderJigsawStage(node) + '</div></section>';
+    return '<section class="screen screen--challenge screen--jigsaw" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC · SCANNER REPAIR</span><button class="text-button" data-action="restart">Restart</button></header><div class="challenge-layout challenge-layout--jigsaw">' + renderGameCopy(node) + renderJigsawStage(node) + '</div></section>';
   }
 
   function ensureJigsawGame(node) {
@@ -1251,13 +1303,13 @@
       : game.selectedPiece == null
         ? 'Select a panel, then choose its position in the scanner grid.'
         : 'Panel ' + (game.selectedPiece + 1) + ' selected. Choose its matching position.';
-    return '<div class="jigsaw-console' + (game.complete ? ' is-complete' : '') + '" data-jigsaw-game data-node-id="' + escapeAttr(node.id) + '"><div class="jigsaw-console-top"><div class="jigsaw-task-light" aria-hidden="true"><i></i><span>TASK ACTIVE</span></div><div class="jigsaw-timer" aria-label="Time remaining"><span>SCAN WINDOW</span><strong data-jigsaw-timer>' + formatGameTime(secondsLeft) + '</strong></div></div><div class="jigsaw-status" role="status" aria-live="polite" data-jigsaw-status>' + escapeHtml(status) + '</div><div class="jigsaw-workspace"><div><span class="jigsaw-label">SCANNER GRID</span><div class="jigsaw-board" role="group" aria-label="Six-position scanner puzzle">' + [0, 1, 2, 3, 4, 5].map(function (slotIndex) {
+    return '<div class="game-stage-group" data-jigsaw-game data-node-id="' + escapeAttr(node.id) + '"><div class="jigsaw-console surface-dark' + (game.complete ? ' is-complete' : '') + '"><div class="jigsaw-console-top"><div class="jigsaw-task-light" aria-hidden="true"><i></i><span>TASK ACTIVE</span></div><div class="jigsaw-timer" aria-label="Time remaining"><span>SCAN WINDOW</span><strong data-jigsaw-timer>' + formatGameTime(secondsLeft) + '</strong></div></div><div class="jigsaw-status" role="status" aria-live="polite" data-jigsaw-status>' + escapeHtml(status) + '</div><div class="jigsaw-workspace"><div><span class="jigsaw-label">SCANNER GRID</span><div class="jigsaw-board" role="group" aria-label="Six-position scanner puzzle">' + [0, 1, 2, 3, 4, 5].map(function (slotIndex) {
       var solved = game.solved.indexOf(slotIndex) !== -1;
       return '<button class="jigsaw-slot jigsaw-shape--' + slotIndex + (solved ? ' is-locked' : '') + '" type="button" data-action="jigsaw-slot" data-slot-index="' + slotIndex + '" aria-label="Position ' + (slotIndex + 1) + (solved ? ', panel locked' : ', empty') + '" ' + (solved ? 'disabled' : '') + '>' + (solved ? renderJigsawArtwork(slotIndex) : '<span aria-hidden="true">' + (slotIndex + 1) + '</span>') + '</button>';
     }).join('') + '</div></div><div><span class="jigsaw-label">LOOSE PANELS · ' + remaining.length + '</span><div class="jigsaw-tray" role="group" aria-label="Unplaced scanner panels">' + remaining.map(function (pieceIndex) {
       var selected = game.selectedPiece === pieceIndex;
       return '<button class="jigsaw-piece jigsaw-shape--' + pieceIndex + (selected ? ' is-selected' : '') + '" type="button" draggable="true" data-action="jigsaw-piece" data-piece-index="' + pieceIndex + '" aria-label="Scanner panel ' + (pieceIndex + 1) + '" aria-pressed="' + selected + '">' + renderJigsawArtwork(pieceIndex) + '<span class="sr-only">Panel ' + (pieceIndex + 1) + '</span></button>';
-    }).join('') + '</div></div></div><div class="jigsaw-controls">' + (game.complete
+    }).join('') + '</div></div></div></div><div class="jigsaw-controls">' + (game.complete
       ? '<div class="jigsaw-success"><span aria-hidden="true">✓</span><div><strong>Feed restored</strong><small>' + escapeHtml(formatGameTime(elapsed) + ' · ' + (game.mistakes ? game.mistakes + ' retries' : 'clean repair')) + '</small></div></div><button class="button button--primary" data-action="finish-game">Continue to trail check <span aria-hidden="true">→</span></button>'
       : '<button class="button button-secondary button--compact" data-action="jigsaw-hint" ' + (hintWait ? 'disabled aria-describedby="jigsaw-hint-wait"' : '') + '>Place one panel</button><small id="jigsaw-hint-wait">' + (hintWait ? 'Hint unlocks in ' + hintWait + ' sec' : 'Hint ready') + '</small>') + '</div></div>';
   }
@@ -1272,7 +1324,7 @@
   /** Render a personality-led crew draft with guidance, never a wrong answer. */
   function renderTeamBuilderMiniGame(node) {
     ensureTeamBuilderGame(node);
-    return '<section class="screen screen--challenge screen--team-builder" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">CREW DRAFT / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header>' + renderTeamBuilderBody(node) + '</section>';
+    return '<section class="screen screen--challenge screen--team-builder" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC · CREW DRAFT</span><button class="text-button" data-action="restart">Restart</button></header>' + renderTeamBuilderBody(node) + '</section>';
   }
 
   function ensureTeamBuilderGame(node) {
@@ -1310,7 +1362,7 @@
         ? '<li class="crew-slot is-filled"><span class="crew-slot-figure">' + renderCrewFigure(member) + '</span><span><strong>' + escapeHtml(member.name) + '</strong><small>' + escapeHtml(member.role) + '</small></span></li>'
         : '<li class="crew-slot"><span class="crew-slot-number" aria-hidden="true">0' + (index + 1) + '</span><span><strong>Open seat</strong><small>Choose a teammate</small></span></li>';
     }).join('');
-    return '<div class="team-builder-game" data-team-game><div class="team-builder-intro"><div><p class="eyebrow">PEOPLE + LEAD / ORBITAL CREW DRAFT</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">' + escapeHtml(mini.concept) + '</p></div><div class="player-loadout"><span>Your starting strengths</span><div>' + selectedSkills.map(function (skill) { return '<b>' + escapeHtml(skill.shortName || skill.name) + '</b>'; }).join('') + '</div><small>You are part of this team too.</small></div></div><div class="team-console"><div class="crew-draft-bar"><div><span>MISSION 01 / CAMPUS LAUNCH</span><strong>Draft ' + teamSize + ' teammates</strong></div><div class="crew-count" aria-label="' + selected.length + ' of ' + teamSize + ' teammates selected"><strong>' + selected.length + '</strong><span>/ ' + teamSize + '</span></div></div><div class="crew-advice" role="status" aria-live="polite"><span class="crew-advice-icon" aria-hidden="true">⌁</span><div class="crew-advice-content"><small>TEAM COACH</small><strong>' + escapeHtml(advice.title) + '</strong><p>' + escapeHtml(advice.copy) + '</p><div class="crew-advice-breakdown"><span><small>' + escapeHtml(advice.coveredTitle) + '</small><b>' + escapeHtml(advice.coveredLabel) + '</b></span><span class="' + (advice.isBalanced ? 'is-covered' : 'is-gap') + '"><small>' + escapeHtml(advice.gapTitle) + '</small><b>' + escapeHtml(advice.gapLabel) + '</b></span></div></div></div><div class="crew-draft-layout"><div class="crew-roster-wrap"><span class="crew-section-label">AVAILABLE EXPLORERS</span><div class="crew-roster" role="group" aria-label="Choose three teammates">' + roster + '</div></div><aside class="crew-summary" aria-label="Current team balance"><span class="crew-section-label">YOUR DREAM CREW</span><ol class="crew-slots">' + slots + '</ol>' + renderTeamBalance(mini, selected) + '</aside></div><div class="crew-draft-actions"><p>' + escapeHtml(advice.footer) + '</p><button class="button button--primary" data-action="finish-game" ' + (selected.length < teamSize ? 'disabled' : '') + '>Lock in this crew <span aria-hidden="true">→</span></button></div></div></div>';
+    return '<div class="team-builder-game challenge-layout" data-team-game>' + renderGameCopy(node) + '<div class="game-stage-group"><div class="team-console surface-dark"><div class="player-loadout"><span>Your starting strengths</span><div>' + selectedSkills.map(function (skill) { return '<b>' + escapeHtml(skill.shortName || skill.name) + '</b>'; }).join('') + '</div><small>You are part of this team too.</small></div><div class="crew-draft-bar"><div><span>MISSION 01 / CAMPUS LAUNCH</span><strong>Draft ' + teamSize + ' teammates</strong></div><div class="crew-count" aria-label="' + selected.length + ' of ' + teamSize + ' teammates selected"><strong>' + selected.length + '</strong><span>/ ' + teamSize + '</span></div></div><div class="crew-advice" role="status" aria-live="polite"><span class="crew-advice-icon" aria-hidden="true">⌁</span><div class="crew-advice-content"><small>TEAM COACH</small><strong>' + escapeHtml(advice.title) + '</strong><p>' + escapeHtml(advice.copy) + '</p><div class="crew-advice-breakdown"><span><small>' + escapeHtml(advice.coveredTitle) + '</small><b>' + escapeHtml(advice.coveredLabel) + '</b></span><span class="' + (advice.isBalanced ? 'is-covered' : 'is-gap') + '"><small>' + escapeHtml(advice.gapTitle) + '</small><b>' + escapeHtml(advice.gapLabel) + '</b></span></div></div></div><div class="crew-draft-layout"><div class="crew-roster-wrap"><span class="crew-section-label">AVAILABLE EXPLORERS</span><div class="crew-roster" role="group" aria-label="Choose three teammates">' + roster + '</div></div><aside class="crew-summary" aria-label="Current team balance"><span class="crew-section-label">YOUR DREAM CREW</span><ol class="crew-slots">' + slots + '</ol>' + renderTeamBalance(mini, selected) + '</aside></div></div><div class="crew-draft-actions"><p>' + escapeHtml(advice.footer) + '</p><button class="button button--primary" data-action="finish-game" ' + (selected.length < teamSize ? 'disabled' : '') + '>Lock in this crew <span aria-hidden="true">→</span></button></div></div></div>';
   }
 
   function renderCrewFigure(candidate) {
@@ -1413,7 +1465,7 @@
   /** Render a spaceship task panel inspired by a macOS drag-to-install flow. */
   function renderDeployMiniGame(node) {
     ensureDeployGame(node);
-    return '<section class="screen screen--challenge screen--deploy" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">SITE UPLINK / LIVE TASK</span><button class="button button--quiet" data-action="restart">Restart</button></header>' + renderDeployBody(node) + '</section>';
+    return '<section class="screen screen--challenge screen--deploy" aria-labelledby="challenge-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to map</button><span class="progress-chip">~60 SEC · SITE UPLINK</span><button class="text-button" data-action="restart">Restart</button></header>' + renderDeployBody(node) + '</section>';
   }
 
   function ensureDeployGame(node) {
@@ -1432,9 +1484,9 @@
       return '<div class="deploy-live-card" role="status"><span class="deploy-live-pip" aria-hidden="true"></span><div><small>DEPLOYMENT COMPLETE</small><strong>Site is live</strong><span>' + escapeHtml(publishedUrl) + '</span></div></div><button class="button button--primary" data-action="finish-game">Continue to trail check <span aria-hidden="true">→</span></button>';
     }
     if (game.fileStaged) {
-      return '<button class="button deploy-host-button" data-action="host-site"><span aria-hidden="true">⌁</span> Host</button><small>Your file is ready for the uplink.</small>';
+      return '<button class="button button--primary" data-action="host-site">Host site</button><small>Your file is ready for the uplink.</small>';
     }
-    return '<div class="deploy-locked-action" aria-disabled="true"><span aria-hidden="true">⌁</span><div><strong>Host</strong><small>Add a file to unlock</small></div></div>';
+    return '<div class="deploy-locked-action"><button class="button button--primary" type="button" disabled aria-describedby="deploy-unlock-hint">Host site</button><small id="deploy-unlock-hint">Add a file to unlock</small></div>';
   }
 
   function renderDeployBody(node) {
@@ -1450,12 +1502,12 @@
         : game.fileSelected
           ? fileName + ' selected. Now choose the GitHub Local folder.'
           : 'Drag the HTML file into the GitHub Local folder.';
-    var fileMarkup = '<span class="deploy-file-icon" aria-hidden="true"><i>&lt;/&gt;</i></span><span class="deploy-file-copy"><strong>' + escapeHtml(fileName) + '</strong><small>HTML document · 14 KB</small></span>';
+    var fileMarkup = '<span class="deploy-file-icon" aria-hidden="true"><i>&lt;/&gt;</i></span><span class="deploy-file-copy"><strong>' + escapeHtml(fileName) + '</strong><small>HTML document · <span class="unbroken-token">14 KB</span></small></span>';
     var folderContents = game.fileStaged || game.complete
       ? '<span class="deploy-folder-file" aria-hidden="true"><i>&lt;/&gt;</i><b>' + escapeHtml(fileName) + '</b></span>'
       : '<span class="deploy-folder-empty" aria-hidden="true">DROP FILE HERE</span>';
     var actionMarkup = renderDeployActionMarkup(game, publishedUrl);
-    return '<div class="deploy-game" data-deploy-game><div class="deploy-intro"><p class="eyebrow">USERS + PRODUCT / SHIPBOARD TASK</p><h1 id="challenge-title" tabindex="-1">' + escapeHtml(mini.title) + '</h1><p class="lede">A website only becomes useful when people can reach it. Stage the finished file, then host it.</p></div><div class="deploy-task-shell"><div class="deploy-task-rivets" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="deploy-task-heading"><span class="deploy-task-light" aria-hidden="true"></span><div><small>TASK 06 / WEB UPLINK</small><strong>Publish one-page site</strong></div><span class="deploy-task-state">' + (game.complete ? 'COMPLETE' : game.fileStaged ? 'READY' : '1 FILE') + '</span></div><div class="deploy-installer-window"><div class="deploy-window-bar"><span aria-hidden="true"><i></i><i></i><i></i></span><strong>Website Hosting Utility</strong><em>LOCAL</em></div><div class="deploy-status" role="status" aria-live="polite" data-deploy-status>' + escapeHtml(status) + '</div><div class="deploy-workspace' + (game.fileStaged ? ' is-staged' : '') + (game.complete ? ' is-complete' : '') + '"><div class="deploy-source"><span class="deploy-zone-label">YOUR DESKTOP</span><button class="deploy-file' + (game.fileSelected ? ' is-selected' : '') + '" type="button" draggable="' + (!game.fileStaged && !game.complete) + '" data-action="select-deploy-file" aria-pressed="' + game.fileSelected + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '>' + fileMarkup + '</button><small>' + (game.fileStaged || game.complete ? 'Moved to repository ✓' : game.fileSelected ? 'Selected — choose the folder' : 'Drag me →') + '</small></div><div class="deploy-transfer-arrow" aria-hidden="true"><span></span><i>→</i></div><div class="deploy-destination"><span class="deploy-zone-label">LOCAL REPOSITORY</span><button class="deploy-folder" type="button" data-action="stage-deploy-file" aria-label="GitHub Local folder, ' + escapeAttr(repositoryName) + (game.fileStaged ? ', contains ' + fileName : ', empty') + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '><span class="deploy-folder-brand"><i aria-hidden="true">GH</i><span><strong>GitHub Local</strong><small>' + escapeHtml(repositoryName) + '</small></span></span>' + folderContents + '</button><small>' + (game.fileStaged || game.complete ? '1 file staged' : 'Repository folder') + '</small></div></div><div class="deploy-action-row">' + actionMarkup + '</div></div></div><div class="deploy-brief"><div class="reward-callout"><span class="hex hex--small badge-hex badge-hex--icon' + originalBadgeClass(skillFor(node)) + '" aria-hidden="true">' + renderBadgeArtwork(skillFor(node)) + '</span><div><span class="eyebrow">POSSIBLE NEW SKILL</span><strong>' + escapeHtml(skillFor(node).name) + '</strong><p>Host the page, then decide whether this kind of work energized you.</p></div></div><p><strong>How to play:</strong> ' + escapeHtml(mini.instructions) + '</p></div></div>';
+    return '<div class="deploy-game challenge-layout" data-deploy-game>' + renderGameCopy(node) + '<div class="game-stage-group"><div class="deploy-task-shell surface-dark"><div class="deploy-task-rivets" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="deploy-task-heading"><span class="deploy-task-light" aria-hidden="true"></span><div><small>TASK 06 / WEB UPLINK</small><strong>Publish one-page site</strong></div><span class="deploy-task-state">' + (game.complete ? 'COMPLETE' : game.fileStaged ? 'READY' : '1 FILE') + '</span></div><div class="deploy-installer-window"><div class="deploy-window-bar"><strong>Hosting workspace</strong><em>LOCAL</em></div><div class="deploy-status" role="status" aria-live="polite" data-deploy-status>' + escapeHtml(status) + '</div><div class="deploy-workspace' + (game.fileStaged ? ' is-staged' : '') + (game.complete ? ' is-complete' : '') + '"><div class="deploy-source"><span class="deploy-zone-label">YOUR DESKTOP</span><button class="deploy-file' + (game.fileSelected ? ' is-selected' : '') + '" type="button" draggable="' + (!game.fileStaged && !game.complete) + '" data-action="select-deploy-file" aria-pressed="' + game.fileSelected + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '>' + fileMarkup + '</button><small>' + (game.fileStaged || game.complete ? 'Moved to repository ✓' : game.fileSelected ? 'Selected — choose the folder' : 'Drag me →') + '</small></div><div class="deploy-transfer-arrow" aria-hidden="true"><span></span><i>→</i></div><div class="deploy-destination"><span class="deploy-zone-label">LOCAL REPOSITORY</span><button class="deploy-folder" type="button" data-action="stage-deploy-file" aria-label="GitHub Local folder, ' + escapeAttr(repositoryName) + (game.fileStaged ? ', contains ' + fileName : ', empty') + '" ' + (game.fileStaged || game.complete ? 'disabled' : '') + '><span class="deploy-folder-brand"><i aria-hidden="true">GH</i><span><strong>GitHub Local</strong><small>' + escapeHtml(repositoryName) + '</small></span></span>' + folderContents + '</button><small>' + (game.fileStaged || game.complete ? '1 file staged' : 'Repository folder') + '</small></div></div></div></div><div class="deploy-action-row">' + actionMarkup + '</div></div></div>';
   }
 
   function formatGameTime(seconds) {
@@ -1519,14 +1571,19 @@
     return Number.isFinite(amount) ? '$' + amount.toLocaleString('en-US') : 'Not available';
   }
 
-  function renderCareerSuggestion(suggestion, index) {
+  /** Keep the hero and shortlist on the same unchanged salary data. */
+  function renderCareerPay(suggestion, isBestMatch) {
     var salary = research.salaryByCareerId[suggestion.career.id];
+    return '<dl class="career-pay' + (isBestMatch ? ' career-stat' : '') + '" aria-label="Pay for ' + escapeAttr(suggestion.career.title) + '"><div><dt>' + 'ENTRY PAY' + '</dt><dd>' + escapeHtml(salary && salary.entryRange ? salary.entryRange.label : formatSalary(suggestion.career.salary)) + '</dd></div><div><dt>MEDIAN PAY</dt><dd>' + escapeHtml(salary ? formatCurrency(salary.median) : 'Not available') + '</dd></div><div class="career-pay-source"><small>' + (salary ? 'BLS OEWS May 2023 · 10th–25th percentile · <span class="unbroken-token">SOC ' + escapeHtml(salary.soc) + '</span>' : 'Salary context is being prepared.') + '</small></div></dl>';
+  }
+
+  function renderCareerSuggestion(suggestion, index) {
     var isBestMatch = index === 0;
     var routeLabel = suggestion.route ? suggestion.route.region.title + ' · ' + suggestion.route.domain.title : 'Information Systems';
     return '<li class="career-rank-card' + (isBestMatch ? ' is-best-match' : '') + '">' +
       '<span class="career-rank-number" aria-hidden="true">' + String(index + 1).padStart(2, '0') + '</span>' +
       '<div class="career-rank-copy"><div class="career-rank-title"><h2>' + escapeHtml(suggestion.career.title) + '</h2><span>' + escapeHtml(isBestMatch ? 'Best match · ' + suggestion.reason : suggestion.reason) + '</span></div><p>' + escapeHtml(suggestion.career.summary) + '</p><small>' + escapeHtml(routeLabel) + '</small></div>' +
-      '<dl class="career-pay' + (isBestMatch ? ' career-stat' : '') + '" aria-label="Pay for ' + escapeAttr(suggestion.career.title) + '"><div><dt>' + (isBestMatch ? 'ENTRY RANGE · NATIONAL PROXY' : 'ENTRY PAY') + '</dt><dd>' + escapeHtml(salary && salary.entryRange ? salary.entryRange.label : formatSalary(suggestion.career.salary)) + '</dd></div><div><dt>MEDIAN PAY</dt><dd>' + escapeHtml(salary ? formatCurrency(salary.median) : 'Not available') + '</dd></div><div class="career-pay-source"><small>' + (salary ? 'BLS OEWS May 2023 · 10th–25th percentile · SOC ' + escapeHtml(salary.soc) : 'Salary context is being prepared.') + '</small></div></dl>' +
+      renderCareerPay(suggestion, isBestMatch) +
       '</li>';
   }
 
@@ -1537,13 +1594,14 @@
     var route = careerRouteFor(career.id);
     var suggestions = rankedCareerSuggestions(node);
     var practiceMarkup = interview
-      ? '<button class="button button--primary" data-action="open-interview" data-career-id="' + escapeAttr(career.id) + '">' + (state.interview.careerId === career.id && state.interview.status !== 'idle' ? 'Continue practice' : 'Practice a mock interview') + ' <span aria-hidden="true">↗</span></button>'
+      ? '<button class="button button--primary" data-action="open-interview" data-career-id="' + escapeAttr(career.id) + '">' + (state.interview.careerId === career.id && state.interview.status !== 'idle' ? 'Continue practice' : 'Practice a mock interview') + ' <span aria-hidden="true">→</span></button>'
       : '';
     var pathLabel = route ? route.region.title + ' / ' + route.domain.title : 'Information Systems';
-    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="button button--quiet" data-action="restart">Restart</button></header>' +
-      '<header class="career-result-heading"><p class="screen-kicker">YOUR TOP CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p>' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-path-line"><span>YOUR DIRECTION</span><strong>' + escapeHtml(pathLabel) + '</strong></div></header>' +
-      '<div class="career-ranking-heading"><div><span class="eyebrow">PERSONALIZED SHORTLIST</span><h2>10 roles worth exploring</h2></div><p>Ranked from your starter skills and the path you chose. Each role shows its own national pay data—nothing is averaged together.</p></div>' +
-      '<ol class="career-ranking">' + suggestions.map(renderCareerSuggestion).join('') + '</ol>' +
+    return '<section class="screen screen--career" aria-labelledby="career-title"><header class="topbar"><button class="button button--quiet" data-action="back-map">← Back to world</button><button class="text-button" data-action="restart">Restart</button></header>' +
+      '<header class="career-result-heading"><div class="career-hero-copy"><p class="screen-kicker">YOUR TOP CAREER MATCH</p><h1 id="career-title" tabindex="-1">' + escapeHtml(career.title) + '</h1><p>' + escapeHtml(career.summary || career.whatTheyDo) + '</p><div class="career-path-line"><span>YOUR DIRECTION</span><strong>' + escapeHtml(pathLabel) + '</strong></div><p class="career-match-why">' + escapeHtml(route ? 'Your choices in ' + route.domain.title + ' led to: ' + node.title + '.' : 'This role connects the strengths and work style you chose.') + '</p></div><div class="career-hero-outcome">' + (suggestions.length ? renderCareerPay(suggestions[0], true) : '') + '<div class="career-payoff"><img src="' + EXPLORER_AVATAR_SRC + '" width="88" height="88" alt="Your cougar explorer"><span>Route complete<small>Keep exploring where your skills can take you.</small></span></div></div></header>' +
+      '<div class="career-ranking-heading"><div><span class="eyebrow">PERSONALIZED SHORTLIST</span><h2>9 more roles worth exploring</h2></div><p>Ranked from your starter skills and the path you chose. Pay ranges are national occupational benchmarks; related roles can share a BLS category.</p></div>' +
+      '<ol class="career-ranking" start="2">' + suggestions.slice(1, 5).map(function (suggestion, index) { return renderCareerSuggestion(suggestion, index + 1); }).join('') + '</ol>' +
+      '<button class="text-button career-more-toggle" data-action="toggle-career-roles" aria-expanded="false" aria-controls="career-more-roles">Show 5 more roles</button><ol class="career-ranking" id="career-more-roles" start="6" hidden>' + suggestions.slice(5).map(function (suggestion, index) { return renderCareerSuggestion(suggestion, index + 5); }).join('') + '</ol>' +
       '<div class="career-result-actions">' + practiceMarkup + '<button class="button button-secondary" data-action="new-path">Start another path</button><button class="text-button" data-action="back-map">View this world</button></div>' +
       (salaryResearch ? '<details class="career-sources"><summary>Sources &amp; salary methodology</summary><div class="source-disclosure"><p><strong>How to read this:</strong> Every role above has its own entry range and median. These are national occupational benchmarks, not guaranteed offers. Your top role is mapped to <em>' + escapeHtml(salaryResearch.occupation) + '</em> (' + escapeHtml(salaryResearch.soc) + ').</p><p>' + escapeHtml(salaryResearch.mapping) + ' ' + escapeHtml(salaryResearch.proxyLimitations) + '</p>' + renderSourceList((salaryResearch.sourceRefs || []).concat(['src-bls-oews-methods'])) + '</div></details>' : '') + '</section>';
   }
@@ -1578,7 +1636,7 @@
     if (!interview || !career) return renderCareer(findNode(state.selectedNodeId));
     var inProgress = state.interview.status !== 'idle';
     var backLabel = state.interview.returnScreen === 'interview-picker' ? '← Back to roles' : '← Back to career';
-    return '<section class="screen interview-screen interview-intro" aria-labelledby="interview-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">' + backLabel + '</button><span class="progress-chip">3 QUESTIONS / ~4 MIN</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-intro-grid"><div><p class="screen-kicker">FIELD PRACTICE / ROLE REHEARSAL</p><h1 id="interview-title" tabindex="-1">' + escapeHtml(career.title) + '<br><em>in your own words.</em></h1><p class="interview-lede">' + escapeHtml(interview.intro) + '</p><div class="interview-expectations"><span><b>01</b> Behavioral evidence</span><span><b>02</b> Technical judgment</span><span><b>03</b> Technical growth</span></div></div><aside class="interview-welcome-card"><span class="eyebrow">A REALISTIC REHEARSAL</span><strong>Specific evidence beats a polished generality.</strong><p>The coach checks what an interviewer can actually verify: your ownership, role-specific reasoning, decisions, and results. Expect direct revision advice when an answer is vague.</p><button class="button button--primary button--wide" data-action="interview-start">' + (inProgress ? 'Continue practice' : 'Start practice') + ' <span aria-hidden="true">→</span></button>' + (inProgress ? '<button class="text-button" data-action="interview-replay">Start this interview again</button>' : '') + '</aside></div>' + renderInterviewSources(interview) + '</section>';
+    return '<section class="screen interview-screen interview-intro" aria-labelledby="interview-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">' + backLabel + '</button><span class="progress-chip">3 QUESTIONS / ~4 MIN</span></header><div class="interview-intro-grid"><div><p class="screen-kicker">FIELD PRACTICE / ROLE REHEARSAL</p><h1 id="interview-title" tabindex="-1">' + escapeHtml(career.title) + '<br><em>in your own words.</em></h1><p class="interview-lede">' + escapeHtml(interview.intro) + '</p><div class="interview-expectations"><span><b>01</b> Behavioral evidence</span><span><b>02</b> Technical judgment</span><span><b>03</b> Technical growth</span></div></div><aside class="interview-welcome-card"><span class="eyebrow">A REALISTIC REHEARSAL</span><strong>Specific evidence beats a polished generality.</strong><p>The coach checks what an interviewer can actually verify: your ownership, role-specific reasoning, decisions, and results. Expect direct revision advice when an answer is vague.</p><button class="button button--primary button--wide" data-action="interview-start">' + (inProgress ? 'Continue practice' : 'Start practice') + ' <span aria-hidden="true">→</span></button>' + (inProgress ? '<button class="text-button" data-action="interview-replay">Start this interview again</button>' : '') + '</aside></div>' + renderInterviewSources(interview) + '</section>';
   }
 
   function renderInterviewQuestion() {
@@ -1586,7 +1644,7 @@
     var question = currentInterviewQuestion();
     if (!interview || !question) return renderCareer(findNode(state.selectedNodeId));
     var answer = state.interview.answers[question.id] || '';
-    return '<section class="screen interview-screen interview-question" aria-labelledby="question-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">QUESTION ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="interview-layout"><aside class="interview-rail" aria-label="Interview progress">' + interview.questions.map(function (item, index) { return '<div class="rail-step ' + (index < state.interview.questionIndex ? 'is-done' : index === state.interview.questionIndex ? 'is-current' : '') + '"><span>' + String(index + 1).padStart(2, '0') + '</span><small>' + escapeHtml(interviewQuestionCategory(item).short) + '</small></div>'; }).join('') + '</aside><div class="question-card"><p class="eyebrow">' + escapeHtml(modelCareer(state.interview.careerId).title + ' / ' + interviewQuestionCategory(question).label) + '</p><h1 id="question-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p class="question-helper">' + escapeHtml(question.helper || '') + '</p><form id="interview-answer-form"><label for="interview-answer">Your answer</label><textarea id="interview-answer" maxlength="1000" rows="8" placeholder="Start with the situation, then explain what you did…">' + escapeHtml(answer) + '</textarea><div class="answer-meta"><span id="word-count">' + wordCount(answer) + ' words</span><span>Minimum ' + question.minWords + ' words · 1,000 characters max</span></div><details class="hint-disclosure"><summary>What a strong answer must prove</summary><p>' + escapeHtml(question.guidance) + '</p></details><div class="question-actions"><button class="button button--primary" type="submit" ' + (answer.trim() ? '' : 'disabled') + '>Get critical feedback <span aria-hidden="true">→</span></button><button class="text-button" type="button" data-action="interview-save-exit">Save and exit</button></div></form></div></div></section>';
+    return '<section class="screen interview-screen interview-question" aria-labelledby="question-title"><p class="sr-only">Question ' + (state.interview.questionIndex + 1) + ' of ' + interview.questions.length + '</p><div class="interview-layout"><aside class="interview-rail" aria-label="Interview progress">' + interview.questions.map(function (item, index) { return '<div class="rail-step ' + (index < state.interview.questionIndex ? 'is-done' : index === state.interview.questionIndex ? 'is-current' : '') + '"><span>' + String(index + 1).padStart(2, '0') + '</span><small>' + escapeHtml(interviewQuestionCategory(item).short) + '</small></div>'; }).join('') + '</aside><div class="question-card"><p class="eyebrow">' + escapeHtml(modelCareer(state.interview.careerId).title + ' / ' + interviewQuestionCategory(question).label) + '</p><h1 id="question-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><p class="question-helper">' + escapeHtml(question.helper || '') + '</p><form id="interview-answer-form"><label for="interview-answer">Your answer</label><textarea id="interview-answer" maxlength="1000" rows="8" placeholder="Start with the situation, then explain what you did…">' + escapeHtml(answer) + '</textarea><div class="answer-meta"><span id="word-count">' + wordCount(answer) + ' words</span><span>Minimum ' + question.minWords + ' words · 1,000 characters max</span></div><details class="hint-disclosure"><summary>What a strong answer must prove</summary><p>' + escapeHtml(question.guidance) + '</p></details><div class="question-actions"><button class="button button--primary" type="submit" ' + (answer.trim() ? '' : 'disabled') + '>Get feedback <span aria-hidden="true">→</span></button><button class="text-button" type="button" data-action="interview-save-exit">Save and exit</button></div></form></div></div></section>';
   }
 
   function renderInterviewFeedback() {
@@ -1599,7 +1657,7 @@
     var missing = criteria.filter(function (criterion) { return feedback.missingCriterionIds.indexOf(criterion.id) !== -1; });
     var coaching = interviewCoachingDetails(state.interview.answers[question.id] || '', question, feedback, matched, missing);
     var nextLabel = state.interview.questionIndex === interview.questions.length - 1 ? 'See my debrief' : 'Next question';
-    return '<section class="screen interview-screen interview-feedback" aria-labelledby="feedback-title"><header class="topbar"><button class="button button--quiet" data-action="interview-save-exit">Save and exit</button><span class="progress-chip">FEEDBACK / ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="feedback-grid"><div class="question-card feedback-question"><p class="eyebrow">YOUR RESPONSE / ' + escapeHtml(interviewQuestionCategory(question).label) + '</p><h1 id="feedback-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><div class="answer-quote">' + escapeHtml(state.interview.answers[question.id] || '') + '</div><button class="text-button" data-action="interview-edit">Revise this answer</button></div><div class="feedback-card"><span class="feedback-level feedback-level--' + escapeAttr(feedback.level) + '">' + escapeHtml(feedback.level === 'strong' ? 'Interview-ready foundation' : feedback.level === 'developing' ? 'Evidence gap' : 'Too general yet') + '</span><p class="feedback-summary">' + feedback.wordCount + ' words · ' + matched.length + ' of ' + criteria.length + ' role signals demonstrated</p><section class="interviewer-read"><span class="eyebrow">INTERVIEWER READ</span><h2>' + escapeHtml(coaching.headline) + '</h2><p>' + escapeHtml(coaching.critique) + '</p></section><section><h2>Evidence that landed</h2>' + (matched.length ? '<ul class="criteria-list criteria-list--matched">' + matched.map(function (criterion) { return '<li>✓ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul>' : '<p class="muted-copy">No role-specific evidence is clear enough yet.</p>') + '</section>' + (missing.length ? '<section><h2>Evidence still missing</h2><ul class="criteria-list criteria-list--missing">' + missing.map(function (criterion) { return '<li>＋ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul></section>' : '') + '<div class="revision-coach"><span>YOUR NEXT REVISION</span><strong>' + escapeHtml(coaching.revisionAction) + '</strong></div><details class="strong-answer"><summary>Compare with a strong role-specific answer</summary><p>' + escapeHtml(question.strongAnswer) + '</p><small>Use the structure, not the wording. Your own evidence is more credible.</small></details><button class="button button--primary button--wide" data-action="interview-next">' + nextLabel + ' <span aria-hidden="true">→</span></button></div></div></section>';
+    return '<section class="screen interview-screen interview-feedback" aria-labelledby="feedback-title"><header class="topbar"><span class="progress-chip">FEEDBACK / ' + (state.interview.questionIndex + 1) + ' OF ' + interview.questions.length + '</span></header><div class="feedback-grid"><div class="question-card feedback-question"><p class="eyebrow">YOUR RESPONSE / ' + escapeHtml(interviewQuestionCategory(question).label) + '</p><h1 id="feedback-title" tabindex="-1">' + escapeHtml(question.prompt) + '</h1><div class="answer-quote">' + escapeHtml(state.interview.answers[question.id] || '') + '</div><button class="text-button" data-action="interview-edit">Revise this answer</button></div><div class="feedback-card"><span class="feedback-level feedback-level--' + escapeAttr(feedback.level) + '">' + escapeHtml(feedback.level === 'strong' ? 'Interview-ready foundation' : feedback.level === 'developing' ? 'Evidence gap' : 'Too general yet') + '</span><p class="feedback-summary">' + feedback.wordCount + ' words · ' + matched.length + ' of ' + criteria.length + ' role signals demonstrated</p><section class="interviewer-read"><span class="eyebrow">INTERVIEWER READ</span><h2>' + escapeHtml(coaching.headline) + '</h2><p>' + escapeHtml(coaching.critique) + '</p></section><section><h2>Evidence that landed</h2>' + (matched.length ? '<ul class="criteria-list criteria-list--matched">' + matched.map(function (criterion) { return '<li>✓ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul>' : '<p class="muted-copy">No role-specific evidence is clear enough yet.</p>') + '</section>' + (missing.length ? '<section><h2>Evidence still missing</h2><ul class="criteria-list criteria-list--missing">' + missing.map(function (criterion) { return '<li>＋ ' + escapeHtml(criterion.label) + '</li>'; }).join('') + '</ul></section>' : '') + '<div class="revision-coach"><span>YOUR NEXT REVISION</span><strong>' + escapeHtml(coaching.revisionAction) + '</strong></div><details class="strong-answer"><summary>Compare with a strong role-specific answer</summary><p>' + escapeHtml(question.strongAnswer) + '</p><small>Use the structure, not the wording. Your own evidence is more credible.</small></details><button class="button button--primary button--wide" data-action="interview-next">' + nextLabel + ' <span aria-hidden="true">→</span></button><button class="text-button" data-action="interview-save-exit">Save and exit</button></div></div></section>';
   }
 
   function renderInterviewDebrief() {
@@ -1612,7 +1670,7 @@
     }).join('');
     var strongest = strongestCriterion(interview);
     var returnLabel = state.interview.returnScreen === 'interview-picker' ? 'Choose another role' : 'Return to career';
-    return '<section class="screen interview-screen interview-debrief" aria-labelledby="debrief-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← ' + returnLabel + '</button><span class="progress-chip">PRACTICE COMPLETE</span><button class="button button--quiet" data-action="restart">Restart</button></header><div class="debrief-card"><p class="screen-kicker">FIELD NOTES SAVED</p><h1 id="debrief-title" tabindex="-1">You made the role<br><em>more concrete.</em></h1><p class="interview-lede">Your answers stay in this browser so you can return, revise, and build a clearer story over time.</p><div class="debrief-grid"><section><span class="eyebrow">YOUR THREE ANSWERS</span><ol class="debrief-list">' + summaries + '</ol></section><aside class="debrief-next"><span class="eyebrow">A NEXT PRACTICE MOVE</span><strong>' + escapeHtml(strongest ? 'Keep developing ' + strongest.label.toLowerCase() + '.' : 'Keep collecting specific examples.') + '</strong><p>Use one class, work, club, or personal project this week to make that idea more specific.</p></aside></div><div class="debrief-actions"><button class="button button--primary" data-action="interview-replay">Practice again</button><button class="button button--secondary" data-action="interview-back-career">' + returnLabel + '</button></div></div>' + renderInterviewSources(interview) + '</section>';
+    return '<section class="screen interview-screen interview-debrief" aria-labelledby="debrief-title"><header class="topbar"><button class="button button--quiet" data-action="interview-back-career">← ' + returnLabel + '</button><span class="progress-chip">PRACTICE COMPLETE</span></header><div class="debrief-card"><p class="screen-kicker">FIELD NOTES SAVED</p><h1 id="debrief-title" tabindex="-1">You made the role<br><em>more concrete.</em></h1><p class="interview-lede">Your answers stay in this browser so you can return, revise, and build a clearer story over time.</p><div class="debrief-grid"><section><span class="eyebrow">YOUR THREE ANSWERS</span><ol class="debrief-list">' + summaries + '</ol></section><aside class="debrief-next"><span class="eyebrow">A NEXT PRACTICE MOVE</span><strong>' + escapeHtml(strongest ? 'Keep developing ' + strongest.label.toLowerCase() + '.' : 'Keep collecting specific examples.') + '</strong><p>Use one class, work, club, or personal project this week to make that idea more specific.</p></aside></div><div class="debrief-actions"><button class="button button--primary" data-action="interview-replay">Practice again</button><button class="button button--secondary" data-action="interview-back-career">' + returnLabel + '</button></div></div>' + renderInterviewSources(interview) + '</section>';
   }
 
   function renderInterviewSources(interview) {
@@ -1768,12 +1826,12 @@
     var items = [];
     state.starterSkills.forEach(function (skillId) {
       var skill = model.skills[skillId];
-      if (skill) items.push({ skill: skill, source: 'Starter skill', starter: true });
+      if (skill) items.push({ skill: skill, source: 'Starter skill', starter: true, key: 'starter:' + skillId });
     });
     state.earned.forEach(function (entry) {
       var skill = model.skills[entry.skillId];
       var node = findNode(entry.nodeId);
-      if (skill) items.push({ skill: skill, source: node ? node.title : 'Journey skill', starter: false });
+      if (skill) items.push({ skill: skill, source: node ? node.title : 'Journey skill', starter: false, key: 'earned:' + entry.nodeId });
     });
     dock.hidden = items.length === 0 || state.screen === 'mini';
     dock.classList.toggle('has-skills', items.length > 0);
@@ -1790,18 +1848,29 @@
     dock.classList.toggle('dock--safe-top', !inlineDock && state.screen === 'reflection');
     document.body.classList.toggle('dock-inline', inlineDock);
     document.body.classList.toggle('dock-floating', !inlineDock);
-    if (!items.length) { dock.innerHTML = ''; return; }
+    if (!items.length) { dock.innerHTML = ''; renderedDockKeys.clear(); return; }
     dock.innerHTML = '<div class="dock-inner"><div class="dock-label"><span class="dock-pip" aria-hidden="true"></span><div><h2 id="skill-dock-title">SKILL STACK</h2><p>' + items.length + ' total · ' + state.earned.length + ' earned</p></div></div><div class="hex-track" id="skill-dock-list" role="list" aria-label="Four starter skills plus skills earned during this journey">' + items.map(function (item, index) {
       var originalArtwork = Boolean(badgeSourceFor(item.skill));
-      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + originalBadgeClass(item.skill) + (index === items.length - 1 && state.lastAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + '"><span class="hex-face" aria-hidden="true">' + renderBadgeArtwork(item.skill) + '<strong' + (originalArtwork ? ' class="badge-label-text"' : '') + '>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong></span></button>';
+      var isNewAward = !item.starter && index === items.length - 1 && state.lastAward && !renderedDockKeys.has(item.key);
+      return '<button class="hex-item' + (item.starter ? ' is-starter' : ' is-earned') + originalBadgeClass(item.skill) + (isNewAward ? ' skill-hex--new' : '') + '" type="button" data-action="inspect-skill" data-inspect-skill-id="' + escapeAttr(item.skill.id) + '" aria-label="' + escapeAttr(item.skill.name + ', ' + item.source) + '" style="--skill-color:' + escapeAttr(item.skill.color) + ';animation:' + (isNewAward && !prefersReducedMotion ? 'skill-pop-safe 350ms var(--ease-out) both' : 'none') + '"><span class="hex-face" aria-hidden="true">' + renderBadgeArtwork(item.skill) + '<strong' + (originalArtwork ? ' class="badge-label-text"' : '') + '>' + escapeHtml(item.skill.shortName || item.skill.name) + '</strong></span></button>';
     }).join('') + '</div></div>';
+    renderedDockKeys = new Set(items.map(function (item) { return item.key; }));
+  }
+
+  /** Clear reward state without replacing the honeycomb DOM or replaying entry motion. */
+  function finishDockReward() {
+    state.lastAward = false;
+    if (dock) dock.querySelectorAll('.skill-hex--new').forEach(function (hex) {
+      hex.classList.remove('skill-hex--new');
+      hex.style.animation = 'none';
+    });
   }
 
   function updateHeader() {
     if (!headerStatus) return;
     if (state.screen === 'skill-select') headerStatus.textContent = state.starterSkills.length + ' OF 4 SKILLS';
     else if (/^interview-/.test(state.screen || '')) headerStatus.textContent = 'INTERVIEW PRACTICE';
-    else if (state.starterSkills.length === 4) headerStatus.textContent = (state.earned.length + 4) + ' SKILLS · WORLD ACTIVE';
+    else if (state.starterSkills.length === 4) headerStatus.textContent = (state.earned.length + 4) + ' SKILLS · EXPLORING CAREERS';
     else headerStatus.textContent = 'READY TO EXPLORE';
   }
 
@@ -2590,6 +2659,13 @@
     if (action === 'enjoy-maybe') { pauseReflection(); return; }
     if (action === 'enjoy-no') { requestRejectNode(element); return; }
     if (action === 'back-map') { resetActiveMiniGame(); state.screen = 'map'; state.travelTargetId = null; saveState(); render(); return; }
+    if (action === 'toggle-career-roles') {
+      var expanded = element.getAttribute('aria-expanded') === 'true';
+      element.setAttribute('aria-expanded', String(!expanded));
+      element.textContent = expanded ? 'Show 5 more roles' : 'Show fewer roles';
+      document.getElementById('career-more-roles').hidden = expanded;
+      return;
+    }
     if (action === 'new-path') { startAnotherPath(); return; }
     if (action === 'open-interview') { openInterview(element.getAttribute('data-career-id'), 'career'); return; }
     if (action === 'interview-start') { startInterview(); return; }
@@ -2608,6 +2684,20 @@
     var index = state.starterSkills.indexOf(skillId);
     if (index !== -1) state.starterSkills.splice(index, 1);
     else if (state.starterSkills.length < 4 && model.skills[skillId]) state.starterSkills.push(skillId);
+    else if (state.starterSkills.length === 4) {
+      var lockedCard = root.querySelector('[data-skill-id="' + skillId + '"]');
+      if (lockedCard && !prefersReducedMotion) {
+        lockedCard.classList.remove('is-limit-hit');
+        void lockedCard.offsetWidth; // Restart feedback on each repeated attempt.
+        lockedCard.classList.add('is-limit-hit');
+        lockedCard.addEventListener('animationend', function () { lockedCard.classList.remove('is-limit-hit'); }, { once: true });
+      }
+      var limitMessage = '4 of 4 picked — tap a selected skill to swap.';
+      var footer = root.querySelector('.skills-footer p');
+      if (footer) footer.textContent = limitMessage;
+      announce(limitMessage);
+      return;
+    }
     saveState(); refreshStarterSkillSelection();
   }
 
@@ -2622,12 +2712,12 @@
       if (unavailable) button.setAttribute('aria-disabled', 'true');
       else button.removeAttribute('aria-disabled');
       var status = button.querySelector('.pick-state');
-      if (status) status.textContent = picked ? 'Selected ✓' : 'Choose +';
+      if (status) status.textContent = picked ? 'Selected ✓' : unavailable ? '4 of 4 picked' : 'Choose +';
     });
     var meter = root.querySelector('.selection-meter strong');
     if (meter) meter.innerHTML = selectedCount + '<span>/4</span>';
     var footerCopy = root.querySelector('.skills-footer p');
-    if (footerCopy) footerCopy.textContent = selectedCount === 4 ? 'Your compass is ready.' : 'Choose ' + (4 - selectedCount) + ' more to continue.';
+    if (footerCopy) footerCopy.textContent = selectedCount === 4 ? '4 of 4 picked — tap a selected skill to swap.' : 'Choose ' + (4 - selectedCount) + ' more to continue.';
     var confirm = root.querySelector('[data-action="confirm-skills"]');
     if (confirm) confirm.disabled = selectedCount !== 4;
     renderDock(); wireDockEvents(); updateHeader();
@@ -2650,7 +2740,7 @@
     if (!state.completed.length && !state.earned.length && !state.rejected.length) { editStarterSkills(); return; }
     modalReturnFocus = document.querySelector('[data-action="edit-skills"]');
     setModalSurfaces(true);
-    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-skills-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">EDIT STARTER LOADOUT</p><h2 id="edit-skills-title">Change your direction?</h2><p>This will clear your current route progress, including ' + state.completed.length + ' explored stops and ' + state.earned.length + ' earned skills. Your name and avatar will stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep exploring</button><button class="button button--danger" data-action="confirm-edit-skills">Edit starter skills</button></div></section></div>';
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-skills-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">EDIT STARTER LOADOUT</p><h2 id="edit-skills-title">Change your direction?</h2><p>This will clear your current route progress, including ' + state.completed.length + ' explored stops and ' + state.earned.length + ' earned skills. Your name and avatar will stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep exploring</button><button class="button button-secondary" data-action="confirm-edit-skills">Edit starter skills</button></div></section></div>';
     wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
@@ -2691,14 +2781,15 @@
     state.screen = 'career';
     saveState(); render();
     if (skill && !alreadyEarned) {
-      animateSkillReward(skill); showToast('+' + skill.name + ' added to your stack', skill);
+      animateSkillReward(skill); showToast('added to your skill stack', skill);
       announce(skill.name + ' earned. ' + node.career.title + ' career match opened.');
-      window.setTimeout(function () { state.lastAward = false; renderDock(); }, prefersReducedMotion ? 0 : 850);
+      window.setTimeout(finishDockReward, prefersReducedMotion ? 0 : 850);
     } else announce(node.career.title + ' career match opened.');
   }
 
   /** Start map travel in place so selecting a stop never flashes or jumps. */
   function beginMapTravel(node) {
+    clearToast();
     var world = root.querySelector('.rpg-world');
     var avatar = root.querySelector('.map-avatar');
     var destination = root.querySelector('[data-action="open-node"][data-node-id="' + node.id + '"]');
@@ -2716,8 +2807,19 @@
     if (destinationStatus) destinationStatus.textContent = 'TRAVELING';
     avatar.style.setProperty('--from-x', currentX + '%');
     avatar.style.setProperty('--from-y', currentY + '%');
-    avatar.style.setProperty('--to-x', destinationX + '%');
-    avatar.style.setProperty('--to-y', Math.max(17, destinationY - 14) + '%');
+    // Measure the real card and explorer so parking remains adjacent when text wraps.
+    var worldBox = world.getBoundingClientRect();
+    var cardBox = destination.getBoundingClientRect();
+    var avatarBox = avatar.getBoundingClientRect();
+    var worldStyle = getComputedStyle(world);
+    var borderX = parseFloat(worldStyle.borderLeftWidth) || 0;
+    var borderY = parseFloat(worldStyle.borderTopWidth) || 0;
+    var parking = {
+      x: (cardBox.left - worldBox.left - borderX - avatarBox.width / 2 - 12) / world.clientWidth * 100,
+      y: (cardBox.top + cardBox.height / 2 - worldBox.top - borderY) / world.clientHeight * 100
+    };
+    avatar.style.setProperty('--to-x', parking.x + '%');
+    avatar.style.setProperty('--to-y', parking.y + '%');
     avatar.setAttribute('aria-label', (state.name || 'Your explorer') + ' traveling to ' + node.title);
     avatar.classList.add('is-traveling');
     world.insertAdjacentHTML('beforeend', '<div class="travel-banner" aria-live="polite"><span>EXPLORER MOVING</span><strong>' + escapeHtml(node.title) + '</strong><i aria-hidden="true"></i></div>');
@@ -2745,13 +2847,13 @@
     else state.screen = 'map';
     saveState(); render();
     if (!alreadyEarned) {
-      animateSkillReward(skill); showToast('+' + skill.name + ' added to your stack', skill);
+      animateSkillReward(skill); showToast('added to your skill stack', skill);
       announce(skill.name + ' earned. The next stage is open.');
     } else {
-      showToast(skill.name + ' is already in your stack', skill);
+      showToast('is already in your skill stack', skill);
       announce(skill.name + ' activity reviewed.');
     }
-    window.setTimeout(function () { state.lastAward = false; renderDock(); }, prefersReducedMotion ? 0 : 850);
+    window.setTimeout(finishDockReward, prefersReducedMotion ? 0 : 850);
   }
 
   function rejectNode(id) {
@@ -2793,7 +2895,7 @@
     var alternative = findAlternative(node);
     modalReturnFocus = element;
     setModalSurfaces(true);
-    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">TRAIL DECISION</p><h2 id="reject-title">Try another trail?</h2><p>Choosing “Not for me” closes ' + escapeHtml(node.title) + (alternative ? ' and points your explorer to ' + escapeHtml(alternative.title) + '.' : ' and reopens your closest matches so the journey can continue.') + ' Your earned skills stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep this trail open</button><button class="button button--danger" data-action="confirm-reject" data-node-id="' + escapeAttr(id) + '">Close this trail</button></div></section></div>';
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">TRAIL DECISION</p><h2 id="reject-title">Try another trail?</h2><p>Choosing “Not for me” closes ' + escapeHtml(node.title) + (alternative ? ' and points your explorer to ' + escapeHtml(alternative.title) + '.' : ' and reopens your closest matches so the journey can continue.') + ' Your earned skills stay saved.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep this trail open</button><button class="button button-secondary" data-action="confirm-reject" data-node-id="' + escapeAttr(id) + '">Close this trail</button></div></section></div>';
     wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
@@ -2979,9 +3081,9 @@
       }
     });
     scratchPosition = position;
-    if (hitBush) { scratchFeedback = 'The cat bumped into the bush. Turn before moving forward.'; announce('The cat needs a different route.'); }
-    else if (position.row === 2 && position.col === 4) { scratchSolved = true; scratchFeedback = 'Great route! The cat reached the flag.'; announce('Scratch path solved.'); }
-    else { scratchFeedback = 'The cat is safe, but has not reached the flag yet. Add more commands.'; announce('Keep building the route.'); }
+    if (hitBush) { scratchFeedback = 'The cougar bumped into the bush. Turn before moving forward.'; announce('The cougar needs a different route.'); }
+    else if (position.row === 2 && position.col === 4) { scratchSolved = true; scratchFeedback = 'Great route! The cougar reached the flag.'; announce('Scratch path solved.'); }
+    else { scratchFeedback = 'The cougar is safe, but has not reached the flag yet. Add more commands.'; announce('Keep building the route.'); }
     refreshScratchGame();
   }
 
@@ -2989,10 +3091,33 @@
   // Feedback, motion, and dialogs
   // ---------------------------------------------------------------------------
 
+  var toastDismissTimer = null;
+  var toastRemoveTimer = null;
+
+  /** Cancel both phases so an older reward cannot erase a newer announcement. */
+  function clearToast() {
+    window.clearTimeout(toastDismissTimer);
+    window.clearTimeout(toastRemoveTimer);
+    if (toastRegion) toastRegion.innerHTML = '';
+  }
+
   function showToast(message, skill) {
     if (!toastRegion) return;
-    toastRegion.innerHTML = '<div class="toast toast--reward" role="status"><span class="toast-mark badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><span>' + escapeHtml(message) + '</span></div>';
-    window.setTimeout(function () { if (toastRegion) toastRegion.innerHTML = ''; }, 3000);
+    clearToast();
+    var label = skill.badgeLabel || skill.name;
+    var header = document.querySelector('.site-header');
+    toastRegion.style.setProperty('--toast-header-height', (header ? header.offsetHeight : 78) + 'px');
+    toastRegion.innerHTML = '<div class="toast toast--reward" role="status"><span class="toast-mark badge-hex badge-hex--icon' + originalBadgeClass(skill) + '" aria-hidden="true">' + renderBadgeArtwork(skill) + '</span><span><strong>' + escapeHtml(label) + '</strong> ' + escapeHtml(message) + '</span><button class="toast-dismiss" aria-label="Dismiss notification">×</button></div>';
+    var toast = toastRegion.querySelector('.toast');
+    function dismissToast() {
+      window.clearTimeout(toastDismissTimer);
+      if (!toast.isConnected) return;
+      toast.classList.add('is-leaving');
+      var exitDuration = prefersReducedMotion ? 0 : parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dur-base')) || 180;
+      toastRemoveTimer = window.setTimeout(function () { toast.remove(); }, exitDuration);
+    }
+    toast.addEventListener('click', dismissToast);
+    toastDismissTimer = window.setTimeout(dismissToast, 2600);
   }
 
   function animateSkillReward(skill) {
@@ -3017,7 +3142,7 @@
   function showRestartModal() {
     if (!modalRoot) { resetState(); return; }
     setModalSurfaces(true);
-    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="restart-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">RESET FIELD GUIDE</p><h2 id="restart-title">Start a fresh journey?</h2><p>Your starter skills, map decisions, and earned skills will be cleared from this browser.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep exploring</button><button class="button button--danger" data-action="confirm-restart">Restart journey</button></div></section></div>';
+    modalRoot.innerHTML = '<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="restart-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><p class="eyebrow">RESET FIELD GUIDE</p><h2 id="restart-title">Start a fresh journey?</h2><p>Your starter skills, map decisions, and earned skills will be cleared from this browser.</p><div class="modal-actions"><button class="button button-secondary" data-action="close-modal">Keep exploring</button><button class="button button-secondary" data-action="confirm-restart">Restart journey</button></div></section></div>';
     wireModalEvents(); modalRoot.querySelector('.modal-close').focus();
   }
 
@@ -3067,7 +3192,8 @@
   }
 
   function focusAfterRender() {
-    var target = root.querySelector('h1, input, [data-action="open-node"]');
+    var target = root.querySelector('h1');
+    if (target) target.setAttribute('tabindex', '-1');
     if (!target) return;
     window.setTimeout(function () {
       if (document.body.contains(target) && target.focus) {

@@ -41,7 +41,10 @@ def minify_css(source: str) -> str:
 
     without_comments = re.sub(r"/\*.*?\*/", "", source, flags=re.DOTALL)
     compact = re.sub(r"\s+", " ", without_comments)
-    return re.sub(r"\s*([{}:;,>])\s*", r"\1", compact).strip()
+    compact = re.sub(r"\s*([{};,>])\s*", r"\1", compact)
+    # Only trim the space *after* a colon. A space *before* one is a descendant
+    # combinator in selectors like `.screen :is(...)` and must survive.
+    return re.sub(r":\s+", ":", compact).strip()
 
 
 def minify_javascript(source: str) -> str:

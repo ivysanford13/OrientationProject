@@ -283,7 +283,7 @@ class InterviewModuleTests(unittest.TestCase):
             self.show_career(page, career_id)
             salary_card = page.locator(".career-stat").first
             salary_text = salary_card.inner_text()
-            self.assertIn("ENTRY RANGE · NATIONAL PROXY", salary_text, career_id)
+            self.assertIn("ENTRY PAY", salary_text, career_id)
             self.assertIn(salary["entryRange"]["label"], salary_text, career_id)
             self.assertIn(f"SOC {salary['soc']}", salary_text, career_id)
             self.assertIn("BLS OEWS May 2023", salary_text, career_id)
@@ -323,17 +323,24 @@ class InterviewModuleTests(unittest.TestCase):
 
         for career_id in ("application-developer", "data-analyst", "product-manager"):
             self.show_career(page, career_id)
-            cards = page.locator(".career-rank-card")
+            cards = page.locator(".career-result-heading, .career-rank-card")
             self.assertEqual(cards.count(), 10, career_id)
+            self.assertEqual(page.locator(".career-rank-card:visible").count(), 4)
+            disclosure = page.locator('[data-action="toggle-career-roles"]')
+            self.assertEqual(disclosure.get_attribute("aria-expanded"), "false")
+            disclosure.focus()
+            page.keyboard.press("Enter")
+            self.assertEqual(disclosure.get_attribute("aria-expanded"), "true")
+            self.assertEqual(page.locator(".career-rank-card:visible").count(), 9)
             self.assertEqual(
-                cards.first.locator("h2").inner_text().strip().casefold(),
+                cards.first.locator("h1, h2").inner_text().strip().casefold(),
                 salaries[career_id]["title"].casefold(),
                 career_id,
             )
-            titles = [title.casefold() for title in cards.locator("h2").all_inner_texts()]
+            titles = [title.casefold() for title in cards.locator("h1, h2").all_inner_texts()]
             self.assertEqual(len(titles), len(set(titles)), career_id)
             for card in cards.all():
-                title = card.locator("h2").inner_text().strip()
+                title = card.locator("h1, h2").inner_text().strip()
                 salary = next(item for item in salaries.values() if item["title"].casefold() == title.casefold())
                 pay_text = card.locator(".career-pay").inner_text()
                 self.assertIn(salary["entryRange"]["label"], pay_text, title)

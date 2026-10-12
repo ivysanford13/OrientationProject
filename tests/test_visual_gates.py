@@ -343,7 +343,7 @@ class CareerLaunchpadVisualGates(unittest.TestCase):
             )
 
             for label_selector, title_selector, screen_label in (
-                (".career-result-heading > .screen-kicker", "#career-title", "career"),
+                (".career-result-heading .screen-kicker", "#career-title", "career"),
             ):
                 label_box = page.locator(label_selector).bounding_box()
                 title_box = page.locator(title_selector).bounding_box()
