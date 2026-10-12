@@ -85,3 +85,7 @@ Build a polished, browser-runnable Information Systems career exploration protot
 - Visual authenticity must not duplicate unnecessary survival UI in a focused classroom mini-game; show only the objective, usable inventory, current action, and crafting workspace.
 - Every earned skill, including Cloud Builder, must use normalized badge artwork from the shared deep-blue hexagon set; never mix a CSS fallback into the honeycomb.
 - Interview prep must visibly balance behavioral evidence, role-specific technical judgment, and technical growth; feedback should name the evidence gap, explain why it weakens the answer, and prescribe a concrete revision.
+- The build's CSS minifier must never strip whitespace *before* a colon: `.screen :is(...)` is a descendant selector, and collapsing it to `.screen:is(...)` silently disables the rule in `index.html` while the source looks correct.
+- Every decorative or UI hexagon uses the shared pointy-top `--hex-clip` so it matches the badge artwork; never clip pointy badge art with a flat-top polygon.
+- Buttons have exactly three tiers (primary, secondary `.button--quiet`, tertiary `.text-button`); Restart is never primary, and only one primary action appears per screen.
+- Reward toasts sit bottom-left on desktop (the skill dock owns bottom-right) and top-center on phones, auto-dismiss, and must never cover a decision card or control the user needs at that moment.

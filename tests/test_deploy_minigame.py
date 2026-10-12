@@ -84,7 +84,7 @@ class DeployMiniGameTests(unittest.TestCase):
             self.assertEqual(page.locator('[data-action="host-site"]').count(), 0)
             page.locator(".deploy-file").drag_to(page.locator(".deploy-folder"))
 
-            host = page.get_by_role("button", name="Host", exact=True)
+            host = page.get_by_role("button", name="Host site", exact=True)
             host.wait_for()
             self.assertIn("portfolio.html is ready", page.locator(".deploy-status").inner_text())
             host.evaluate("element => element.scrollIntoView({block: 'center'})")
@@ -132,7 +132,7 @@ class DeployMiniGameTests(unittest.TestCase):
             page.get_by_role("button", name="portfolio.html HTML document").click()
             self.assertIn("selected", page.locator(".deploy-status").inner_text())
             page.get_by_role("button", name="GitHub Local folder").click()
-            page.get_by_role("button", name="Host", exact=True).click()
+            page.get_by_role("button", name="Host site", exact=True).click()
             self.assertIn("Website online", page.locator(".deploy-status").inner_text())
             self.assertEqual(errors, [])
         finally:
@@ -149,7 +149,7 @@ class DeployMiniGameTests(unittest.TestCase):
             )
             page.get_by_role("button", name="portfolio.html HTML document").click()
             page.get_by_role("button", name="GitHub Local folder").click()
-            page.get_by_role("button", name="Host", exact=True).click()
+            page.get_by_role("button", name="Host site", exact=True).click()
             self.assertEqual(
                 page.evaluate("document.documentElement.scrollWidth"),
                 page.evaluate("document.documentElement.clientWidth"),

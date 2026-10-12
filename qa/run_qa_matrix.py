@@ -281,7 +281,7 @@ class QARunner:
 
         page.locator('[data-action="select-deploy-file"]').click()
         page.locator('[data-action="stage-deploy-file"]').click()
-        host_button = page.get_by_role("button", name="Host", exact=True)
+        host_button = page.get_by_role("button", name="Host site", exact=True)
         if host_button.count() != 1:
             raise AssertionError("deploy task did not reveal its Host action")
         host_button.click()
